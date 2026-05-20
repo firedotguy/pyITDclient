@@ -534,6 +534,8 @@ class Post(ITDBaseModel):
         for name, value in stats.items():
             if name in fields:
                 setattr(self, fields[name], value)
+        self.on_stats_update()
+
 
     @property
     def url(self) -> str:
