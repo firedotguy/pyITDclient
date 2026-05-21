@@ -76,9 +76,13 @@ class Config:
     dwell_max_buffer: int = 20
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
+    dwell_wait_durations: bool = True
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3
+
+    view_read_speed: int = 250 # in WPM # https://scholarwithin.com/average-reading-speed
+    view_images_speed: int = 130 # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
 
     def __post_init__(self):
         if self.rate_limit_default:
