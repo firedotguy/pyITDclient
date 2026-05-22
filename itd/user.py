@@ -12,7 +12,7 @@ from itd.pin import Pin
 from itd.poll import NewPoll
 from itd.report import Report
 from itd.span import Span
-from itd.utils import to_uuid, ATTACHMENTS
+from itd.utils import to_uuid, ATTACHMENTS, parse_datetime
 from itd.api.etc import get_who_to_follow
 from itd.api.users import (
     get_user, follow, unfollow, block, unblock, get_followers, get_following, delete_account,
@@ -44,8 +44,11 @@ class Profile(ITDBaseModel):
     _load_with_parent = False
 
     authenticated: bool = True
-    user: ProfileUser | None
+    user: ProfileUser | None = None
     banned: bool = False
+    deleted: bool = False
+    can_restore: bool = Field(True, alias='canRestore')
+    message: str | None = None
     profile_required: bool = Field(False, alias='profileRequired')
     user_id: UUID | None = Field(None, alias='userId')
     roles: list[Role] | None = None
@@ -55,7 +58,9 @@ class Profile(ITDBaseModel):
         return get_profile(client or self.client).json()
 
     def __str__(self) -> str:
-        return str(self.user)
+        if self.user:
+            return str(self.user)
+        return super().__str__()
 
 class _ProfileValidate(BaseModel, Profile):
     pass
@@ -177,8 +182,6 @@ class _UserBase(ITDBaseModel):
     banner: str | None = None
     bio: str | None = None
 
-    created_at: datetime | None = Field(None, alias='createdAt') # none if blocked
-
     def __init__(self, username_or_id: str | UUID, client: Client | None = None) -> None:
         self._identifier = username_or_id
         if isinstance(username_or_id, str) and username_or_id != 'me':
@@ -224,8 +227,8 @@ class User(_UserBase):
     _validator = lambda _: _UserValidate
     _fields_from_data: set[str] = set()
 
-    _followers: list = []
-    _following: list = []
+    _followers: list[User] = []
+    _following: list[User] = []
 
     is_following: bool = Field(False, alias='isFollowing')
     is_followed_by: bool = Field(False, alias='isFollowedBy')
@@ -247,6 +250,8 @@ class User(_UserBase):
     online: bool = False
 
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId') # none if no or blocked
+
+    created_at: datetime | None = Field(None, alias='createdAt') # none if blocked
 
     @classmethod
     def _from_dict(cls, data: dict, set_loaded: bool = True, client: Client | None = None):
@@ -378,13 +383,13 @@ class User(_UserBase):
         return Post.new(content, spans, attachments, poll, self, client or self.client)
 
     @property
-    def following(self) -> list:
+    def following(self) -> list[User]:
         if not self._following:
             self._following = [User._from_dict(user, False, self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
         return self._following
 
     @property
-    def followers(self) -> list:
+    def followers(self) -> list[User]:
         if not self._followers:
             self._followers = [User._from_dict(user, False, self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
         return self._followers
@@ -413,6 +418,8 @@ class Me(_UserBase):
     following_count: int = Field(alias='followingCount')
     posts_count: int = Field(alias='postsCount')
 
+    created_at: datetime = Field(alias='createdAt')
+
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)
 
@@ -435,8 +442,8 @@ class Me(_UserBase):
         instance._loaded = False
         return instance
 
-    def delete(self) -> None: # should not use other client, because you can get Me only from current client
-        delete_account(self.client)
+    def delete(self) -> datetime: # should not use other client, because you can get Me only from current client
+        return parse_datetime(delete_account(self.client).json()['restoreDeadline'])
 
     def restore(self) -> None:
         restore_account(self.client)
