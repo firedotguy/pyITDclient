@@ -7,11 +7,11 @@ from pydantic import Field, BaseModel, field_validator
 
 from itd.base import ITDBaseModel, refresh_wrapper, ITDList
 from itd.enums import AccessType, Unset, Role, ReportReason, ReportTargetType
-from itd.exceptions import PinNotOwnedError
 from itd.pin import Pin
 from itd.poll import NewPoll
 from itd.report import Report
 from itd.span import Span
+from itd.exceptions import PinNotOwnedError, AccountDeletedError
 from itd.utils import to_uuid, ATTACHMENTS, parse_datetime
 from itd.api.etc import get_who_to_follow
 from itd.api.users import (
@@ -530,6 +530,16 @@ class Me(_UserBase):
         if not self._pins:
             self._pins = [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
         return self._pins
+
+    @refresh_wrapper
+    def refresh(self, client: Client | None = None):
+        user = get_user(client or self.client, self._identifier).json()
+        if user.get('isDeleted'):
+            exc = AccountDeletedError()
+            exc.can_restore = user.get('canRestore', True)
+            exc.restore_deadline = parse_datetime(user['restoreDeadline']) if 'restoreDeadline' in user else None
+            raise exc
+        return user
 
     if not TYPE_CHECKING:
         def __getattribute__(self, name: str):

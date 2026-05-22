@@ -12,7 +12,10 @@ from pydantic_core import PydanticUndefinedType
 
 from itd._default import get_default_client
 from itd.logger import get_logger
-from itd.exceptions import ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError, DEFAULT_ERRORS
+from itd.exceptions import (
+    ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError,
+    DEFAULT_ERRORS, AccountDeletedError
+)
 from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch
 if TYPE_CHECKING:
     from itd.client import Client
@@ -336,11 +339,16 @@ def catch_errors(*exceptions: ITDException):
                 ):
                     if isinstance(exception, ValidationError):
                         exception.text = json.get('error', {}).get('message', 'Failed validation')
+
                     if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                         exception.retry_after = json.get('error', {}).get('retryAfter', 0)
+
                     if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
                         client.refresh_auth()
                         return wrapper(client, *args, **kwargs)
+
+                    if isinstance(exception, AccountDeletedError):
+                        exception.can_restore = json.get('error', {}).get('canRestore', True)
 
                     raise exception
 
