@@ -378,7 +378,7 @@
   <a href="#-_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Авто-дозагрузка
+        Авто-дозагрузка списков
       
     </span>
   </a>
@@ -454,53 +454,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Функции
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Функции
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../methods/client/" class="md-nav__link">
         
@@ -521,10 +474,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -537,7 +489,7 @@
   <span class="md-ellipsis">
     
   
-    Пост
+    Посты
   
 
     
@@ -549,10 +501,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -565,7 +516,7 @@
   <span class="md-ellipsis">
     
   
-    Пользователь
+    Пользователи
   
 
     
@@ -577,11 +528,30 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Уведомления
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -601,10 +571,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -622,8 +592,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1213,7 +1183,7 @@
   <a href="#-_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Авто-дозагрузка
+        Авто-дозагрузка списков
       
     </span>
   </a>
@@ -1303,23 +1273,21 @@
 </code></pre></div>
 <h3 id="_4">Псевдокод</h3>
 <div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="p">(</span>
-    <span class="n">обновляемый</span> <span class="ow">and</span> <span class="c1"># (1)</span>
-    <span class="ow">not</span> <span class="n">имя</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span>
-    <span class="n">имя</span> <span class="o">==</span> <span class="s1">&#39;client&#39;</span>
+    <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># приватный аттрибут</span>
+    <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;client&#39;</span> <span class="ow">or</span>
+    <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refreshable</span> <span class="ow">or</span> <span class="c1"># (1)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">auto_load</span> <span class="ow">or</span> <span class="c1"># (3)</span>
+    <span class="nb">callable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># (2)</span>
+    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">load_comments_from_post</span> <span class="ow">and</span> <span class="n">isinstane</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Post</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Comment</span><span class="p">))</span> <span class="c1"># (4)</span>
 <span class="p">):</span>
-        <span class="k">if</span> <span class="n">isinstnace</span><span class="p">(</span><span class="n">значение</span><span class="p">,</span> <span class="n">функция</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">значение</span> <span class="c1"># (2)</span>
+    <span class="k">return</span> <span class="n">value</span>
 
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="ow">not</span> <span class="n">модель_загружена</span> <span class="ow">and</span>
-            <span class="nb">any</span><span class="p">([</span><span class="n">стоит</span> <span class="n">дефолтное</span> <span class="n">значение</span><span class="p">,</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">значение</span><span class="p">,</span> <span class="n">pydatnicField</span><span class="p">),</span> <span class="n">значение</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">установлено</span> <span class="n">дефолтное</span> <span class="n">значение</span> <span class="n">pydantic</span><span class="p">])</span> <span class="ow">and</span>
-            <span class="ow">not</span> <span class="n">auto_load</span> <span class="ow">and</span> <span class="c1"># (3)</span>
-            <span class="ow">not</span> <span class="p">(</span><span class="n">имя</span> <span class="o">==</span> <span class="s1">&#39;comments&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">load_comments_from_post</span><span class="p">)</span> <span class="c1"># (4)</span>
-        <span class="p">):</span>
-            <span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;load </span><span class="si">%s</span><span class="s1">.</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">имя_модели</span><span class="p">,</span> <span class="n">имя</span><span class="p">)</span>
-            <span class="n">модель</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ITDBaseModel</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">_load_with_parent</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">_loaded</span><span class="p">):</span> <span class="c1"># тип - pydantic field или модель</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;refresh </span><span class="si">%s</span><span class="s1"> (caused by </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">значение</span>
+<span class="k">return</span> <span class="n">value</span>
 </code></pre></div>
 <ol>
 <li>Пропуск необновляемых моделей, например уведомление (можно получить только из списка)</li>
@@ -1327,7 +1295,7 @@
 <li>см. <a href="../config/#auto_load-bool">auto_load</a></li>
 <li>см. <a href="../config/#load_comments_from_post-bool">load_comments_from_post</a></li>
 </ol>
-<h2 id="-_2">Авто-дозагрузка</h2>
+<h2 id="-_2">Авто-дозагрузка списков</h2>
 <p>Дозагрузка листов при итерации или получении индекса.<br />
 В базовой модели стоят методы <code>__getitem__</code> и <code>__next__</code>, перехватывающие попытку получения значения которого пока не существует.<br />
 Можно выключить в конфиге (см. <a href="../config/#load_on_getitem-all-batchint-all-batch">load_on_getitem</a>)
