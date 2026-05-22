@@ -40,23 +40,21 @@ post.content
 ### Псевдокод
 ```python
 if (
-    обновляемый and # (1)
-    not имя.startswith('_') or
-    имя == 'client'
+    name.startswith('_') or # приватный аттрибут
+    name == 'client' or
+    not self._refreshable or # (1)
+    self.client.config.auto_load or # (3)
+    callable(value) or # (2)
+    (self.client.config.load_comments_from_post and isinstane(self, Post) and isinstance(value, Comment)) # (4)
 ):
-        if isinstnace(значение, функция):
-            return значение # (2)
+    return value
 
-        if (
-            not модель_загружена and
-            any([стоит дефолтное значение, isinstance(значение, pydatnicField), значение is None and not установлено дефолтное значение pydantic]) and
-            not auto_load and # (3)
-            not (имя == 'comments' and not load_comments_from_post) # (4)
-        ):
-            l.info('load %s.%s', имя_модели, имя)
-            модель.refresh()
+if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded): # тип - pydantic field или модель
+    l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
+    self.refresh()
+    return object.__getattribute__(self, name)
 
-    return значение
+return value
 ```
 
 1. Пропуск необновляемых моделей, например уведомление (можно получить только из списка)
@@ -64,7 +62,7 @@ if (
 3. см. [auto_load](config.md#auto_load-bool)
 4. см. [load_comments_from_post](config.md#load_comments_from_post-bool)
 
-## Авто-дозагрузка
+## Авто-дозагрузка списков
 Дозагрузка листов при итерации или получении индекса.  
 В базовой модели стоят методы `__getitem__` и `__next__`, перехватывающие попытку получения значения которого пока не существует.  
 Можно выключить в конфиге (см. [load_on_getitem](config.md#load_on_getitem-all-batchint-all-batch))

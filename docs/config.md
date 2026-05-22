@@ -162,3 +162,9 @@ Bypass пре-валидации на проверку уровня автори
 
 #### post_update_stats_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка между обнолвением статистики видимых постов. По умолчанию 3.
+
+#### view_read_speed <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Скорость чтения (в WPM). Используется для более правдоподобного времени просмотра поста.
+
+#### view_images_speed <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Скорость понимания картинок. Используется для более правдоподобного времени просмотра поста.
