@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from atexit import register
 from time import sleep
 from threading import Thread
+from typing import overload
 
 from requests import Session
 from requests.utils import default_user_agent
@@ -14,7 +15,7 @@ from requests.exceptions import RequestException
 from itd._default import _default_client, set_default_client
 from itd.exceptions import InsufficientAuthLevelError, RateLimitError, InternalError, NotFoundError
 from itd.hashtag import Hashtag
-from itd.request import fetch, decode_jwt_payload
+from itd.request import fetch, decode_jwt_payload, fetch_stream
 from itd.enums import RateLimitMode, All, DebugResponseMode, ParseMode, Batch, BATCH, UserAgent, AuthLevel
 from itd.user import Me, User
 from itd.post import DwellTracker, Post
@@ -67,6 +68,7 @@ class Config:
     retry_delay: float = 10 # delay before next attempt (after rate limit error) if retry_after is not provided in request
     retry_max_retries: int | None = None # none for no limit
     retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
+    retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
 
@@ -74,9 +76,13 @@ class Config:
     dwell_max_buffer: int = 20
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
+    dwell_wait_durations: bool = True
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3
+
+    view_read_speed: int = 250 # in WPM # https://scholarwithin.com/average-reading-speed
+    view_images_speed: int = 130 # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
 
     def __post_init__(self):
         if self.rate_limit_default:
@@ -197,6 +203,14 @@ class Client:
             self.refresh_auth()
 
         return fetch(self, method, url, params, files)
+
+    def request_sse(self, url: str):
+        l.debug('sse %s', url)
+
+        if self.access_token is None and url != 'v1/auth/refresh':
+            self.refresh_auth()
+
+        return fetch_stream(self, url)
 
 
     def update_post_stats(self):
@@ -334,6 +348,12 @@ class Client:
         hashtag = self.search_hashtags(query, 1)
         if hashtag:
             return hashtag[0]
+
+    @overload
+    def get_follow_status(self, users: list[User | UUID | str]) -> dict[UUID, bool]: ...
+
+    @overload
+    def get_follow_status(self, users: User | UUID | str) -> bool: ...
 
     def get_follow_status(self, users: list[User | UUID | str] | User | UUID | str) -> dict[UUID, bool] | bool:
         """Получить статус подписки

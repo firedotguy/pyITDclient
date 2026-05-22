@@ -3,10 +3,13 @@ from html.parser import HTMLParser
 from datetime import datetime
 import re
 from sys import version
+from typing import TYPE_CHECKING
 
 from itd.span import Span
-from itd.file import File
-from itd.enums import SpanType
+from itd.file import PostAttach, File
+from itd.enums import SpanType, AttachType
+if TYPE_CHECKING:
+    from itd.client import Config
 
 
 def get_sdk_user_agent():
@@ -48,6 +51,13 @@ def format_attachments(attachments: ATTACHMENTS = []) -> list[UUID]:
         if isinstance(attachments, File):
             return [attachments.id]
         return [to_uuid(attachments)]
+
+
+def calc_view_duration(config: 'Config', text: str, attachments: list[PostAttach] = []):
+    text_reading = round(len(text.split()) / config.view_read_speed * 60_000)
+    image_reading = sum([config.view_images_speed for attachment in attachments if attachment.type == AttachType.IMAGE])
+    # video_watching = sum([attachment.duration for attachment in attachments if attachment.type == AttachType.VIDEO]) # TODO
+    return text_reading + image_reading
 
 
 class HTMLSpanParser(HTMLParser):

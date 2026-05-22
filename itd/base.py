@@ -12,13 +12,18 @@ from pydantic_core import PydanticUndefinedType
 
 from itd._default import get_default_client
 from itd.logger import get_logger
-from itd.exceptions import ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError, DEFAULT_ERRORS, InternalError
+from itd.exceptions import ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError, DEFAULT_ERRORS
 from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch
 if TYPE_CHECKING:
     from itd.client import Client
 
 
 l = get_logger('base')
+
+def _is_comments_on_post(value: Any, self: Any) -> bool:
+    from itd.comment import Comments
+    from itd.post import Post
+    return isinstance(value, Comments) and isinstance(self, Post)
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
     try:
@@ -67,33 +72,25 @@ class ITDBaseModel:
 
     if not TYPE_CHECKING:
         def __getattribute__(self, name: str) -> Any:
-            if _getattr(self, '_refreshable') and not name.startswith('_') or name in ('client', 'model_fields_set'):
-                try:
-                    attr = _getattr(self, name)
-                except AttributeError:
-                    attr = None
+            value = object.__getattribute__(self, name)
+            if (
+                name.startswith('_') or # приватный аттрибут
+                name in ('client', 'model_fields_set') or
+                not _getattr(self, '_refreshable') or # не рефрешабельная модель
+                not _getattr(self, 'client').config.auto_load or # отключено в конфиге
+                callable(value) or # функция
+                (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self))
+            ):
+                # l.debug('return %s as is', name)
+                return value
 
-                if callable(attr):
-                    return object.__getattribute__(self, name)
+            if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded):
+                l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
+                self.refresh()
+                return object.__getattribute__(self, name)
 
-                fields_from_data = _getattr(self, '_fields_from_data', ())
-                triggers = {
-                    'default': name not in fields_from_data and _field_has_default(type(self), name),
-                    'none': attr is None and not _field_has_default(type(self), name),
-                    'field-info': isinstance(attr, FieldInfo)
-                }
-                if (
-                    not _getattr(self, '_loaded') and
-                    any(triggers.values()) and
-                    _getattr(self, 'client').config.auto_load and
-                    not (name == 'comments' and not _getattr(self, 'client').config.load_comments_from_post) # да я хотел сделать нормально, поставить проперти на comments и тд, но это херня кака ято крч просто нахардкожу
-                ):
-                    l.info('load %s.%s reason=%s', self.__class__.__name__.lower(), name,
-                        next((k for k, v in triggers.items() if v))
-                    )
-                    self.refresh()
+            return value
 
-            return object.__getattribute__(self, name)
 
 
 T = TypeVar('T', bound=ITDBaseModel)
@@ -276,7 +273,7 @@ def refresh_wrapper(func):
         if self._validator:
             validated = self._validator().model_validate(data)
             self._fields_from_data = validated.model_fields_set
-            l.debug('refresh %s', self.__class__.__name__.lower())
+            l.debug('fill %s', self.__class__.__name__)
             for name, value in validated.__dict__.items():
                 setattr(self, name, value)
 
@@ -380,7 +377,7 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
             else:
                 delay = client.config._rate_limit_default
 
-            if datetime.now() - timedelta(seconds=delay) < client.last_actions.get(func.__name__, datetime(2013, 2, 16)):  # my birthday actually
+            if datetime.now() - timedelta(seconds=delay) < client.last_actions.get(func.__name__, datetime(1990, 1, 1)):
                 delay -= (datetime.now() - client.last_actions[func.__name__]).seconds
                 l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
                 sleep(max(delay, 0))
@@ -393,8 +390,12 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
                 try:
                     return func(client, *args, **kwargs)
                 except (client.config._retry_exceptions) as e:
-                    retry_after = getattr(e, 'retry_after', client.config.rate_limit_wait) or client.config.retry_delay
-                    l.info('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
+                    if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
+                        l.error('too large rate limit')
+                        raise
+
+                    retry_after = getattr(e, 'retry_after', client.config.retry_delay)
+                    l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
 
         return wrapper

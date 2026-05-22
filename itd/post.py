@@ -28,7 +28,7 @@ from itd.base import ITDBaseModel, refresh_wrapper, ITDList
 from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType
 from itd.exceptions import NotFoundError
 from itd.logger import get_logger
-from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_html, parse_md
+from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_html, parse_md, calc_view_duration
 if TYPE_CHECKING:
     from itd.client import Client
 
@@ -108,8 +108,9 @@ class DwellTracker(ITDBaseModel):
             vs (str): VS
             duration (int): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+
             entered_at (datetime): Дата открытия поста (когда пользователь увидел пост)
-            reason (ViewReason): Причина просмотра
             source (ViewSource): Страница, с которой произошел просмотр
+            source_context (str | None, optional): Контекст страницы, с которой произошел просмотр. Defaults to None.
+            reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
         """
         l.info(
             'dwell add view record id=%s vs=%s duration=%s entered_at=%s exited_at=%s source=%s source_context=%s reason=%s',
@@ -418,7 +419,7 @@ class Post(ITDBaseModel):
 
         return Post._from_dict(post, client=client)
 
-    def view(self, client: Client | None = None, entered_at: datetime | None = None, duration: int = 250, reason: ViewReason = ViewReason.NORMAL) -> None:
+    def view(self, client: Client | None = None, entered_at: datetime | None = None, duration: int | None = None, reason: ViewReason = ViewReason.NORMAL) -> None:
         """Просмотреть пост
 
         Args:
@@ -429,6 +430,10 @@ class Post(ITDBaseModel):
             if self.vs is None:
                 self.refresh(c)
                 assert self.vs
+            if duration is None:
+                duration = calc_view_duration(c.config, self.content, self.attachments)
+                if c.config.dwell_wait_durations:
+                    sleep(duration / 1000)
             c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at or datetime.now() - timedelta(milliseconds=duration), self.source, self.source_context, reason)
         else:
             view_post(c, self.id)
@@ -534,6 +539,8 @@ class Post(ITDBaseModel):
         for name, value in stats.items():
             if name in fields:
                 setattr(self, fields[name], value)
+        self.on_stats_update()
+
 
     @property
     def url(self) -> str:
@@ -596,11 +603,6 @@ class _PostValidate(BaseModel, Post): # BaseModel MUST be first or you ll have s
     def validate_wall_recipient(cls, wall_recipient: dict | None):
         if wall_recipient is not None:
             return User._from_dict(wall_recipient, False)
-
-    # @field_validator('vs', mode='plain')
-    # @classmethod
-    # def validate_vs(cls, vs: str):
-    #     return ViewerSession(decode_jwt_payload(vs))
 
 
 

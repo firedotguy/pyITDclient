@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, cast, Iterator
+from typing import TYPE_CHECKING, Literal, cast, Iterator
 from uuid import UUID
 from datetime import datetime
 from json import loads
@@ -57,6 +57,52 @@ class Notification(ITDBaseModel):
 
         self.is_read = True
         self.read_at = datetime.now()
+
+    def get_text(self, avatar: bool = False) -> str:
+        text = ''
+        if avatar:
+            text += self.actor.avatar + ' '
+        text += self.actor.display_name + ' '
+
+        match self.type:
+            case NotificationType.FOLLOW:
+                text += 'подписался(-ась) на вас'
+            case NotificationType.FOLLOW_REQUEST:
+                text += 'хочет подписаться на вас'
+            case NotificationType.FOLLOW_ACCEPTED:
+                text += 'принял(а) вашу заявку на подписку'
+            case NotificationType.LIKE:
+                text += 'оценил(а) ваш пост'
+            case NotificationType.COMMENT:
+                text += 'прокомментировал(а) ваш пост'
+            case NotificationType.REPOST:
+                text += 'сделал(а) репост вашего поста'
+            case NotificationType.COMMENT_LIKE:
+                text += 'оценил(а) ваш комментарий'
+            case NotificationType.REPLY:
+                text += 'ответил(а) на ваш комментарий'
+            case NotificationType.MENTION:
+                text += 'упомянул(а) вас в посте'
+            case NotificationType.COMMENT_MENTION:
+                text += 'упомянул(а) вас в комментарии'
+            case NotificationType.WALL_POST:
+                text += 'написал(а) на вашей стене'
+
+        return text
+
+    def get_color(self) -> Literal['blue'] | Literal['green'] | Literal['red'] | Literal['purple']:
+        match self.type:
+            case NotificationType.FOLLOW | NotificationType.FOLLOW_REQUEST | NotificationType.REPOST | NotificationType.WALL_POST:
+                return 'blue'
+
+            case NotificationType.FOLLOW_ACCEPTED | NotificationType.COMMENT | NotificationType.REPLY:
+                return 'green'
+
+            case NotificationType.LIKE | NotificationType.COMMENT_LIKE:
+                return 'red'
+
+            case NotificationType.MENTION | NotificationType.COMMENT_MENTION:
+                return 'purple'
 
 
 class _NotificationValidate(BaseModel, Notification):
@@ -116,8 +162,9 @@ class Notifications(ITDList[Notification]):
             notification = Notification(data, self, self.client)
             self.insert(0, notification)
 
-            l.info('call %s', notification.type.value)
+            l.info('new notification type=%s', notification.type.value)
             exec(f'self.on_{notification.type.value}(notification)')
+            self.on_notification(notification)
 
             yield notification
 
@@ -140,35 +187,26 @@ class Notifications(ITDList[Notification]):
 
 
     # redefine this for your needs (eg notifications.on_like = my_function)
-    def on_like(self, notification: Notification) -> None:
-        pass
+    def on_like(self, notification: Notification, /) -> None: ...
 
-    def on_comment(self, notification: Notification) -> None:
-        pass
+    def on_comment(self, notification: Notification, /) -> None: ...
 
-    def on_reply(self, notification: Notification) -> None:
-        pass
+    def on_reply(self, notification: Notification, /) -> None: ...
 
-    def on_repost(self, notification: Notification) -> None:
-        pass
+    def on_repost(self, notification: Notification, /) -> None: ...
 
-    def on_mention(self, notification: Notification) -> None:
-        pass
+    def on_mention(self, notification: Notification, /) -> None: ...
 
-    def on_follow(self, notification: Notification) -> None:
-        pass
+    def on_follow(self, notification: Notification, /) -> None: ...
 
-    def on_follow_request(self, notification: Notification) -> None:
-        pass
+    def on_follow_request(self, notification: Notification, /) -> None: ...
 
-    def on_follow_accepted(self, notification: Notification) -> None:
-        pass
+    def on_follow_accepted(self, notification: Notification, /) -> None: ...
 
-    def on_comment_like(self, notification: Notification) -> None:
-        pass
+    def on_comment_like(self, notification: Notification, /) -> None: ...
 
-    def on_comment_mention(self, notification: Notification) -> None:
-        pass
+    def on_comment_mention(self, notification: Notification, /) -> None: ...
 
-    def on_wall_post(self, notification: Notification) -> None:
-        pass
+    def on_wall_post(self, notification: Notification, /) -> None: ...
+
+    def on_notification(self, notification: Notification, /) -> None: ...
