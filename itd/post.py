@@ -28,7 +28,7 @@ from itd.base import ITDBaseModel, refresh_wrapper, ITDList
 from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType
 from itd.exceptions import NotFoundError
 from itd.logger import get_logger
-from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_html, parse_md, calc_view_duration
+from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_md, parse_html, calc_view_duration
 if TYPE_CHECKING:
     from itd.client import Client
 

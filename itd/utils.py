@@ -5,12 +5,17 @@ import re
 from sys import version
 from typing import TYPE_CHECKING
 
+from telegramify_markdown import convert, converter
+import pyromark
+from lxml import html
+
 from itd.span import Span
 from itd.file import PostAttach, File
 from itd.enums import SpanType, AttachType
 if TYPE_CHECKING:
     from itd.client import Config
 
+converter.STANDARD_OPTIONS = pyromark.Options.ENABLE_STRIKETHROUGH
 
 def get_sdk_user_agent():
     from itd import __version__ # i fucking hate circular imports this is sooo stupid
@@ -60,66 +65,16 @@ def calc_view_duration(config: 'Config', text: str, attachments: list[PostAttach
     return text_reading + image_reading
 
 
-class HTMLSpanParser(HTMLParser):
-    """Парсер HTML для извлечения текста и spans с форматированием."""
-
-    TAG_MAP = {
-        'b': SpanType.BOLD,
-        'i': SpanType.ITALIC,
-        's': SpanType.STRIKE,
-        'u': SpanType.UNDERLINE,
-        'code': SpanType.MONOSPACE,
-        'spoiler': SpanType.SPOILER,
-        'q': SpanType.QUOTE
-    }
-
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.spans: list[Span] = []
-        self.text_parts: list[str] = []
-        self.stack: list[tuple[str, SpanType, int, str | None]] = []  # (tag, type, text_offset, url)
-        self.text_offset = 0
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
-        if tag == 'a':
-            href = None
-            for attr_name, attr_value in attrs:
-                if attr_name == 'href' and attr_value:
-                    href = attr_value
-                    break
-            self.stack.append(('a', SpanType.LINK, self.text_offset, href))
-
-        elif tag in self.TAG_MAP:
-            self.stack.append((tag, self.TAG_MAP[tag], self.text_offset, None))
-
-    def handle_endtag(self, tag: str):
-        # Ищем соответствующий открывающий тег в стеке
-        for i in range(len(self.stack) - 1, -1, -1):
-            if self.stack[i][0] == tag:
-                _, span_type, text_start, url = self.stack.pop(i)
-                offset = text_start
-                length = self.text_offset - text_start
-                if span_type == SpanType.LINK and url is None:
-                    url = self.get_text()[offset: offset + length]
-                self.spans.append(Span(
-                    length=length,
-                    offset=offset,
-                    type=span_type,
-                    url=url
-                ))
-                break
-
-    def handle_data(self, data: str):
-        self.text_parts.append(data)
-        self.text_offset += len(data)
-
-    def get_text(self) -> str:
-        return ''.join(self.text_parts)
-
-    def get_spans(self) -> list[Span]:
-        self.spans.sort(key=lambda s: s.offset)
-        return self.spans
-
+TAG_MAP = {
+    'b': SpanType.BOLD,
+    'i': SpanType.ITALIC,
+    's': SpanType.STRIKE,
+    'u': SpanType.UNDERLINE,
+    'code': SpanType.MONOSPACE,
+    'spoiler': SpanType.SPOILER,
+    'q': SpanType.QUOTE,
+    'a': SpanType.LINK
+}
 
 def parse_html(text: str) -> tuple[str, list[Span]]:
     """
@@ -136,84 +91,23 @@ def parse_html(text: str) -> tuple[str, list[Span]]:
         str: чистая строка
         list[Span]: список спанов
     """
-    parser = HTMLSpanParser()
-    parser.feed(text)
-    return parser.get_text(), parser.get_spans()
+    if not text:
+        return text, []
 
+    root = html.document_fromstring(text)
 
-DELIMITERS = {
-    '**': SpanType.BOLD,
-    '*': SpanType.ITALIC,
-    '~~': SpanType.STRIKE,
-    '__': SpanType.UNDERLINE,
-    '`': SpanType.MONOSPACE,
-    '||': SpanType.SPOILER,
-    '>': SpanType.QUOTE,
-}
-
-
-def _split_with_delimiters(s: str):
-    escaped_delimiters = [re.escape(d) for d in sorted(DELIMITERS.keys(), key=len, reverse=True)]
-    link_pattern = r'\[[^\]]+\]\([^\)]*\)'
-    pattern = '(' + '|'.join([r'\\.', link_pattern] + escaped_delimiters) + ')'
-    return list(filter(len, re.split(pattern, s)))
-
-
-def parse_md(s: str) -> tuple[str, list[Span]]:
-    r"""
-    Парсит markdown, извлекает чистый текст и spans с форматированием.
-
-    \**жирный**, \*курсив*, \~~зачёркнутый~~, __подчёркнутый__, \`моноширный`, \||спойлер||, \>цитата>
-
-    Теги могут пересекаться, например: __111\*1234__32342*
-
-    Теги могут быть вложенными: __1231\*1323*__
-
-    \[текст ссылки](url)
-
-    Внутри ссылки остальные теги не парсятся
-
-    Если url пустой, на его место будет поставлен текст ссылки, то есть:
-
-    \[текст ссылки]() = \[текст ссылки](текст ссылки)
-
-
-    используйте \ для экранирования символов
-
-    Args:
-        s: markdown строка для парсинга
-
-    Returns:
-        str: чистая строка
-        list[Span]: список спанов
-    """
-    starts = {}
-    result = ""
+    # https://stackoverflow.com/questions/67434754/extract-inline-nodes-from-html-string-with-offset-and-length
     spans = []
-    for token in _split_with_delimiters(s):
-        if token[0] == '\\':
-            result += token[1]
-        elif token in starts:
-            start = starts[token]
-            del starts[token]
-            spans.append(Span(
-                offset=start,
-                length=len(result) - start,
-                type=DELIMITERS[token]
-            ))
-        elif token in DELIMITERS:
-            starts[token] = len(result)
-        elif match := re.match(r'\[([^\]]+)\]\(([^\)]*)\)', token):
-            text = match.group(1)
-            url = match.group(2)
-            spans.append(Span(
-                offset=len(result),
-                length=len(text),
-                type=SpanType.LINK,
-                url=url if len(url) != 0 else text,
-            ))
-            result += text
-        else:
-            result += token
+    for element in root.xpath('.//*'):
+        if element.tag not in TAG_MAP:
+            continue
 
-    return result, spans
+        length = len(element.text_content())
+        offset = len(''.join(element.xpath('./preceding::text()')))
+        spans.append(Span(length=length, offset=offset, type=TAG_MAP[element.tag], url=element.get('href')))
+    return root.text_content(), spans
+
+
+def parse_md(md: str) -> tuple[str, list[Span]]:
+    text, spans = convert(md, latex_escape=False)
+    return text, [Span.model_validate(span, from_attributes=True) for span in spans]
