@@ -32,10 +32,11 @@ nav:
   - launch.md
   - concept.md
   - config.md
-  - Функции:
-    - methods/client.md
-    - methods/posts.md
-    - methods/users.md
+  # - Функции:
+  - methods/client.md
+  - Посты: methods/posts.md
+  - Пользователи: methods/users.md
+  - Уведомления: methods/notifications.md
   - API Reference:
     - api/client.md
     - api/user.md

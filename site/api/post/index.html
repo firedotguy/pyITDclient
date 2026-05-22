@@ -301,53 +301,6 @@
   
   
   
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Функции
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Функции
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../../methods/client/" class="md-nav__link">
         
@@ -368,10 +321,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -384,7 +336,7 @@
   <span class="md-ellipsis">
     
   
-    Пост
+    Посты
   
 
     
@@ -396,10 +348,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -412,7 +363,7 @@
   <span class="md-ellipsis">
     
   
-    Пользователь
+    Пользователи
   
 
     
@@ -424,11 +375,30 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methods/notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Уведомления
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -450,10 +420,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -471,8 +441,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -5075,22 +5045,6 @@
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>reason</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            ViewReason (itd.enums.ViewReason)" href="../enums/#itd.enums.ViewReason">ViewReason</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Причина просмотра</p>
-              </div>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            NORMAL (itd.enums.ViewReason.NORMAL)" href="../enums/#itd.enums.ViewReason.NORMAL">NORMAL</a></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
                 <code>source</code>
             </td>
             <td>
@@ -5103,6 +5057,38 @@
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>source_context</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Контекст страницы, с которой произошел просмотр. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reason</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            ViewReason (itd.enums.ViewReason)" href="../enums/#itd.enums.ViewReason">ViewReason</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Причина просмотра. Defaults to ViewReason.NORMAL.</p>
+              </div>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            NORMAL (itd.enums.ViewReason.NORMAL)" href="../enums/#itd.enums.ViewReason.NORMAL">NORMAL</a></code>
             </td>
           </tr>
       </tbody>
@@ -8006,7 +7992,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">view</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">entered_at</span><span class="p">:</span> <span class="n"><span title="datetime.datetime">datetime</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">duration</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span> <span class="n">reason</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ViewReason (itd.enums.ViewReason)" href="../enums/#itd.enums.ViewReason">ViewReason</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NORMAL (itd.enums.ViewReason.NORMAL)" href="../enums/#itd.enums.ViewReason.NORMAL">NORMAL</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">view</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">entered_at</span><span class="p">:</span> <span class="n"><span title="datetime.datetime">datetime</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">duration</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">reason</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ViewReason (itd.enums.ViewReason)" href="../enums/#itd.enums.ViewReason">ViewReason</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NORMAL (itd.enums.ViewReason.NORMAL)" href="../enums/#itd.enums.ViewReason.NORMAL">NORMAL</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
