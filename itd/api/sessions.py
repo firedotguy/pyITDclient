@@ -14,10 +14,10 @@ def get_sessions(client: Client):
 
 @catch_errors()
 @rate_limit()
-def delete_session(client: Client, id: UUID):
+def revoke(client: Client, id: UUID):
     return client.request('delete', f'v1/auth/sessions/{id}')
 
 @catch_errors()
 @rate_limit()
-def delete_all_sessions(client: Client):
+def revoke_all(client: Client):
     return client.request('delete', 'v1/auth/sessions')

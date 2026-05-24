@@ -7,7 +7,7 @@ from pydantic import Field, BaseModel
 from itd.base import ITDBaseModel
 from itd.client import Client
 from itd.enums import DeviceType
-from itd.api.sessions import get_sessions, delete_session, delete_all_sessions
+from itd.api.sessions import get_sessions, revoke, revoke_all
 
 
 class Session(ITDBaseModel):
@@ -33,8 +33,12 @@ class Session(ITDBaseModel):
     client_name: str = Field(alias='clientName') # cant use "client"
     client_version: str = Field(alias='clientVersion')
 
+    def revoke(self):
+        revoke(self.client, self.id)
+        del self
+
     def delete(self):
-        delete_session(self.client, self.id)
+        self.revoke()
 
     def __init__(self, session: dict, client: Client | None = None) -> None:
         super().__init__(client)
@@ -71,6 +75,14 @@ class Sessions(ITDBaseModel, list[Session]):
         self.clear()
         self.extend([Session(session) for session in get_sessions(self.client).json()['sessions']])
         return self
+
+    def revoke_all(self) -> int:
+        revoked = revoke_all(self.client).json()['revokedCount']
+        self.clear()
+        return revoked
+
+    def delete_all(self) -> int:
+        return self.revoke_all()
 
     @classmethod
     def empty(cls):
