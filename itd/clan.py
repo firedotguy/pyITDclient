@@ -14,5 +14,5 @@ class TopClans(ITDBaseModel, list[Clan]):
         self.refresh()
 
     def refresh(self):
-        # TODO!!
+        self.clear()
         self.extend([Clan.model_validate(clan) for clan in get_top_clans(self.client).json()['clans']])
