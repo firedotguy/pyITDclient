@@ -47,6 +47,9 @@ filetype = [
 logs = [
     "rich>=15.0.0",
 ]
+date = [
+    "dateparser>=1.2.2",
+]
 
 [dependency-groups]
 dev = [
