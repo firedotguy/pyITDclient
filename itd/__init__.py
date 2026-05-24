@@ -9,4 +9,5 @@ from itd.hashtag import Hashtag, Hashtags
 from itd.notification import Notifications
 from itd.post import Post, Posts, UserPosts, HashtagPosts, LikedPosts
 from itd.poll import NewPoll
+from itd.session import Sessions
 from itd.user import User, Me
