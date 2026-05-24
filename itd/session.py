@@ -70,3 +70,10 @@ class Sessions(ITDBaseModel, list[Session]):
     def load(self):
         self.clear()
         self.extend([Session(session) for session in get_sessions(self.client).json()['sessions']])
+        return self
+
+    @classmethod
+    def empty(cls):
+        instance = cls.__new__(cls)
+        super(Sessions, instance).__init__()
+        return instance
