@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://itdsdk.qzz.io/docs/methods/client/">
+        <link rel="canonical" href="https://itdsdk.qzz.io/docs/ref/client/">
       
       
         <link rel="prev" href="../../config/">
       
       
-        <link rel="next" href="../posts/">
+        <link rel="next" href="../base/">
       
       
         
@@ -76,11 +76,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#_1" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -303,22 +298,26 @@
   
   
   
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
           
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Клиент
+    Reference
   
 
     
@@ -326,8 +325,33 @@
   
   
 
-          <span class="md-nav__icon md-icon"></span>
-        </label>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -346,427 +370,41 @@
 
       </a>
       
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#refresh-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        refresh str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        access str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-itdconfig" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        config ITDConfig
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Сделать запрос
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Сделать запрос">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#method-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        method str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#url-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        url str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#params-dict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        params dict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#files-dictstr-tuplestr-bufferedreader-bytes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        files [, ] dict[str, tuple[str, BufferedReader | bytes]]
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#level-dict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        level dict
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Обновить статистики постов
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Обновить статистики постов">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Поиск
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Поиск">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#query-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        query str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#hashtags_limit-int" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        hashtags_limit int
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#users_limit-int" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        users_limit int
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Получить статус подписок
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Получить статус подписок">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#users-listuuid-user-uuid-user" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        users [ | ] | | list[UUID | User] | UUID | User
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Изменить пароль
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Изменить пароль">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#old-str-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        old str Required
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-str-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        new str Required
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_15" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Выйти
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#access_token" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Обновить access_token
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Обновить access_token">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Базовые модели
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -791,9 +429,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -818,9 +457,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -845,6 +485,42 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wip/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WIP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -861,17 +537,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    API
   
 
     
@@ -882,12 +558,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    API
   
 
           </label>
@@ -1393,412 +1069,6 @@
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#refresh-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        refresh str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#access-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        access str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-itdconfig" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        config ITDConfig
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Сделать запрос
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Сделать запрос">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#method-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        method str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#url-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        url str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#params-dict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        params dict
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#files-dictstr-tuplestr-bufferedreader-bytes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        files [, ] dict[str, tuple[str, BufferedReader | bytes]]
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#level-dict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        level dict
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Обновить статистики постов
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Обновить статистики постов">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Поиск
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Поиск">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#query-str" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        query str
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#hashtags_limit-int" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        hashtags_limit int
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#users_limit-int" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        users_limit int
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Получить статус подписок
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Получить статус подписок">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#users-listuuid-user-uuid-user" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        users [ | ] | | list[UUID | User] | UUID | User
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Изменить пароль
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Изменить пароль">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Параметры
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Параметры">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#old-str-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        old str Required
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-str-required" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        new str Required
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_15" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Выйти
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#access_token" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Обновить access_token
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Обновить access_token">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ошибки
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1984,13 +1254,13 @@
         
         
           
-          <a href="../posts/" class="md-footer__link md-footer__link--next" aria-label="Next: Посты">
+          <a href="../base/" class="md-footer__link md-footer__link--next" aria-label="Next: Базовые модели">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Посты
+                Базовые модели
               </div>
             </div>
             <div class="md-footer__button md-icon">
