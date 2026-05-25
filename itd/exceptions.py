@@ -1,4 +1,5 @@
 from typing import Callable
+from datetime import datetime
 
 from requests import Response
 
@@ -275,8 +276,15 @@ class ProfileRequiredError(ITDException):
     text = 'No profile. Please create your profile first'
 
 
+class AccountDeletedError(ITDException):
+    code = 'ACCOUNT_DELETED'
+    text = 'Account has been deleted'
+    can_restore: bool = True
+    restore_deadline: datetime | None = None
+
+
 DEFAULT_ERRORS = (
     RateLimitError(), InvalidAccessTokenError(), UnauthorizedError(), AccessTokenExpiredError(),
     AccountBannedError(), AccountTemporarilyBannedError(), InternalError(),
-    ProfileRequiredError(), RefreshTokenMissingError()
+    ProfileRequiredError(), RefreshTokenMissingError(), AccountDeletedError()
 )

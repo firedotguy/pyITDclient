@@ -115,6 +115,17 @@ class CommentSorting(Enum): # actually it is not working (stupid itd api)
     NEW = 'new'
     OLD = 'old'
 
+class DeviceType(Enum):
+    DESKTOP = 'desktop'
+    MOBILE = 'mobile'
+
+# class DeviceOS(Enum):
+#     WINDOWS = 'Windows'
+#     MACOS = 'MacOS'
+#     LINUX = 'Linux'
+#     ANDROID = 'Android'
+#     IOS = 'iOS'
+
 class AccessType(Enum):
     """Типы разрешений для видимости лайков и записей на стене"""
     NOBODY = 'nobody' # никто

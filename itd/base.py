@@ -12,7 +12,10 @@ from pydantic_core import PydanticUndefinedType
 
 from itd._default import get_default_client
 from itd.logger import get_logger
-from itd.exceptions import ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError, DEFAULT_ERRORS
+from itd.exceptions import (
+    ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError,
+    DEFAULT_ERRORS, AccountDeletedError
+)
 from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch
 if TYPE_CHECKING:
     from itd.client import Client
@@ -72,24 +75,25 @@ class ITDBaseModel:
 
     if not TYPE_CHECKING:
         def __getattribute__(self, name: str) -> Any:
-            value = object.__getattribute__(self, name)
+            value = _getattr(self, name)
             if (
                 name.startswith('_') or # приватный аттрибут
                 name in ('client', 'model_fields_set') or
                 not _getattr(self, '_refreshable') or # не рефрешабельная модель
                 not _getattr(self, 'client').config.auto_load or # отключено в конфиге
                 callable(value) or # функция
-                (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self))
+                (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self)) or
+                (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 # l.debug('return %s as is', name)
-                return value
+                return object.__getattribute__(self, name)
 
-            if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded):
+            if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded) or (not _getattr(self, '_loaded') and value is None):
                 l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
                 self.refresh()
                 return object.__getattribute__(self, name)
 
-            return value
+            return object.__getattribute__(self, name)
 
 
 
@@ -335,11 +339,16 @@ def catch_errors(*exceptions: ITDException):
                 ):
                     if isinstance(exception, ValidationError):
                         exception.text = json.get('error', {}).get('message', 'Failed validation')
+
                     if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                         exception.retry_after = json.get('error', {}).get('retryAfter', 0)
+
                     if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
                         client.refresh_auth()
                         return wrapper(client, *args, **kwargs)
+
+                    if isinstance(exception, AccountDeletedError):
+                        exception.can_restore = json.get('error', {}).get('canRestore', True)
 
                     raise exception
 

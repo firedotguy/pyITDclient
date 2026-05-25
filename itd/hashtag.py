@@ -58,7 +58,17 @@ class _HashtagValidate(BaseModel, Hashtag):
 class Hashtags(ITDBaseModel, list[Hashtag]):
     _refreshable = False
 
+    def __init__(self, client: Client | None = None):
+        super().__init__(client)
+        self.load()
+
     def load(self, count: int = 10):
         self.clear()
         self.extend([Hashtag._from_dict(hashtag) for hashtag in get_hashtags(self.client, count).json()['data']['hashtags']])
         return self
+
+    @classmethod
+    def empty(cls):
+        instance = cls.__new__(cls)
+        super(Hashtags, instance).__init__()
+        return instance
