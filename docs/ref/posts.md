@@ -13,7 +13,7 @@ post = Post(
 ID поста.
 
 !!! note
-    Для проверки на существование (`NotFoundError`) вызовите [`post.refresh()`](#_9) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
+    Для проверки на существование (`NotFoundError`) вызовите [`post.refresh()`](base.md#refresh) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
 
 ---
 
@@ -43,7 +43,7 @@ post = Post.new(
 Получатель поста (для постов на стене). Может быть объектом пользователя или UUID.  
 Для поста на стене также можно использовать `user.post()`.
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: [:material-identifier: | :material-file:] | :material-identifier: | :material-file:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения. Может быть списком, объектом файла или UUID.
 
 #### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">NewPoll</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
@@ -118,16 +118,6 @@ post.poll.options[0].vote()
             ]
         )
         ```
-
----
-
-## :material-refresh: Обновить
-```python
-post.refresh()
-```
-
-### Ошибки
- - `NotFoundError` - пост не найден.
 
 ---
 
@@ -372,7 +362,7 @@ posts = Posts.clan()
  - `ValidationError`: ошибка валидации (из-за слишком большого лимита батча).
 
 ---
-
+<a id="userposts"></a>
 ## :fontawesome-solid-user: Посты пользователя
 ```python
 from itd.enums import UserPostSorting
@@ -437,6 +427,7 @@ post = posts.wait_for_post(
 
 ---
 
+<a id="likedposts"></a>
 ## :material-heart: Лайкнутые посты пользователя
 ```python
 LikedPosts('fdg')

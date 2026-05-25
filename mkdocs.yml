@@ -23,6 +23,8 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
       emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - toc:
+      toc_depth: 0
 
 extra_css:
   - stylesheets/extra.css
@@ -32,12 +34,14 @@ nav:
   - launch.md
   - concept.md
   - config.md
-  # - Функции:
-  - methods/client.md
-  - Посты: methods/posts.md
-  - Пользователи: methods/users.md
-  - Уведомления: methods/notifications.md
-  - API Reference:
+  - Reference:
+    - Клиент: ref/client.md
+    - Базовые модели: ref/base.md
+    - Посты: ref/posts.md
+    - Пользователи: ref/users.md
+    - Уведомления: ref/notifications.md
+    - WIP: ref/wip.md
+  - API:
     - api/client.md
     - api/user.md
     - api/post.md
