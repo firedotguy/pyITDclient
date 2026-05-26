@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from requests import get
 
-from itd.base import ITDBaseModel, refresh_wrapper
+from itd.base import ITDBaseModel
 from itd.enums import AttachType
 from itd.api.files import upload_file, delete_file
 if TYPE_CHECKING:
@@ -29,37 +29,37 @@ class File(ITDBaseModel):
     def __init__(self, name: str, data: bytes | BufferedReader, client: Client | None = None):
         super().__init__(client)
         self.filename = name
-        self._upload(data)
+        self.data = data
+        self.refresh()
 
     @classmethod
-    def from_path(cls, path: Path | str):
+    def from_path(cls, path: Path | str, *, client: Client | None = None):
         if isinstance(path, str):
             path = Path(path)
-        return cls(path.name, path.read_bytes())
+        return cls(path.name, path.read_bytes(), client)
 
     @classmethod
-    def from_bytes(cls, data: bytes | BufferedReader):
-        try:
-            from filetype import guess
-        except ModuleNotFoundError:
-            raise ImportError('filetype is required for File.from_bytes. Install by running "uv add itd-sdk[filetype]" (or "pip install itd-sdk[filetype]" if you are using pip)')
+    def from_bytes(cls, data: bytes | BufferedReader, name: str | None = None, *, client: Client | None = None):
+        if not name:
+            try:
+                from filetype import guess
+            except ModuleNotFoundError:
+                raise ImportError('filetype is required for File.from_bytes. Install by running "uv add itd-sdk[filetype]" (or "pip install itd-sdk[filetype]" if you are using pip)')
 
-        kind = guess(data)
-        return cls(
-            f'file.{kind.extension}' if kind else 'file.0',
-            data
-        )
+            kind = guess(data)
+            name = f'file.{kind.extension}' if kind else 'file.0'
 
-    @refresh_wrapper
-    def _upload(self, data: bytes | BufferedReader):
-        return upload_file(self.client, self.filename, data).json()
+        return cls(name, data, client)
 
-    def delete(self) -> None:
-        delete_file(self.client, self.id)
+    def _refresh(self, *, client: Client):
+        return upload_file(client, self.filename, self.data).json()
+
+    def delete(self, *, client: Client | None = None) -> None:
+        delete_file(client or self.client, self.id)
 
     def download(self, name: str | None = None) -> None:
         with open(name or self.filename, 'wb') as fl:
-            fl.write(get(self.url, timeout=60).content)
+            fl.write(get(self.url, timeout=self.client.config.timeout_file).content)
 
     def __str__(self) -> str:
         return self.filename

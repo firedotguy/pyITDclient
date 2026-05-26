@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from itd.base import ITDBaseModel, refresh_wrapper
+from itd.base import ITDBaseModel
 from itd.enums import ReportReason, ReportTargetType
 from itd.api.reports import report
 if TYPE_CHECKING:
@@ -28,9 +28,7 @@ class Report(ITDBaseModel):
 
         self.refresh()
 
-
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
+    def _refresh(self, *, client: Client):
         return report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data']
 
 

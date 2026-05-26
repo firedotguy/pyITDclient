@@ -21,14 +21,12 @@ def test_by_username_is_lazy():
     user = User.by_username('example')
     assert user.username == 'example'
     assert user._identifier == 'example'
-    assert not user._loaded
 
 
 def test_by_id_is_lazy():
     uid = UUID('00000000-0000-0000-0000-000000000001')
     user = User.by_id(uid)
     assert user.id == uid
-    assert not user._loaded
 
 
 

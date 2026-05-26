@@ -165,6 +165,7 @@ class Role(Enum):
 
 class LoadStatus(Enum):
     NO = 'no'
+    LOADING = 'loading'
     PARTIALLY = 'partially'
     FULL = 'full'
 

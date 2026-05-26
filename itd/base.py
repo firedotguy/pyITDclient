@@ -60,34 +60,59 @@ class ITDBaseModel:
             value._client = client
         object.__setattr__(self, name, value)
 
-    def _post_refresh(self):
-        pass
+    def _post_refresh(self): ...
 
     @property
     def client(self) -> Client:
         return self._client
 
-    def refresh(self) -> Any:
-        l.warning('refresh is not implemented but have called')
+    def _refresh(self, *, client: Client) -> dict: ...
+
+    def refresh(self, *, client: Client | None = None) -> Any:
+        self.load_status = LoadStatus.LOADING
+        self._fill_from_data(self._refresh(client=client or self.client))
+        self.load_status = LoadStatus.FULL
+        return self
 
 
-    # if not TYPE_CHECKING:
-    def __getattribute__(self, name: str) -> Any:
+    def _fill_from_data(self, data: dict):
+        assert self._validator, 'Unable to use fill_from_data without a validator'
+        validated = self._validator().model_validate(data) # pyright: ignore[reportCallIssue]
+        self._fields_from_data = validated.model_fields_set
+        for name, value in validated.__dict__.items():
+            setattr(self, name, value)
+
+        self._post_refresh()
+
+
+    @classmethod
+    def from_dict(cls, data: dict, *, client: Client | None = None):
+        instance = cls.__new__(cls)
+        ITDBaseModel.__init__(instance, client)
+
+        instance._fill_from_data(data)
+        instance.load_status = LoadStatus.PARTIALLY
+        return instance
+
+
+    if not TYPE_CHECKING:
+        def __getattribute__(self, name: str) -> Any:
             value = _getattr(self, name)
             if (
                 name.startswith('_') or # приватный аттрибут
-                name in ('client', 'model_fields_set') or
+                name in ('client', 'model_fields_set', 'load_status') or
                 not _getattr(self, '_refreshable') or # не рефрешабельная модель
                 not _getattr(self, 'client').config.auto_load or # отключено в конфиге
                 callable(value) or # функция
+                self.load_status == LoadStatus.LOADING or
                 (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self)) or
                 (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 # l.debug('return %s as is', name)
                 return object.__getattribute__(self, name)
 
-            if isinstance(value, FieldInfo) or (_getattr(self, 'load_status') != LoadStatus.FULL and name not in self._fields_from_data):
-                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
+            if isinstance(value, FieldInfo) or (self.load_status != LoadStatus.FULL and name not in self._fields_from_data):
+                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
                 self.refresh()
 
             return object.__getattribute__(self, name)
@@ -176,7 +201,7 @@ class ITDList[T](ITDBaseModel, list[T]):
     def _get_objects(data: dict) -> list[dict]:
         return []
 
-    def refresh(self, count: int | All | Batch | None = None, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
+    def refresh(self, count: int | All | Batch | None = None, limit: int | Batch = BATCH, *, client: Client | None = None) -> list[T]:
         """Обновить список (удалить все элементы и загрузить заново)
 
         Args:
@@ -260,29 +285,6 @@ class ITDList[T](ITDBaseModel, list[T]):
     @property
     def all(self) -> list[T]:
         return self.load_all()
-
-
-def refresh_wrapper(func):
-    """Декоратор для self.refresh"""
-    @wraps(func)
-    def wrapper(self, client: Client | None = None):
-        # if self._loading:
-        #     return
-
-        # self._loading = True
-        data = func(self, client or self.client)
-        if self._validator:
-            validated = self._validator().model_validate(data)
-            self._fields_from_data = validated.model_fields_set
-            l.debug('fill %s', self.__class__.__name__)
-            for name, value in validated.__dict__.items():
-                setattr(self, name, value)
-
-        # self._loading = False
-        self.load_status = LoadStatus.FULL
-        self._post_refresh()
-
-    return wrapper
 
 
 def _filter_bytes(args: tuple):

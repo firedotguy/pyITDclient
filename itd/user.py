@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from uuid import UUID
 from datetime import datetime
 
 from pydantic import Field, BaseModel, field_validator
 
-from itd.base import ITDBaseModel, refresh_wrapper, ITDList
+from itd.base import ITDBaseModel, ITDList
 from itd.enums import AccessType, Unset, Role, ReportReason, ReportTargetType, LoadStatus
 from itd.pin import Pin
 from itd.poll import NewPoll
@@ -53,9 +53,8 @@ class Profile(ITDBaseModel):
     user_id: UUID | None = Field(None, alias='userId')
     roles: list[Role] | None = None
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return get_profile(client or self.client).json()
+    def _refresh(self, *, client: Client):
+        return get_profile(client).json()
 
     def __str__(self) -> str:
         if self.user:
@@ -77,9 +76,8 @@ class Privacy(ITDBaseModel):
     likes_visibility: AccessType = Field(alias='likesVisibility')
     show_last_seen: bool = Field(alias='showLastSeen')
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return get_privacy(client or self.client).json()
+    def _refresh(self, *, client: Client):
+        return get_privacy(client).json()
 
     def update(self,
         is_private: bool | None = None,
@@ -138,9 +136,8 @@ class Subscription(ITDBaseModel):
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None): # refreshes only is_active
-        return get_subscription(client or self.client).json()
+    def _refresh(self, *, client: Client): # refreshes only is_active
+        return get_subscription(client).json()
 
     def pay(self):
         return pay_subscription(self.client).json()['confirmationUrl']
@@ -195,9 +192,8 @@ class _UserBase(ITDBaseModel):
     def __str__(self) -> str:
         return self.display_name
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return get_user(client or self.client, self._identifier).json()
+    def _refresh(self, *, client: Client):
+        return get_user(client, self._identifier).json()
 
     @property
     def posts(self) -> UserPosts:
@@ -531,9 +527,8 @@ class Me(_UserBase):
             self._pins = [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
         return self._pins
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        user = get_user(client or self.client, self._identifier).json()
+    def _refresh(self, *, client: Client):
+        user = get_user(client, self._identifier).json()
         if user.get('isDeleted'):
             exc = AccountDeletedError()
             exc.can_restore = user.get('canRestore', True)
@@ -620,6 +615,6 @@ class WhoToFollow(ITDBaseModel, list[User]):
         super().__init__(client)
         self.refresh()
 
-    def refresh(self):
+    def refresh(self, *, client: Client | None = None):
         self.clear()
-        self.extend([User._from_dict(user, client=self.client) for user in get_who_to_follow(self.client).json()['users']])
+        self.extend([User.from_dict(user, client=client or self.client) for user in get_who_to_follow(self.client).json()['users']])

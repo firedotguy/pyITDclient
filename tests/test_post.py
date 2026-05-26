@@ -99,6 +99,6 @@ def test_delete_restore(client):
     post.restore(client)
 
     post.refresh()
-    assert post._loaded
+    assert post.load_status.value == 'full'
 
     post.delete(client)

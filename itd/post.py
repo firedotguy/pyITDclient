@@ -24,7 +24,7 @@ from itd.api.posts import (
 )
 from itd.api.hashtags import get_posts_by_hashtag
 from itd.api.dwell import send_views, send_interactions
-from itd.base import ITDBaseModel, refresh_wrapper, ITDList
+from itd.base import ITDBaseModel, ITDList
 from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType, LoadStatus
 from itd.exceptions import NotFoundError
 from itd.logger import get_logger
@@ -66,6 +66,8 @@ class ViewEvent(DwellEvent):
 
 
 class DwellTracker(ITDBaseModel):
+    _refreshable = False
+
     def __init__(self, client: Client | None = None) -> None:
         super().__init__(client)
         self.views: list[ViewEvent] = []
@@ -319,19 +321,10 @@ class Post(ITDBaseModel):
         return instance
 
     @classmethod
-    def _from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> 'Post':
-        instance = cls.__new__(cls)
-        super(Post, instance).__init__(client)
-
-        validated = _PostValidate.model_validate(data)
-        instance._fields_from_data = validated.model_fields_set
-        for name, value in validated.__dict__.items():
-            setattr(instance, name, value)
-
-        instance.load_status = LoadStatus.PARTIALLY
+    def from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, client: Client | None = None) -> 'Post':
+        instance = super().from_dict(data)
         instance.source = source
         instance.source_context = source_context
-        instance._post_refresh()
         return instance
 
 
@@ -339,9 +332,8 @@ class Post(ITDBaseModel):
         assert self.poll, 'No poll'
         self.poll.vote(options, client or self.client)
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return get_post(client or self.client, self.id).json()['data']
+    def _refresh(self, *, client: Client):
+        return get_post(client, self.id).json()['data']
 
 
     def __str__(self) -> str:
@@ -413,12 +405,12 @@ class Post(ITDBaseModel):
             Post: Пост
         """
         post = repost(client or self.client, self.id, content).json()
-        if self._loaded:
+        if 'reposts_count' in self._fields_from_data:
             self.reposts_count += 1
         if (client or self.client) == self.client:
             self.is_reposted = True
 
-        return Post._from_dict(post, client=client)
+        return Post.from_dict(post, client=client)
 
     def view(self, client: Client | None = None, entered_at: datetime | None = None, duration: int | None = None, reason: ViewReason = ViewReason.NORMAL) -> None:
         """Просмотреть пост
@@ -428,9 +420,6 @@ class Post(ITDBaseModel):
         """
         c = client or self.client
         if c.dwell_tracker is not None:
-            if self.vs is None:
-                self.refresh(c)
-                assert self.vs
             if duration is None:
                 duration = calc_view_duration(c.config, self.content, self.attachments)
                 if c.config.dwell_wait_durations:
@@ -440,7 +429,7 @@ class Post(ITDBaseModel):
             view_post(c, self.id)
         if c == self.client:
             self.is_viewed = True
-        if c.config.post_view_increment and self._loaded:
+        if c.config.post_view_increment and 'views_count' in self._fields_from_data:
             self.views_count += 1
 
     def pin(self, client: Client | None = None) -> None:
@@ -516,7 +505,7 @@ class Post(ITDBaseModel):
             Comment: Комментарий
         """
         comment = self.comments.new(content, attachments, client or self.client)
-        if self._loaded:
+        if 'comments_count' in self._fields_from_data:
             self.comments_count += 1
         return comment
 
@@ -578,7 +567,7 @@ class _PostValidate(BaseModel, Post): # BaseModel MUST be first or you ll have s
     def validate_original_post(cls, post: dict | None = None):
         if post is None:
             return
-        return Post._from_dict(post)
+        return Post.from_dict(post)
 
     @field_validator('poll', mode='plain')
     @classmethod
@@ -627,7 +616,7 @@ class _BasePosts(ITDList[Post]):
         return data['posts']
 
     def _extend(self, objects: list, client: Client):
-        self.extend([Post._from_dict(post, self.source, self.source_context, client=client) for post in objects])
+        self.extend([Post.from_dict(post, self.source, self.source_context, client=client) for post in objects])
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
@@ -769,7 +758,7 @@ class HashtagPosts(_BasePosts):
         return get_posts_by_hashtag(client, self.hashtag.name, self.cursor, limit).json()['data']
 
     def _extend(self, objects: list, client: Client):
-        self.extend([Post._from_dict(post, self.source, self.source_context, client=client) for post in objects])
+        self.extend([Post.from_dict(post, self.source, self.source_context, client=client) for post in objects])
 
     def _get_total(self, data: dict):
         return data['hashtag']['postsCount']
