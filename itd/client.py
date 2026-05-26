@@ -65,7 +65,7 @@ class Config:
 
     retry_enabled: bool = True
     retry_delay: float = 10 # delay before next attempt (after rate limit error) if retry_after is not provided in request
-    retry_max_retries: int | None = None # none for no limit
+    retry_max_retries: int | None = 10 # none for no limit
     retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
     retry_max_retry_after: int = 500
 
