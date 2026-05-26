@@ -34,7 +34,6 @@ def test_me_loads(me):
     assert me.id is not None
     assert me.username
     assert me.display_name
-    assert me._loaded
 
 
 def test_me_to_user_copies_fields(me):

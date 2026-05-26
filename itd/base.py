@@ -58,6 +58,10 @@ class ITDBaseModel:
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')): # ai
             value._client = client
+        if not name.startswith('_'):
+            if not hasattr(self, '_fields_from_data'):
+                self._fields_from_data = set()
+            self._fields_from_data.add(name)
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...
@@ -243,7 +247,6 @@ class ITDList[T](ITDBaseModel, list[T]):
     def __getitem__(self, index: slice) -> list[T]: ...
 
     def __getitem__(self, index: int | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
-
         if isinstance(index, slice):
             value: int | None = index.stop
         else:
