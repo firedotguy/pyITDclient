@@ -404,7 +404,7 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
                         l.error('too large rate limit')
                         raise
 
-                    retry_after = getattr(e, 'retry_after', client.config.retry_delay)
+                    retry_after = getattr(e, 'retry_after', client.config.retry_delay) or 10
                     l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
 
