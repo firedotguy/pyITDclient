@@ -56,7 +56,7 @@ class File(ITDBaseModel):
 
     def download(self, name: str | None = None) -> None:
         with open(name or self.filename, 'wb') as fl:
-            fl.write(get(self.url, timeout=self.client.config.timeout_file).content)
+            fl.write(get(self.url, timeout=self.client.config.timeout_file_download).content)
 
     def __str__(self) -> str:
         return self.filename
@@ -92,7 +92,7 @@ class PostAttach(ITDBaseModel):
             name (str): Имя файла.
         """
         with open(name, 'wb') as fl:
-            fl.write(get(self.url, timeout=self.client.config.timeout_file).content)
+            fl.write(get(self.url, timeout=self.client.config.timeout_file_download).content)
 
     def record_open(self, client: Client | None = None):
         """Записать событие открытия фото
@@ -161,7 +161,7 @@ class CommentAttach(PostAttach):
             name (str | None, optional): Имя файла. None - имя, под которым был загружен этот файл. Defaults to None.
         """
         with open(name or self.filename, 'wb') as fl:
-            fl.write(get(self.url, timeout=self.client.config.timeout_file).content)
+            fl.write(get(self.url, timeout=self.client.config.timeout_file_download).content)
 
 
 class _CommentAttachValidate(BaseModel, CommentAttach):

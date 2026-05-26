@@ -52,6 +52,7 @@ class Config:
 
     timeout: float = 30
     timeout_file: float = 120
+    timeout_file_download: float = 60
 
     url: str = 'xn--d1ah4a.com'
     url_api: str | None = None

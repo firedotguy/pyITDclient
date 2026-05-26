@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, TYPE_CHECKING, Iterator, TypeVar, overload
+from typing import Any, Callable, TYPE_CHECKING, Iterator, TypeVar, overload, Literal
 from functools import wraps
 from time import sleep
 from datetime import datetime, timedelta
