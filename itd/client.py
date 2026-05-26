@@ -75,6 +75,7 @@ class Config:
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
     dwell_wait_durations: bool = True
+    post_view_increment: bool = False
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3

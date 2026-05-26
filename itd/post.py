@@ -439,7 +439,8 @@ class Post(ITDBaseModel):
             view_post(c, self.id)
         if c == self.client:
             self.is_viewed = True
-        # post can be already viewed, so view will not add; thats why do not change views_count
+        if c.config.post_view_increment:
+            self.views_count += 1
 
     def pin(self, client: Client | None = None) -> None:
         """Закрепить пост
