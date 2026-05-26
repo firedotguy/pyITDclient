@@ -413,7 +413,8 @@ class Post(ITDBaseModel):
             Post: Пост
         """
         post = repost(client or self.client, self.id, content).json()
-        self.reposts_count += 1
+        if self._loaded:
+            self.reposts_count += 1
         if (client or self.client) == self.client:
             self.is_reposted = True
 
@@ -439,7 +440,7 @@ class Post(ITDBaseModel):
             view_post(c, self.id)
         if c == self.client:
             self.is_viewed = True
-        if c.config.post_view_increment:
+        if c.config.post_view_increment and self._loaded:
             self.views_count += 1
 
     def pin(self, client: Client | None = None) -> None:
@@ -515,7 +516,8 @@ class Post(ITDBaseModel):
             Comment: Комментарий
         """
         comment = self.comments.new(content, attachments, client or self.client)
-        self.comments_count += 1
+        if self._loaded:
+            self.comments_count += 1
         return comment
 
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
