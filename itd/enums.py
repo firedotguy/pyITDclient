@@ -147,7 +147,6 @@ class AccessType(Enum):
 
 _ACCESS_TYPE_HIERARCHY = [AccessType.EVERYONE, AccessType.FOLLOWERS, AccessType.MUTUAL, AccessType.EVERYONE] # 100% that hierarcy is spelled wrong
 
-
 class SpanType(Enum):
     MONOSPACE = 'monospace' # моноширный (код)
     STRIKE = 'strike' # зачеркнутый
@@ -160,10 +159,14 @@ class SpanType(Enum):
     QUOTE = 'quote' # цитата (не работает)
     MENTION = 'mention' # упоминание (появляется только при получении постов, при создании нету)
 
-
 class Role(Enum):
     USER = 'user'
     ADMIN = 'admin'
+
+class LoadStatus(Enum):
+    NO = 'no'
+    PARTIALLY = 'partially'
+    FULL = 'full'
 
 
 class Unset: pass

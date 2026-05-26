@@ -25,7 +25,7 @@ from itd.api.posts import (
 from itd.api.hashtags import get_posts_by_hashtag
 from itd.api.dwell import send_views, send_interactions
 from itd.base import ITDBaseModel, refresh_wrapper, ITDList
-from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType
+from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType, LoadStatus
 from itd.exceptions import NotFoundError
 from itd.logger import get_logger
 from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_html, parse_md, calc_view_duration
@@ -313,13 +313,13 @@ class Post(ITDBaseModel):
         for name, value in validated.__dict__.items():
             setattr(instance, name, value)
 
-        instance._loaded = False
+        instance.load_status = LoadStatus.PARTIALLY
         instance._post_refresh()
 
         return instance
 
     @classmethod
-    def _from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, set_loaded: bool = True, client: Client | None = None) -> 'Post':
+    def _from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> 'Post':
         instance = cls.__new__(cls)
         super(Post, instance).__init__(client)
 
@@ -328,7 +328,7 @@ class Post(ITDBaseModel):
         for name, value in validated.__dict__.items():
             setattr(instance, name, value)
 
-        instance._loaded = set_loaded
+        instance.load_status = LoadStatus.PARTIALLY
         instance.source = source
         instance.source_context = source_context
         instance._post_refresh()
@@ -578,7 +578,7 @@ class _PostValidate(BaseModel, Post): # BaseModel MUST be first or you ll have s
     def validate_original_post(cls, post: dict | None = None):
         if post is None:
             return
-        return Post._from_dict(post, set_loaded=False)
+        return Post._from_dict(post)
 
     @field_validator('poll', mode='plain')
     @classmethod
@@ -599,13 +599,13 @@ class _PostValidate(BaseModel, Post): # BaseModel MUST be first or you ll have s
             return None
         if isinstance(author, _UserBase):
             return author
-        return User._from_dict(author, False)
+        return User._from_dict(author)
 
     @field_validator('wall_recipient', mode='plain')
     @classmethod
     def validate_wall_recipient(cls, wall_recipient: dict | None):
         if wall_recipient is not None:
-            return User._from_dict(wall_recipient, False)
+            return User._from_dict(wall_recipient)
 
 
 
@@ -769,7 +769,7 @@ class HashtagPosts(_BasePosts):
         return get_posts_by_hashtag(client, self.hashtag.name, self.cursor, limit).json()['data']
 
     def _extend(self, objects: list, client: Client):
-        self.extend([Post._from_dict(post, self.source, self.source_context, set_loaded=False, client=client) for post in objects])
+        self.extend([Post._from_dict(post, self.source, self.source_context, client=client) for post in objects])
 
     def _get_total(self, data: dict):
         return data['hashtag']['postsCount']

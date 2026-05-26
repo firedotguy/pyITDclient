@@ -16,7 +16,7 @@ from itd.exceptions import (
     ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError,
     DEFAULT_ERRORS, AccountDeletedError
 )
-from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch
+from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch, LoadStatus
 if TYPE_CHECKING:
     from itd.client import Client
 
@@ -47,8 +47,7 @@ def _field_has_default(cls: type, name: str) -> bool:
 class ITDBaseModel:
     """Базовый класс модельки"""
     _refreshable: bool = True
-    _loaded: bool = False
-    _loading: bool = False
+    load_status: LoadStatus = LoadStatus.NO
     _load_with_parent: bool = True # load parent model if model called
     _validator: Callable[[Any], type[BaseModel]] | None = None # callable (pls use lambda), becuase we havent validator at that moment (it depends on this class)
 
@@ -70,11 +69,10 @@ class ITDBaseModel:
 
     def refresh(self) -> Any:
         l.warning('refresh is not implemented but have called')
-        self._loaded = True
 
 
-    if not TYPE_CHECKING:
-        def __getattribute__(self, name: str) -> Any:
+    # if not TYPE_CHECKING:
+    def __getattribute__(self, name: str) -> Any:
             value = _getattr(self, name)
             if (
                 name.startswith('_') or # приватный аттрибут
@@ -88,10 +86,9 @@ class ITDBaseModel:
                 # l.debug('return %s as is', name)
                 return object.__getattribute__(self, name)
 
-            if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded) or (not _getattr(self, '_loaded') and value is None):
-                l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
+            if isinstance(value, FieldInfo) or (_getattr(self, 'load_status') != LoadStatus.FULL and name not in self._fields_from_data):
+                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
                 self.refresh()
-                return object.__getattribute__(self, name)
 
             return object.__getattribute__(self, name)
 
@@ -282,7 +279,7 @@ def refresh_wrapper(func):
                 setattr(self, name, value)
 
         # self._loading = False
-        self._loaded = True
+        self.load_status = LoadStatus.FULL
         self._post_refresh()
 
     return wrapper

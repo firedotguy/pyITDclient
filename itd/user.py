@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import Field, BaseModel, field_validator
 
 from itd.base import ITDBaseModel, refresh_wrapper, ITDList
-from itd.enums import AccessType, Unset, Role, ReportReason, ReportTargetType
+from itd.enums import AccessType, Unset, Role, ReportReason, ReportTargetType, LoadStatus
 from itd.pin import Pin
 from itd.poll import NewPoll
 from itd.report import Report
@@ -254,14 +254,14 @@ class User(_UserBase):
     created_at: datetime | None = Field(None, alias='createdAt') # none if blocked
 
     @classmethod
-    def _from_dict(cls, data: dict, set_loaded: bool = True, client: Client | None = None):
+    def _from_dict(cls, data: dict, client: Client | None = None):
         instance = cls(data['username'], client)
         validated = _UserValidate.model_validate(data)
         instance._fields_from_data = validated.model_fields_set
         for name, value in validated.__dict__.items():
             setattr(instance, name, value)
 
-        instance._loaded = set_loaded
+        instance.load_status = LoadStatus.PARTIALLY
         return instance
 
     @classmethod
@@ -385,13 +385,13 @@ class User(_UserBase):
     @property
     def following(self) -> list[User]:
         if not self._following:
-            self._following = [User._from_dict(user, False, self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
+            self._following = [User._from_dict(user, client=self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
         return self._following
 
     @property
     def followers(self) -> list[User]:
         if not self._followers:
-            self._followers = [User._from_dict(user, False, self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
+            self._followers = [User._from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
         return self._followers
 
 
@@ -439,7 +439,7 @@ class Me(_UserBase):
             if hasattr(self, name):
                 setattr(instance, name, getattr(self, name))
         instance._identifier = self.id
-        instance._loaded = False
+        instance.load_status = LoadStatus.PARTIALLY
         return instance
 
     def delete(self) -> datetime: # should not use other client, because you can get Me only from current client
@@ -590,7 +590,7 @@ class Followers(ITDList[User]):
         return data['pagination']['page'] + 1
 
     def _extend(self, objects: list, client: Client):
-        self.extend([User._from_dict(user, False, client) for user in objects])
+        self.extend([User._from_dict(user, client=client) for user in objects])
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
@@ -622,4 +622,4 @@ class WhoToFollow(ITDBaseModel, list[User]):
 
     def refresh(self):
         self.clear()
-        self.extend([User._from_dict(user, False, self.client) for user in get_who_to_follow(self.client).json()['users']])
+        self.extend([User._from_dict(user, client=self.client) for user in get_who_to_follow(self.client).json()['users']])
