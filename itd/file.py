@@ -30,7 +30,7 @@ class File(ITDBaseModel):
         super().__init__(client)
         self.filename = name
         self.data = data
-        self.refresh()
+        self._fill_from_data(upload_file(client or self.client, self.filename, self.data).json())
 
     @classmethod
     def from_path(cls, path: Path | str, *, client: Client | None = None):
@@ -51,9 +51,6 @@ class File(ITDBaseModel):
 
         return cls(name, data, client)
 
-    def _refresh(self, *, client: Client):
-        return upload_file(client, self.filename, self.data).json()
-
     def delete(self, *, client: Client | None = None) -> None:
         delete_file(client or self.client, self.id)
 
@@ -73,6 +70,7 @@ class _FileValidate(BaseModel, File):
 class PostAttach(ITDBaseModel):
     _validator = lambda _: _PostAttachValidate
     _post: Post
+    _refreshable = False
 
     id: UUID
     type: AttachType = AttachType.IMAGE

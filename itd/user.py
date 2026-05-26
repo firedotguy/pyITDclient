@@ -123,6 +123,7 @@ class _PrivacyValidate(BaseModel, Privacy):
 class Subscription(ITDBaseModel):
     _validator = lambda _: _SubscriptionValidate
     _payment_methods: list
+    _refreshable = False
 
     active: bool = Field(False, alias='isActive')
     expires_at: datetime | None = Field(None, alias='expiresAt')
@@ -536,13 +537,9 @@ class Me(_UserBase):
             raise exc
         return user
 
-    if not TYPE_CHECKING:
-        def __getattribute__(self, name: str):
-            value = super().__getattribute__(name)
-            if name == 'pin' and value is not None and getattr(value, '_user', None) is None:
-                value._user = self
-            return value
-
+    def _post_refresh(self):
+        if self.pin:
+            self.pin._user = self
 
 
 class _MeValidate(BaseModel, Me):

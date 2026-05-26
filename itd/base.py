@@ -66,9 +66,11 @@ class ITDBaseModel:
     def client(self) -> Client:
         return self._client
 
-    def _refresh(self, *, client: Client) -> dict: ...
+    def _refresh(self, *, client: Client) -> dict: raise NotImplementedError()
 
     def refresh(self, *, client: Client | None = None) -> Any:
+        if not self._refreshable:
+            l.warning(f'{self.__class__.__name__} is not refreshable but refresh is called')
         self.load_status = LoadStatus.LOADING
         self._fill_from_data(self._refresh(client=client or self.client))
         self.load_status = LoadStatus.FULL

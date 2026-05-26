@@ -26,10 +26,7 @@ class Report(ITDBaseModel):
         self.reason = reason
         self.description = description
 
-        self.refresh()
-
-    def _refresh(self, *, client: Client):
-        return report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data']
+        self._fill_from_data(report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data'])
 
 
 
