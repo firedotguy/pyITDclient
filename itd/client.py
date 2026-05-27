@@ -75,8 +75,9 @@ class Config:
     dwell_max_buffer: int = 20
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
-    dwell_wait_durations: bool = True
+    dwell_wait_durations: bool = False
     post_view_increment: bool = False
+    post_auto_view: bool = True # view when called post.set_invisible()
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3
@@ -109,6 +110,8 @@ class Config:
             case _:
                 self._user_agent = self.user_agent
 
+        if self.dwell_wait_durations:
+            l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
         self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (RateLimitError, InternalError, RequestException)
 

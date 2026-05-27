@@ -101,7 +101,7 @@ class DwellTracker(ITDBaseModel):
         self.interactions.clear()
         return True
 
-    def record_view(self, id: UUID, vs: str, duration: int, entered_at: datetime, source: ViewSource, source_context: str | None = None, reason: ViewReason = ViewReason.NORMAL):
+    def record_view(self, id: UUID, vs: str, duration: int, entered_at: datetime, exited_at: datetime, source: ViewSource, source_context: str | None = None, reason: ViewReason = ViewReason.NORMAL):
         """Записать событие просмотра
 
         Args:
@@ -109,6 +109,7 @@ class DwellTracker(ITDBaseModel):
             vs (str): VS
             duration (int): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+
             entered_at (datetime): Дата открытия поста (когда пользователь увидел пост)
+            exited_at (datetime): Дата скрытия поста (когда пост пропал из зоны видимости)
             source (ViewSource): Страница, с которой произошел просмотр
             source_context (str | None, optional): Контекст страницы, с которой произошел просмотр. Defaults to None.
             reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
@@ -116,8 +117,7 @@ class DwellTracker(ITDBaseModel):
         l.info(
             'dwell add view record id=%s vs=%s duration=%s entered_at=%s exited_at=%s source=%s source_context=%s reason=%s',
             id, vs, duration, entered_at.strftime('%m.%d %H:%M:%S'),
-            (entered_at + timedelta(milliseconds=duration)).strftime('%m.%d %H:%M:%S'),
-            source.value, source_context, reason.value
+            exited_at.strftime('%m.%d %H:%M:%S'), source.value, source_context, reason.value
         )
 
         self.views.append(
@@ -125,7 +125,7 @@ class DwellTracker(ITDBaseModel):
                 v=vs,
                 md=duration,
                 et=round(entered_at.timestamp() * 1000),
-                xt=round(entered_at.timestamp() * 1000) + duration,
+                xt=round(exited_at.timestamp() * 1000),
                 r=reason,
                 s=source,
                 sc=source_context,
@@ -214,6 +214,7 @@ class DwellTracker(ITDBaseModel):
 
 class Post(ITDBaseModel):
     _validator = lambda _: _PostValidate
+    _entered_at: datetime | None = None
 
     id: UUID
     author: User
@@ -412,21 +413,33 @@ class Post(ITDBaseModel):
 
         return Post.from_dict(post, client=client)
 
-    def view(self, client: Client | None = None, entered_at: datetime | None = None, duration: int | None = None, reason: ViewReason = ViewReason.NORMAL) -> None:
+    def view(self, entered_at: datetime | None = None, exited_at: datetime | None = None, duration: int | None = None, reason: ViewReason = ViewReason.NORMAL, *, client: Client | None = None) -> None:
         """Просмотреть пост
 
         Args:
+            entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел пост). Если None, заполнится исходя из exited_at. Defaults to None.
+            exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, заполнится исходя из duration и entered_at (если есть) или datetime.now. Defaults to None.
+            duration (int | None, optional): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+. если None, вычисляется исхоодя из длины поста и вложений. Defaults to None.
+            reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
             client (Client | None, optional): Клиент. Defaults to None.
         """
         c = client or self.client
+
         if c.dwell_tracker is not None:
             if duration is None:
                 duration = calc_view_duration(c.config, self.content, self.attachments)
-                if c.config.dwell_wait_durations:
-                    sleep(duration / 1000)
-            c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at or datetime.now() - timedelta(milliseconds=duration), self.source, self.source_context, reason)
+            if exited_at is None:
+                if entered_at is not None:
+                    exited_at = entered_at + timedelta(milliseconds=duration)
+                else:
+                    exited_at = datetime.now()
+            if entered_at is None:
+                entered_at = exited_at - timedelta(milliseconds=duration)
+
+            c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
         else:
             view_post(c, self.id)
+
         if c == self.client:
             self.is_viewed = True
         if c.config.post_view_increment and 'views_count' in self._loaded_attrs:
@@ -513,10 +526,13 @@ class Post(ITDBaseModel):
         return Report(self.id, ReportTargetType.POST, reason, description, client or self.client)
 
     def set_visible(self, client: Client | None = None):
+        self._entered_at = datetime.now()
         (client or self.client).visible_posts.append(self)
 
     def set_invisible(self, client: Client | None = None):
         (client or self.client).visible_posts.remove(self)
+        if self._entered_at and (client or self.client).config.post_auto_view:
+            self.view(self._entered_at, client=client or self.client)
 
     def on_stats_update(self): pass # override this
 
