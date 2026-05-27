@@ -248,12 +248,10 @@ class Post(ITDBaseModel):
     # vs: ViewerSession
     vs: str = Field('') # from 13.05 it is string token
 
-
     def __init__(self, id: str | UUID, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> None:
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
-        self.visible = False
 
         super().__init__(client)
 
@@ -261,6 +259,7 @@ class Post(ITDBaseModel):
         return Post(self.id, client=client)
 
     def _post_refresh(self):
+        self.visible = False
         self.comments = Comments()
         self.comments._post_id = self.id
         for attachment in self.attachments:
@@ -324,7 +323,7 @@ class Post(ITDBaseModel):
 
     @classmethod
     def from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, client: Client | None = None) -> 'Post':
-        instance = super().from_dict(data)
+        instance = super().from_dict(data, client=client)
         instance.source = source
         instance.source_context = source_context
         return instance
