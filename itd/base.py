@@ -191,7 +191,9 @@ class ITDList[T](ITDBaseModel, list[T]):
                 left -= length
 
             l.info('fetched %s %s (was %s) cursor=%s has_more=%s', length, self.__class__.__name__.lower(), len(self), self.cursor, self.has_more)
-            added.extend(self._to_models(objects, client or self.client))
+            models = self._to_models(objects, client or self.client)
+            self.extend(models)
+            added.extend(models)
 
             if not self.has_more or not objects:
                 break
