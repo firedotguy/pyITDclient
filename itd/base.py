@@ -100,26 +100,33 @@ class ITDBaseModel:
 
     if not TYPE_CHECKING:
         def __getattribute__(self, name: str) -> Any:
-            value = _getattr(self, name)
+            try:
+                value = object.__getattribute__(self, name)
+                exists = True
+            except AttributeError:
+                value = None
+                exists = False
+
             if (
                 name.startswith('_') or # приватный аттрибут
                 name in ('client', 'model_fields_set', 'load_status') or # спец. имя
                 not _getattr(self, '_refreshable') or # не рефрешабельная модель
                 not _getattr(self, 'client').config.auto_load or # отключено в конфиге
                 callable(value) or # функция
+                isinstance(_getattr(type(self), name), property) or
                 self.load_status == LoadStatus.LOADING or # сейчас загружается (уже вроде как не надо, но пусть будет на всяк)
                 (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self)) or # коменты
                 name in self._loaded_attrs or name in self.__dict__ or # было загружено или добавлено через setattr
                 (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 # l.debug('return %s as is', name)
-                return object.__getattribute__(self, name)
+                if not exists:
+                    raise AttributeError
+                return value
 
-            if isinstance(value, FieldInfo) or self.load_status != LoadStatus.FULL:
-                l.debug('attrs %s', list(self._loaded_attrs))
-                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
-                self.refresh()
-
+            # if isinstance(value, FieldInfo) or self.load_status != LoadStatus.FULL:
+            l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
+            self.refresh()
             return object.__getattribute__(self, name)
 
 

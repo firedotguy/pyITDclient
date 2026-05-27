@@ -7,7 +7,6 @@ from threading import Thread
 from atexit import register
 
 from pydantic import Field, BaseModel, field_validator, field_serializer
-from pydantic.fields import FieldInfo
 
 from itd.comment import Comment, Comments
 from itd.file import PostAttach
