@@ -129,8 +129,8 @@ class Notifications(ITDList[Notification]):
     def _get_has_more(data: dict) -> bool:
         return data['hasMore']
 
-    def _extend(self, objects: list, client: Client):
-        return self.extend([Notification(notification, self, client) for notification in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Notification(notification, self, client) for notification in objects]
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':

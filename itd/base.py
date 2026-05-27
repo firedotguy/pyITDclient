@@ -155,11 +155,11 @@ class ITDList[T](ITDBaseModel, list[T]):
             client (Client | None, optional): Клиент. Defaults to None.
 
         Returns:
-            list[T]: Весь список (с новыми объектами)
+            list[T]: Новые объекты
         """
         if not (self.has_more or (client or self.client).config.force_load_lists):
             l.warning('skip load because has_more=False')
-            return self
+            return []
 
         limit = limit or self._limit
         if isinstance(count, int) and count < limit:
@@ -168,6 +168,7 @@ class ITDList[T](ITDBaseModel, list[T]):
 
         # Batch = load one batch (limit), All = load everything, int = load exactly N
         left = None if isinstance(count, All) else (count or limit)
+        added = []
 
         while left is None or left > 0:
             batch = limit if left is None else min(limit, left)
@@ -190,16 +191,15 @@ class ITDList[T](ITDBaseModel, list[T]):
                 left -= length
 
             l.info('fetched %s %s (was %s) cursor=%s has_more=%s', length, self.__class__.__name__.lower(), len(self), self.cursor, self.has_more)
-            self._extend(objects, client or self.client)
+            added.extend(self._to_models(objects, client or self.client))
 
             if not self.has_more or not objects:
                 break
 
-        return self
+        return added
     # --- ai end
 
-    def _extend(self, objects: list, client: Client):
-        pass
+    def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
     @staticmethod
     def _get_has_more(data: dict) -> bool:

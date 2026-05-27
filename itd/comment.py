@@ -183,8 +183,8 @@ class Comments(ITDList[Comment]):
     def _fetch(self, client: Client, limit: int):
         return get_comments(client, self._post_id, len(self), limit).json()['data']
 
-    def _extend(self, objects: list, client: Client):
-        self.extend([Comment(comment, self._post_id, client=client) for comment in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Comment(comment, self._post_id, client=client) for comment in objects]
 
     @staticmethod
     def _get_objects(data: dict) -> list[dict]:
@@ -246,8 +246,8 @@ class Replies(Comments):
     def _get_total(self, data: dict) -> int:
         return self._comment.replies_count
 
-    def _extend(self, objects: list, client: Client) -> None:
-        self.extend([Comment(comment, comment_id=self._comment.id, client=client) for comment in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Comment(comment, comment_id=self._comment.id, client=client) for comment in objects]
 
 
     def __setattr__(self, name: str, value) -> None:

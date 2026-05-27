@@ -635,8 +635,8 @@ class _BasePosts(ITDList[Post]):
     def _get_objects(data: dict) -> list[dict]:
         return data['posts']
 
-    def _extend(self, objects: list, client: Client):
-        self.extend([Post.from_dict(post, self.source, self.source_context, client=client) for post in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Post.from_dict(post, self.source, self.source_context, client=client) for post in objects]
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
@@ -777,8 +777,8 @@ class HashtagPosts(_BasePosts):
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_posts_by_hashtag(client, self.hashtag.name, self.cursor, limit).json()['data']
 
-    def _extend(self, objects: list, client: Client):
-        self.extend([Post.from_dict(post, self.source, self.source_context, client=client) for post in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Post.from_dict(post, self.source, self.source_context, client=client) for post in objects]
 
     def _get_total(self, data: dict):
         return data['hashtag']['postsCount']

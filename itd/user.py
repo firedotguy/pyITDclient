@@ -570,8 +570,8 @@ class Followers(ITDList[User]):
     def _get_cursor(data: dict):
         return data['pagination']['page'] + 1
 
-    def _extend(self, objects: list, client: Client):
-        self.extend([User.from_dict(user, client=client) for user in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [User.from_dict(user, client=client) for user in objects]
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
