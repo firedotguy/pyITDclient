@@ -253,6 +253,7 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
+        self.visible = False
 
         super().__init__(client)
 
@@ -526,13 +527,17 @@ class Post(ITDBaseModel):
         return Report(self.id, ReportTargetType.POST, reason, description, client or self.client)
 
     def set_visible(self, client: Client | None = None):
-        self._entered_at = datetime.now()
-        (client or self.client).visible_posts.append(self)
+        if not self.visible:
+            self.visible = True
+            self._entered_at = datetime.now()
+            (client or self.client).visible_posts.add(self)
 
     def set_invisible(self, client: Client | None = None):
-        (client or self.client).visible_posts.remove(self)
-        if self._entered_at and (client or self.client).config.post_auto_view:
-            self.view(self._entered_at, client=client or self.client)
+        if self.visible:
+            self.visible = False
+            (client or self.client).visible_posts.remove(self)
+            if self._entered_at and (client or self.client).config.post_auto_view:
+                self.view(self._entered_at, client=client or self.client)
 
     def on_stats_update(self): pass # override this
 
