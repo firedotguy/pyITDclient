@@ -289,6 +289,7 @@ class Post(ITDBaseModel):
         Returns:
             Post: Пост
         """
+        # TODO rewrite with from_dict
         instance = cls.__new__(cls)
         super(Post, instance).__init__(client)
 
@@ -311,7 +312,7 @@ class Post(ITDBaseModel):
         ).json()
 
         validated = _PostValidate.model_validate(post)
-        instance._fields_from_data = validated.model_fields_set
+        instance._loaded_attrs = validated.model_fields_set
         for name, value in validated.__dict__.items():
             setattr(instance, name, value)
 
@@ -405,7 +406,7 @@ class Post(ITDBaseModel):
             Post: Пост
         """
         post = repost(client or self.client, self.id, content).json()
-        if 'reposts_count' in self._fields_from_data:
+        if 'reposts_count' in self._loaded_attrs:
             self.reposts_count += 1
         if (client or self.client) == self.client:
             self.is_reposted = True
@@ -429,7 +430,7 @@ class Post(ITDBaseModel):
             view_post(c, self.id)
         if c == self.client:
             self.is_viewed = True
-        if c.config.post_view_increment and 'views_count' in self._fields_from_data:
+        if c.config.post_view_increment and 'views_count' in self._loaded_attrs:
             self.views_count += 1
 
     def pin(self, client: Client | None = None) -> None:
@@ -505,7 +506,7 @@ class Post(ITDBaseModel):
             Comment: Комментарий
         """
         comment = self.comments.new(content, attachments, client or self.client)
-        if 'comments_count' in self._fields_from_data:
+        if 'comments_count' in self._loaded_attrs:
             self.comments_count += 1
         return comment
 
@@ -588,13 +589,13 @@ class _PostValidate(BaseModel, Post): # BaseModel MUST be first or you ll have s
             return None
         if isinstance(author, _UserBase):
             return author
-        return User._from_dict(author)
+        return User.from_dict(author)
 
     @field_validator('wall_recipient', mode='plain')
     @classmethod
     def validate_wall_recipient(cls, wall_recipient: dict | None):
         if wall_recipient is not None:
-            return User._from_dict(wall_recipient)
+            return User.from_dict(wall_recipient)
 
 
 

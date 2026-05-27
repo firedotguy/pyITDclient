@@ -152,12 +152,12 @@ class _CommentValidate(BaseModel, Comment):
     @classmethod
     def validate_reply_to(cls, reply_to: dict | None):
         if reply_to is not None:
-            return User._from_dict(reply_to)
+            return User.from_dict(reply_to)
 
     @field_validator('author', mode='plain')
     @classmethod
     def validate_author(cls, author: dict):
-        return User._from_dict(author)
+        return User.from_dict(author)
 
 
 

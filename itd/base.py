@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, TYPE_CHECKING, Iterator, TypeVar, overload, Literal
+from typing import Any, Callable, TYPE_CHECKING, Iterator, TypeVar, overload
 from functools import wraps
 from time import sleep
 from datetime import datetime, timedelta
@@ -53,15 +53,12 @@ class ITDBaseModel:
 
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
-        self._fields_from_data: set[str] = set()
+        self._loaded_attrs: set[str] = set()
 
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')): # ai
             value._client = client
-        if not name.startswith('_'):
-            if not hasattr(self, '_fields_from_data'):
-                self._fields_from_data = set()
-            self._fields_from_data.add(name)
+
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...
@@ -84,7 +81,7 @@ class ITDBaseModel:
     def _fill_from_data(self, data: dict):
         assert self._validator, 'Unable to use fill_from_data without a validator'
         validated = self._validator().model_validate(data) # pyright: ignore[reportCallIssue]
-        self._fields_from_data = validated.model_fields_set
+        # self._loaded_attrs = validated.model_fields_set # значения автоматически добавляются через __setattr__
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
@@ -106,18 +103,20 @@ class ITDBaseModel:
             value = _getattr(self, name)
             if (
                 name.startswith('_') or # приватный аттрибут
-                name in ('client', 'model_fields_set', 'load_status') or
+                name in ('client', 'model_fields_set', 'load_status') or # спец. имя
                 not _getattr(self, '_refreshable') or # не рефрешабельная модель
                 not _getattr(self, 'client').config.auto_load or # отключено в конфиге
                 callable(value) or # функция
-                self.load_status == LoadStatus.LOADING or
-                (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self)) or
+                self.load_status == LoadStatus.LOADING or # сейчас загружается (уже вроде как не надо, но пусть будет на всяк)
+                (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self)) or # коменты
+                name in self._loaded_attrs or name in self.__dict__ or # было загружено или добавлено через setattr
                 (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 # l.debug('return %s as is', name)
                 return object.__getattribute__(self, name)
 
-            if isinstance(value, FieldInfo) or (self.load_status != LoadStatus.FULL and name not in self._fields_from_data):
+            if isinstance(value, FieldInfo) or self.load_status != LoadStatus.FULL:
+                l.debug('attrs %s', list(self._loaded_attrs))
                 l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
                 self.refresh()
 

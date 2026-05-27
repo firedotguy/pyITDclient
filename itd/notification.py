@@ -109,7 +109,7 @@ class _NotificationValidate(BaseModel, Notification):
     @field_validator('actor', mode='plain')
     @classmethod
     def validate_actor(cls, actor: dict):
-        return User._from_dict(actor)
+        return User.from_dict(actor)
 
 
 

@@ -287,7 +287,7 @@ class Client:
             tuple[list[User], list[Hashtag]]: Результат поиска
         """
         res = search(self, query, users_limit, hashtags_limit).json()['data']
-        return [User._from_dict(user, client=self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
+        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
 
     def search_users(self, query: str, limit: int = 20) -> list[User]:
         """Поиск пользователей
