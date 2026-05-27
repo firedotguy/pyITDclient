@@ -126,7 +126,7 @@ class Client:
         self.access_token: str | None = None
         self.refresh_token: str | None = None
         self._user: Me | None = None
-        self.visible_posts: set[Post] = set()
+        self.visible_posts: list[Post] = []
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False) # idk what is this, (claude added) just for better stability

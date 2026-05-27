@@ -529,7 +529,7 @@ class Post(ITDBaseModel):
         if not self.visible:
             self.visible = True
             self._entered_at = datetime.now()
-            (client or self.client).visible_posts.add(self)
+            (client or self.client).visible_posts.append(self)
 
     def set_invisible(self, client: Client | None = None):
         if self.visible:
