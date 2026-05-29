@@ -8,13 +8,11 @@
       
       
       
-        <link rel="canonical" href="https://itdsdk.qzz.io/docs/concept/">
+        <link rel="canonical" href="https://itdsdk.qzz.io/docs/migration/">
       
       
-        <link rel="prev" href="../launch/">
+        <link rel="prev" href="../api/utils/">
       
-      
-        <link rel="next" href="../config/">
       
       
         
@@ -25,7 +23,7 @@
     
     
       
-        <title>Концепция - itd-sdk</title>
+        <title>Migration Guide - itd-sdk</title>
       
     
     
@@ -109,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Концепция
+              Migration Guide
             
           </span>
         </div>
@@ -240,17 +238,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../concept/" class="md-nav__link">
         
   
   
@@ -266,7 +257,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1054,10 +1044,17 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1073,6 +1070,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1113,86 +1111,168 @@
   
 
 
-<h1 id="_1">Концепция</h1>
-<h2 id="-">Анти-рейт-лимит</h2>
-<p>Если вызываемая функция уже использовалась, автоматически включается ожидание пердустановленных задержек.</p>
-<h3 id="_2">Псевдокод</h3>
-<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">функция</span> <span class="n">есть</span> <span class="n">в</span> <span class="n">предустановленных</span> <span class="n">значениях</span><span class="p">:</span> <span class="c1"># (1)</span>
-    <span class="n">задержка</span> <span class="o">=</span> <span class="n">предустановленное</span> <span class="n">значение</span>
-<span class="k">elif</span> <span class="n">rate_limit_mode</span> <span class="o">==</span> <span class="n">RateLimitMode</span><span class="o">.</span><span class="n">NO</span><span class="p">:</span>
-    <span class="n">задержка</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">elif</span> <span class="nb">any</span><span class="p">((</span><span class="n">задержка_функции_min</span><span class="p">,</span> <span class="n">задержка_функции_mid</span><span class="p">,</span> <span class="n">задержка_функции_max</span><span class="p">)):</span>
-    <span class="n">задержка</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;задержка_</span><span class="si">{</span><span class="nb">min</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">mid</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="nb">max</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="c1"># (2)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">задержка</span> <span class="o">=</span> <span class="n">задержка_для_обычных_запросов</span> <span class="c1"># (3)</span>
-
-<span class="k">if</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">задержка</span> <span class="o">&lt;</span> <span class="n">время_последнего_вызова_функции</span><span class="p">:</span>
-    <span class="n">задержка</span> <span class="o">-=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">время_последнего_вызова_функции</span> <span class="c1"># (4)</span>
-    <span class="n">l</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;anti rate limit on </span><span class="si">%s</span><span class="s1">; wait </span><span class="si">%s</span><span class="s1">s&#39;</span><span class="p">,</span> <span class="n">имя_функции</span><span class="p">,</span> <span class="n">задержка</span><span class="p">)</span>
-    <span class="n">sleep</span><span class="p">(</span><span class="n">задержка</span><span class="p">)</span>
-<span class="n">время_последнего_вызова_функции</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-</code></pre></div>
-<ol>
-<li>см. <a href="../config/#rate_limit_actions-dictstr-float">rate_limit_actions</a></li>
-<li>взависимости от установленного значения <a href="../config/#rate_limit-ratelimitmode">rate_limit</a></li>
-<li>см. <a href="../config/#rate_limit_default-float">rate_limit_default</a></li>
-<li>отнимается уже прошедшее время (если функция вызвана 10сек назад, то ждать только 5сек вместо 15сек)</li>
-</ol>
-<h2 id="-_1">Авто-загрузка</h2>
-<p>При инициализации модели она не загружается из API.<br />
-В базовой модели стоит метод <code>__getattribute__</code>, перехватывающий попытку получения значений, и автоматически загружает данные, если они еще не загружены.<br />
-Можно выключить в конфиге (см. <a href="../config/#auto_load-bool">auto_load</a>) (тогда нужно будет вручную вызывать <code>refresh</code>).</p>
-<h3 id="_3">Пример триггера</h3>
-<div class="highlight"><pre><span></span><code><span class="n">post</span> <span class="o">=</span> <span class="n">Post</span><span class="p">(</span><span class="s1">&#39;b6f9e0c6-f6bc-4b40-9906-8735ec76368d&#39;</span><span class="p">)</span>
-<span class="n">post</span><span class="o">.</span><span class="n">content</span>
-</code></pre></div>
-<h3 id="_4">Псевдокод</h3>
-<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="p">(</span>
-    <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># приватный аттрибут</span>
-    <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;client&#39;</span> <span class="ow">or</span>
-    <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refreshable</span> <span class="ow">or</span> <span class="c1"># (1)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">auto_load</span> <span class="ow">or</span> <span class="c1"># (3)</span>
-    <span class="nb">callable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># (2)</span>
-    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">load_comments_from_post</span> <span class="ow">and</span> <span class="n">isinstane</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Post</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Comment</span><span class="p">))</span> <span class="c1"># (4)</span>
-<span class="p">):</span>
-    <span class="k">return</span> <span class="n">value</span>
-
-<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ITDBaseModel</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">_load_with_parent</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">_loaded</span><span class="p">):</span> <span class="c1"># тип - pydantic field или модель</span>
-    <span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;refresh </span><span class="si">%s</span><span class="s1"> (caused by </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-    <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-
-<span class="k">return</span> <span class="n">value</span>
-</code></pre></div>
-<ol>
-<li>Пропуск необновляемых моделей, например уведомление (можно получить только из списка)</li>
-<li>Пропуск функций, чтобы не обновлять пользователя при действиях (например для post.like() необязательно получать сам пост)</li>
-<li>см. <a href="../config/#auto_load-bool">auto_load</a></li>
-<li>см. <a href="../config/#load_comments_from_post-bool">load_comments_from_post</a></li>
-</ol>
-<h2 id="-_2">Авто-дозагрузка списков</h2>
-<p>Дозагрузка листов при итерации или получении индекса.<br />
-В базовой модели стоят методы <code>__getitem__</code> и <code>__next__</code>, перехватывающие попытку получения значения которого пока не существует.<br />
-Можно выключить в конфиге (см. <a href="../config/#load_on_getitem-all-batchint-all-batch">load_on_getitem</a>)
+<h1 id="migration-guide">Migration Guide</h1>
+<h2 id="230-244">2.3.0 -&gt; 2.4.4</h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>В версиях 2.4.0 - 2.4.3 есть критические ошибки. Используйте 2.4.4.</p>
+</div>
+<ul>
+<li>ITDlist.load возвращает только новые объекты</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">2.3.0</label><label for="__tabbed_1_2">2.4.4+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">posts</span> <span class="o">=</span> <span class="n">Posts</span><span class="p">()</span>
-<span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># равносильно posts.load(1)</span>
-<span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">posts</span><span class="p">:</span> <span class="c1"># равносильно for post in posts.load_all():</span>
-    <span class="k">pass</span>
+<span class="n">posts</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">posts</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="mi">5</span><span class="p">)))</span> <span class="c1"># 10</span>
 </code></pre></div>
-После получения значения оно сохраняется, и при повторном получении индекса повторная загрузка не произойдет. Также и с итерацией - после ее окончания весь список будет загружен.</p>
-<h2 id="-_3">Авто-ожидание рейт лимитов</h2>
-<p>При ошибке <code>RateLimit</code> автоматически ожидает указанное время и повторяет запрос.</p>
-<h3 id="_5">Псевдокод</h3>
-<div class="highlight"><pre><span></span><code><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">функция</span><span class="p">()</span>
-    <span class="k">except</span> <span class="n">RateLimitError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;rate limit on </span><span class="si">%s</span><span class="s1">; wait </span><span class="si">%s</span><span class="s1">s&#39;</span><span class="p">,</span> <span class="n">имя_функции</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">время_ожидания_из_API</span> <span class="ow">or</span> <span class="mi">10</span><span class="p">)</span> <span class="c1"># (1)</span>
-        <span class="n">sleep</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">время_ожидания_из_API</span> <span class="ow">or</span> <span class="mi">10</span><span class="p">)</span>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">posts</span> <span class="o">=</span> <span class="n">Posts</span><span class="p">()</span>
+<span class="n">posts</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">posts</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="mi">5</span><span class="p">)))</span> <span class="c1"># 5</span>
 </code></pre></div>
-<ol>
-<li>Если рейт-лимит на уровне метода, в ответе приходит необходимое время ожидания (<code>json['error']['retryAfter']</code>). Также бывает рейт-лимит на уровне всех запросов (скорее всего по IP), в таком случае отдает только {'error': 'Too Many Requests'}</li>
-</ol>
+</div>
+</div>
+</div>
+<ul>
+<li>Удалены <code>config</code>.{<code>rate_limit_wait</code>,<code>retry_on_rate_limits</code>} (устарели в 2.2.0)</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">2.1.2</label><label for="__tabbed_2_2">2.4.4+ (2.2.0+)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">config</span> <span class="o">=</span> <span class="n">ITDConfig</span><span class="p">(</span>
+    <span class="n">rate_limit_wait</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">retry_on_rate_limits</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">config</span> <span class="o">=</span> <span class="n">ITDConfig</span><span class="p">(</span>
+    <span class="n">retry_delay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">retry_enabled</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="183-200">1.8.3 -&gt; 2.0.0</h2>
+<ul>
+<li>Удален <code>cookies</code>, переименован <code>access_token</code> =&gt; <code>access</code>, добавлен <code>refresh</code> в <code>ITDClient.__init__</code></li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">1.8.3</label><label for="__tabbed_3_2">2.0.0+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">c</span> <span class="o">=</span> <span class="n">ITDClient</span><span class="p">(</span>
+    <span class="n">cookies</span><span class="o">=</span><span class="s1">&#39;refresh_token=xxx&#39;</span><span class="p">,</span>
+    <span class="n">access_token</span><span class="o">=</span><span class="s1">&#39;eyXXX&#39;</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">c</span> <span class="o">=</span> <span class="n">ITDClient</span><span class="p">(</span>
+    <span class="n">refresh</span><span class="o">=</span><span class="s1">&#39;xxx&#39;</span><span class="p">,</span>
+    <span class="n">access</span><span class="o">=</span><span class="s1">&#39;eyXXX&#39;</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>Добавлено окончание <code>Error</code> ко всем ошибкам</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">1.8.3</label><label for="__tabbed_4_2">2.0.0+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotFound</span><span class="p">,</span> <span class="n">Forbidden</span><span class="p">,</span> <span class="n">CantRepostYourself</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotFoundError</span><span class="p">,</span> <span class="n">ForbiddenError</span><span class="p">,</span> <span class="n">CantRepostYourselfError</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>Переименован <code>is_blocked</code> и <code>is_followed</code> в <code>User</code></li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">1.8.3</label><label for="__tabbed_5_2">2.0.0+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">is_blocked</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">is_followed</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">is_blocked_by</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">is_followed_by</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>Переименован модуль с роутами (<code>routes</code>)</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">1.8.3</label><label for="__tabbed_6_2">2.0.0</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd.routes.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd.api.users</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>Удалено большинство функций из <code>ITDClient</code>, удален модуль с моделями (<code>models</code>)</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">1.8.3</label><label for="__tabbed_7_2">2.0.0+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">c</span> <span class="o">=</span> <span class="n">ITDClient</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">)</span>
+<span class="n">c</span><span class="o">.</span><span class="n">get_me</span><span class="p">()</span>
+<span class="n">c</span><span class="o">.</span><span class="n">create_post</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">c</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s1">&#39;fdg&#39;</span><span class="p">)</span>
+<span class="c1"># и так далее по смыслу</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd</span><span class="w"> </span><span class="kn">import</span> <span class="n">Me</span><span class="p">,</span> <span class="n">Post</span><span class="p">,</span> <span class="n">User</span>
+
+<span class="n">ITDClient</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">)</span>
+<span class="n">Me</span><span class="p">()</span>
+<span class="n">Post</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+<span class="n">User</span><span class="p">(</span><span class="s1">&#39;fdg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">follow</span><span class="p">()</span>
+<span class="c1"># и так далее по смыслу</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>Переименован параметр <code>attachment_ids</code> при создании комментария или поста</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">1.8.3</label><label for="__tabbed_8_2">2.0.0+</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">c</span><span class="o">.</span><span class="n">create_post</span><span class="p">(</span><span class="n">attachment_ids</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;69cb7f5e-1ca8-486f-b883-89436c308df5&#39;</span><span class="p">])</span>
+<span class="n">c</span><span class="o">.</span><span class="n">add_comment</span><span class="p">(</span>
+    <span class="s1">&#39;1e02ff60-f1fb-48c9-b304-f2c536d2c944&#39;</span><span class="p">,</span>
+    <span class="n">attachment_ids</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;69cb7f5e-1ca8-486f-b883-89436c308df5&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">Post</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+    <span class="n">attachments</span><span class="o">=</span><span class="s1">&#39;69cb7f5e-1ca8-486f-b883-89436c308df5&#39;</span> <span class="c1"># также может быть объектом файла, списком или UUID</span>
+<span class="p">)</span>
+<span class="n">Post</span><span class="p">(</span><span class="s1">&#39;1e02ff60-f1fb-48c9-b304-f2c536d2c944&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">comments</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+    <span class="n">attachments</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;69cb7f5e-1ca8-486f-b883-89436c308df5&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
 
 
@@ -1222,7 +1302,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../launch/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Запуск">
+          <a href="../api/utils/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Утилиты">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1232,27 +1312,11 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Запуск
+                Утилиты
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="../config/" class="md-footer__link md-footer__link--next" aria-label="Next: Конфигурация">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Конфигурация
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
         
       </nav>
     
