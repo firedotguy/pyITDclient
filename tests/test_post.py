@@ -20,7 +20,6 @@ def test_post_loads(redis_post):
     assert redis_post.created_at is not None
 
 
-
 def test_view(redis_post):
     redis_post.view()
 

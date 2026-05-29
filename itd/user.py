@@ -15,11 +15,24 @@ from itd.exceptions import PinNotOwnedError, AccountDeletedError
 from itd.utils import to_uuid, ATTACHMENTS, parse_datetime
 from itd.api.etc import get_who_to_follow
 from itd.api.users import (
-    get_user, follow, unfollow, block, unblock, get_followers, get_following, delete_account,
-    restore_account, get_blocked, get_privacy, update_privacy, update_profile, get_profile
+    get_user,
+    follow,
+    unfollow,
+    block,
+    unblock,
+    get_followers,
+    get_following,
+    delete_account,
+    restore_account,
+    get_blocked,
+    get_privacy,
+    update_privacy,
+    update_profile,
+    get_profile
 )
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_subscription, pay_subscription, get_payment_methods, toggle_subscription_auto_renewal
+
 if TYPE_CHECKING:
     from itd.client import Client
     from itd.post import Post, UserPosts, LikedPosts
@@ -61,9 +74,9 @@ class Profile(ITDBaseModel):
             return str(self.user)
         return super().__str__()
 
+
 class _ProfileValidate(BaseModel, Profile):
     pass
-
 
 
 class Privacy(ITDBaseModel):
@@ -79,7 +92,8 @@ class Privacy(ITDBaseModel):
     def _refresh(self, *, client: Client):
         return get_privacy(client).json()
 
-    def update(self,
+    def update(
+        self,
         is_private: bool | None = None,
         wall_access: AccessType | None = None,
         likes_visibility: AccessType | None = None,
@@ -100,7 +114,7 @@ class Privacy(ITDBaseModel):
             for field in ('wall_access', 'likes_visibility', 'is_private'):
                 setattr(self._user, field, object.__getattribute__(self, field))
 
-    def update_from_fields(self): # you can update fields (like privacy.is_private = True), then exec this func to update
+    def update_from_fields(self):  # you can update fields (like privacy.is_private = True), then exec this func to update
         self.update(self.is_private, self.wall_access, self.likes_visibility, self.show_last_seen)
 
     @classmethod
@@ -110,6 +124,7 @@ class Privacy(ITDBaseModel):
         return instance
 
     if not TYPE_CHECKING:
+
         def __getattribute__(self, name: str):
             if name in ('is_private', 'wall_access', 'likes_visibility') and object.__getattribute__(self, '_user'):
                 setattr(self, name, getattr(object.__getattribute__(self, '_user'), name))
@@ -137,7 +152,7 @@ class Subscription(ITDBaseModel):
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
-    def _refresh(self, *, client: Client): # refreshes only is_active
+    def _refresh(self, *, client: Client):  # refreshes only is_active
         return get_subscription(client).json()
 
     def pay(self):
@@ -167,7 +182,6 @@ class _SubscriptionValidate(BaseModel, Subscription):
     pass
 
 
-
 class _UserBase(ITDBaseModel):
     _identifier: str | UUID
 
@@ -189,7 +203,6 @@ class _UserBase(ITDBaseModel):
 
         super().__init__(client)
 
-
     def __str__(self) -> str:
         return self.display_name
 
@@ -200,6 +213,7 @@ class _UserBase(ITDBaseModel):
     def posts(self) -> UserPosts:
         if not hasattr(self, '_posts'):
             from itd.post import UserPosts
+
             self._posts = UserPosts(self, client=self.client)
         return self._posts
 
@@ -207,6 +221,7 @@ class _UserBase(ITDBaseModel):
     def liked_posts(self) -> LikedPosts:
         if not hasattr(self, '_liked_posts'):
             from itd.post import LikedPosts
+
             self._liked_posts = LikedPosts(self, client=self.client)
         return self._liked_posts
 
@@ -219,7 +234,6 @@ class _UserBase(ITDBaseModel):
         return self.url
 
 
-
 class User(_UserBase):
     _validator = lambda _: _UserValidate
     _fields_from_data: set[str] = set()
@@ -230,7 +244,9 @@ class User(_UserBase):
     is_following: bool = Field(False, alias='isFollowing')
     is_followed_by: bool = Field(False, alias='isFollowedBy')
 
-    is_blocked_by: bool = Field(False, alias='isBlockedByThem') # not 100% true, server returns value only if isBlockedByThem is True and isBlockedByMe is False
+    is_blocked_by: bool = Field(
+        False, alias='isBlockedByThem'
+    )  # not 100% true, server returns value only if isBlockedByThem is True and isBlockedByMe is False
     is_blocking: bool = Field(False, alias='isBlockedByMe')
     blocked_at: datetime | None = Field(None, alias='blockedAt')
 
@@ -238,17 +254,17 @@ class User(_UserBase):
     following_count: int | None = Field(None, alias='followingCount')
     posts_count: int | None = Field(None, alias='postsCount')
 
-    wall_access: AccessType | None = Field(None, alias='wallAccess') # none if blocked
-    likes_visibility: AccessType | None = Field(None, alias='likesVisibility') # none if blocked
-    is_private: bool | None = Field(None, alias='isPrivate') # none if following or blocked
+    wall_access: AccessType | None = Field(None, alias='wallAccess')  # none if blocked
+    likes_visibility: AccessType | None = Field(None, alias='likesVisibility')  # none if blocked
+    is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
-    last_seen: datetime | dict | None = Field(None, alias='lastSeen') # none if hidden or blocked
+    last_seen: datetime | dict | None = Field(None, alias='lastSeen')  # none if hidden or blocked
     online: bool = False
 
-    pinned_post_id: UUID | None = Field(None, alias='pinnedPostId') # none if no or blocked
+    pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
 
-    created_at: datetime | None = Field(None, alias='createdAt') # none if blocked
+    created_at: datetime | None = Field(None, alias='createdAt')  # none if blocked
 
     @classmethod
     def by_id(cls, id: UUID | str) -> 'User':
@@ -259,7 +275,7 @@ class User(_UserBase):
         return cls(username)
 
     @classmethod
-    def by_u(cls, username: str) -> 'User': # just abbr for username
+    def by_u(cls, username: str) -> 'User':  # just abbr for username
         return User.by_username(username)
 
     @classmethod
@@ -327,7 +343,6 @@ class User(_UserBase):
             return self.is_following
         return True
 
-
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.USER, reason, description, client or self.client)
 
@@ -358,14 +373,10 @@ class User(_UserBase):
             self.is_blocking = False
 
     def post(
-        self,
-        content: str | None = None,
-        spans: list[Span] = [],
-        attachments: ATTACHMENTS = [],
-        poll: NewPoll | None = None,
-        client: Client | None = None
+        self, content: str | None = None, spans: list[Span] = [], attachments: ATTACHMENTS = [], poll: NewPoll | None = None, client: Client | None = None
     ) -> Post:
-        from itd.post import Post # stupid circular import
+        from itd.post import Post  # stupid circular import
+
         return Post.new(content, spans, attachments, poll, self, client or self.client)
 
     @property
@@ -381,14 +392,12 @@ class User(_UserBase):
         return self._followers
 
 
-
 class _UserValidate(BaseModel, User):
     @field_validator('pin', mode='plain')
     @classmethod
     def validate_pin(cls, pin: dict | None):
         if pin:
             return Pin(pin)
-
 
 
 class Me(_UserBase):
@@ -417,7 +426,6 @@ class Me(_UserBase):
         self.profile: Profile = Profile(self.client)
         self.client._user = self
 
-
     def to_user(self) -> User:
         instance = User.__new__(User)
         ITDBaseModel.__init__(instance, self._client)
@@ -428,7 +436,7 @@ class Me(_UserBase):
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
-    def delete(self) -> datetime: # should not use other client, because you can get Me only from current client
+    def delete(self) -> datetime:  # should not use other client, because you can get Me only from current client
         return parse_datetime(delete_account(self.client).json()['restoreDeadline'])
 
     def restore(self) -> None:
@@ -443,13 +451,7 @@ class Me(_UserBase):
     ):
         self.privacy.update(is_private, wall_access, likes_visibility, show_last_seen)
 
-    def update(
-        self,
-        bio: str | None = None,
-        display_name: str | None = None,
-        username: str | None = None,
-        banner_id: UUID | str | Unset | None = None
-    ):
+    def update(self, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | str | Unset | None = None):
         if isinstance(banner_id, str):
             banner_id = to_uuid(banner_id)
         update_profile(self.client, bio, display_name, username, banner_id)
@@ -465,9 +467,9 @@ class Me(_UserBase):
 
     def remove_pin(self) -> None:
         if object.__getattribute__(self, 'pin'):
-            self.pin.remove() # pyright: ignore[reportOptionalMemberAccess]
+            self.pin.remove()  # pyright: ignore[reportOptionalMemberAccess]
         else:
-            remove_pin(self.client) # if pins not loaded just use straight call
+            remove_pin(self.client)  # if pins not loaded just use straight call
 
     def set_pin(self, pin: Pin | str | None = None):
         if pin is None:
@@ -483,10 +485,9 @@ class Me(_UserBase):
                 raise PinNotOwnedError(pin)
         else:
             if pin.slug in [p.slug for p in self.pins]:
-                pin.set(self.client) # can be not our pin, so set our client to ensure client is correct
+                pin.set(self.client)  # can be not our pin, so set our client to ensure client is correct
             else:
                 raise PinNotOwnedError(pin.slug)
-
 
     @property
     def blocked(self) -> 'Blocked':
@@ -544,12 +545,10 @@ class _MeValidate(BaseModel, Me):
         return Subscription(subscription)
 
 
-
 class Followers(ITDList[User]):
     _load_with_parent = False
     _user_id: UUID
     cursor: int = 1
-
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_followers(client, self._user_id, self.cursor).json()['data']
@@ -580,7 +579,6 @@ class Followers(ITDList[User]):
         super().__setattr__(name, value)
 
 
-
 class Following(Followers):
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_following(client, self._user_id, self.cursor).json()['data']
@@ -591,7 +589,6 @@ class Blocked(Followers):
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_blocked(client, self.cursor, limit).json()['data']
-
 
 
 class WhoToFollow(ITDBaseModel, list[User]):

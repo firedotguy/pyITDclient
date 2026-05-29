@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from itd.client import Client
+
 try:
     from dateparser import parse
 except ImportError:
@@ -27,7 +28,6 @@ class Version(BaseModel):
     @property
     def version_tuple(self):
         return tuple(map(int, self.version.split('.')))
-
 
 
 class Changelog(ITDBaseModel, list[Version]):
@@ -68,6 +68,7 @@ class Apps(ITDBaseModel, dict[str, App]):
             self[name] = App.model_validate(app)
             setattr(self, name, self[name])
 
-    if TYPE_CHECKING: # for type checkers that not allow Apps().android
+    if TYPE_CHECKING:  # for type checkers that not allow Apps().android
+
         def __getattribute__(self, name: str):
             return super().__getattribute__(name)

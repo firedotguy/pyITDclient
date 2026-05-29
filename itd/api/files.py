@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from itd.base import catch_errors, rate_limit
 from itd.exceptions import UploadError, ModerationFailedError, InvalidFileTypeError, TooLargeError
+
 if TYPE_CHECKING:
     from itd.client import Client
 
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
 @catch_errors(UploadError(), ModerationFailedError(), InvalidFileTypeError(), TooLargeError('File', 413))
 def upload_file(client: Client, name: str, data: BufferedReader | bytes):
     return client.request('post', 'files/upload', files={'file': (name, data)})
+
 
 @rate_limit()
 @catch_errors()

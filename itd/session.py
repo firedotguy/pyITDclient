@@ -22,15 +22,15 @@ class Session(ITDBaseModel):
     expires_at: datetime = Field(alias='expiresAt')
 
     ip: IPv4Address = Field(alias='ipAddress')
-    country: str | None = Field(None, alias='ipCountry') # country code
+    country: str | None = Field(None, alias='ipCountry')  # country code
     city: str | None = Field(None, alias='ipCity')
 
     device_type: DeviceType = Field(alias='deviceType')
-    device_os: str = Field(alias='osName') # TODO use enum
+    device_os: str = Field(alias='osName')  # TODO use enum
     device_os_version: int = Field(alias='osVersion')
-    device_model: str | None = Field(None, alias='deviceModel') # always none
+    device_model: str | None = Field(None, alias='deviceModel')  # always none
 
-    client_name: str = Field(alias='clientName') # cant use "client"
+    client_name: str = Field(alias='clientName')  # cant use "client"
     client_version: str = Field(alias='clientVersion')
 
     def revoke(self):
@@ -61,7 +61,6 @@ class Session(ITDBaseModel):
 
 class _SessionValidate(BaseModel, Session):
     pass
-
 
 
 class Sessions(ITDBaseModel, list[Session]):

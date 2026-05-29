@@ -34,7 +34,7 @@ dependencies = [
   "pydantic>=2.12.5,<2.14.0",
   "sseclient-py~=1.9.0",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = 'https://itdsdk.qzz.io'
@@ -56,3 +56,11 @@ dev = [
     "pytest>=8.4.2",
     "python-dotenv>=1.2.1",
 ]
+
+[tool.ruff]
+line-length = 160
+ignore = ["COM", "D300", "E501"]
+
+[tool.ruff.format]
+quote-style = "preserve"
+skip-magic-trailing-comma = true

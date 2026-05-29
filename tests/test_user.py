@@ -29,7 +29,6 @@ def test_by_id_is_lazy():
     assert user.id == uid
 
 
-
 def test_me_loads(me):
     assert me.id is not None
     assert me.username
@@ -59,7 +58,6 @@ def test_me_following_instance(me):
 
 def test_followers_count_consistent(me):
     assert len(me.followers) <= me.followers.total
-
 
 
 def test_follow_increments_followers_count(client, me2):

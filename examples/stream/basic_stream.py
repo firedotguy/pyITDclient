@@ -1,11 +1,14 @@
 """
 Базовый пример прослушивания SSE потока уведомлений
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from itd import ITDClient, StreamConnect
+
 
 def main():
     cookies = 'YOUR_COOKIES_HERE'
@@ -32,6 +35,7 @@ def main():
 
     except KeyboardInterrupt:
         print(f'\n! Отключение...')
+
 
 if __name__ == '__main__':
     main()

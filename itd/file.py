@@ -11,9 +11,11 @@ from requests import get
 from itd.base import ITDBaseModel
 from itd.enums import AttachType
 from itd.api.files import upload_file, delete_file
+
 if TYPE_CHECKING:
     from itd.client import Client
     from itd.post import Post
+
 
 class File(ITDBaseModel):
     _refreshable = False
@@ -44,7 +46,9 @@ class File(ITDBaseModel):
             try:
                 from filetype import guess
             except ModuleNotFoundError:
-                raise ImportError('filetype is required for File.from_bytes. Install by running "uv add itd-sdk[filetype]" (or "pip install itd-sdk[filetype]" if you are using pip)')
+                raise ImportError(
+                    'filetype is required for File.from_bytes. Install by running "uv add itd-sdk[filetype]" (or "pip install itd-sdk[filetype]" if you are using pip)'
+                )
 
             kind = guess(data)
             name = f'file.{kind.extension}' if kind else 'file.0'
@@ -64,7 +68,6 @@ class File(ITDBaseModel):
 
 class _FileValidate(BaseModel, File):
     pass
-
 
 
 class PostAttach(ITDBaseModel):
@@ -100,7 +103,7 @@ class PostAttach(ITDBaseModel):
         Args:
             client (Client | None, optional): Клиент. Defaults to None.
         """
-        c = (client or self.client)
+        c = client or self.client
         assert c.dwell_tracker is not None, 'Enable dwell to record photo opens'
         assert self.type == AttachType.IMAGE, 'Recording photo open allowed only for images'
         c.dwell_tracker.record_photo_open(self._post.vs, self._post.source, self.id, self._post.attachments.index(self))
@@ -113,7 +116,7 @@ class PostAttach(ITDBaseModel):
             played (int | None, optional): Сколько было просмотренно (мс). None - берется из duration. Defaults to None.
             client (Client | None, optional): Клиент. Defaults to None.
         """
-        c = (client or self.client)
+        c = client or self.client
         assert c.dwell_tracker is not None, 'Enable dwell to record photo opens'
         assert self.type == AttachType.VIDEO, 'Recording video progress allowed only for videos'
         c.dwell_tracker.record_video_progress(self._post.vs, self._post.source, self.id, played or duration, duration)
@@ -131,7 +134,6 @@ class PostAttach(ITDBaseModel):
 
 class _PostAttachValidate(BaseModel, PostAttach):
     pass
-
 
 
 class CommentAttach(PostAttach):

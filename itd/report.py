@@ -8,8 +8,10 @@ from pydantic import BaseModel, Field
 from itd.base import ITDBaseModel
 from itd.enums import ReportReason, ReportTargetType
 from itd.api.reports import report
+
 if TYPE_CHECKING:
     from itd.client import Client
+
 
 class Report(ITDBaseModel):
     _refreshable = False
@@ -27,7 +29,6 @@ class Report(ITDBaseModel):
         self.description = description
 
         self._fill_from_data(report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data'])
-
 
 
 class _ReportValidate(BaseModel, Report):

@@ -9,20 +9,24 @@ from itd.exceptions import NotFoundError
 if TYPE_CHECKING:
     from itd.client import Client
 
+
 @rate_limit()
 @catch_errors()
 def get_notifications(client: Client, limit: int = 20, offset: int = 0):
     return client.request('get', 'notifications', {'limit': limit, 'offset': offset})
+
 
 @rate_limit()
 @catch_errors(NotFoundError('Notification', json_check=lambda json: json.get('success') is False))
 def mark_as_read(client: Client, id: UUID):
     return client.request('post', f'notifications/{id}/read')
 
+
 @rate_limit()
 @catch_errors()
 def mark_all_as_read(client: Client):
     return client.request('post', 'notifications/read-all')
+
 
 @rate_limit()
 @catch_errors()

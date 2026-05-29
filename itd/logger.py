@@ -3,9 +3,7 @@ from sys import stdout
 
 
 class ITDFormatter(logging.Formatter):
-    def __init__(
-        self, fmt: str | None = None, colorful: bool = True
-    ) -> None:
+    def __init__(self, fmt: str | None = None, colorful: bool = True) -> None:
         super().__init__(fmt, "%Y-%m-%d %H:%M:%S")
         self.colorful = colorful
 

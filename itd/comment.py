@@ -13,6 +13,7 @@ from itd.utils import parse_datetime, to_nullable_uuid, format_attachments, ATTA
 from itd.api.comments import get_comments, add_comment, add_reply_comment, get_replies, like_comment, unlike_comment, delete_comment
 from itd.user import User
 from itd.file import CommentAttach
+
 if TYPE_CHECKING:
     from itd.client import Client
 
@@ -32,12 +33,14 @@ class Comment(ITDBaseModel):
 
     attachments: list[CommentAttach]
     replies: 'Replies' = Field(default_factory=lambda: Replies())
-    reply_to: User | None = None # author of replied comment, if this comment is reply
+    reply_to: User | None = None  # author of replied comment, if this comment is reply
 
     _post_id: UUID | None = None
-    _comment_id: UUID | None = None # base comment id, if this comment is reply
+    _comment_id: UUID | None = None  # base comment id, if this comment is reply
 
-    def __init__(self, comment: dict, post_id: UUID | None = None, comment_id: UUID | None = None, client: Client | None = None, _skip_init: bool = False) -> None:
+    def __init__(
+        self, comment: dict, post_id: UUID | None = None, comment_id: UUID | None = None, client: Client | None = None, _skip_init: bool = False
+    ) -> None:
         if not _skip_init:
             super().__init__(client)
 
@@ -67,13 +70,7 @@ class Comment(ITDBaseModel):
             Comment: Комментарий
         """
         return Comment(
-            add_reply_comment(
-                client or self._client,
-                self._comment_id or self.id,
-                user_id or self.author.id,
-                content,
-                format_attachments(attachments)
-            ).json(),
+            add_reply_comment(client or self._client, self._comment_id or self.id, user_id or self.author.id, content, format_attachments(attachments)).json(),
             self._post_id,
             client=client or self.client,
             _skip_init=True
@@ -113,23 +110,14 @@ class Comment(ITDBaseModel):
         """
         delete_comment(client or self._client, self.id)
 
-
     @classmethod
     def new(cls, post_id: UUID, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
         instance = cls.__new__(cls)
         super(Comment, instance).__init__(client)
         instance.__init__(
-            add_comment(
-                client or instance.client,
-                post_id,
-                content,
-                format_attachments(attachments)
-            ).json(),
-            post_id,
-            client=client or instance.client
+            add_comment(client or instance.client, post_id, content, format_attachments(attachments)).json(), post_id, client=client or instance.client
         )
         return instance
-
 
 
 class _CommentValidate(BaseModel, Comment):
@@ -160,11 +148,9 @@ class _CommentValidate(BaseModel, Comment):
         return User.from_dict(author)
 
 
-
-
-
 class Comments(ITDList[Comment]):
     """Список комментариев с функцией дозагрузки"""
+
     _refreshable = False
     _limit = 500
 
@@ -173,7 +159,7 @@ class Comments(ITDList[Comment]):
     _sorting: CommentSorting = CommentSorting.POPULAR
 
     @property
-    def _load_with_parent(self): # pyright: ignore[reportIncompatibleVariableOverride]
+    def _load_with_parent(self):  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.client.config.load_comments_from_post
 
     def __init__(self, data: list[dict] = []):
@@ -211,7 +197,6 @@ class Comments(ITDList[Comment]):
         self._sorting = value
         self.refresh()
 
-
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
             for comment in self.copy():
@@ -222,7 +207,6 @@ class Comments(ITDList[Comment]):
         super().__setattr__(name, value)
 
 
-
 class Replies(Comments):
     _limit = 100
     _comment: 'Comment'
@@ -231,7 +215,7 @@ class Replies(Comments):
         return get_replies(
             client or self._client,
             self._comment.id,
-            ceil(max(len(self), 1) / limit), # page equals already loaded divide by [LIMIT]
+            ceil(max(len(self), 1) / limit),  # page equals already loaded divide by [LIMIT]
             limit
         ).json()['data']
 
@@ -249,14 +233,12 @@ class Replies(Comments):
     def _to_models(self, objects: list, client: Client):
         return [Comment(comment, comment_id=self._comment.id, client=client) for comment in objects]
 
-
     def __setattr__(self, name: str, value) -> None:
         if name == '_comment':
             for comment in self.copy():
                 comment._comment_id = value.id
 
         super().__setattr__(name, value)
-
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None, *, author_id: str | UUID | None = None) -> 'Comment':
         assert self._comment is not None
