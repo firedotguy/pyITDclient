@@ -3,84 +3,85 @@ site_url: https://itdsdk.qzz.io/docs/
 repo_url: https://github.com/firedotguy/itd-sdk
 
 theme:
-  name: material
-  features:
-    - navigation.footer
-    - content.code.annotate
+    name: material
+    features:
+        - navigation.footer
+        - content.code.annotate
 
-  palette:
-    scheme: slate
-    primary: deep orange
-    accent: orange
+    palette:
+        scheme: slate
+        primary: deep orange
+        accent: orange
 
 markdown_extensions:
-  - admonition
-  - pymdownx.details
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.emoji:
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-  - toc:
-      toc_depth: 0
+    - admonition
+    - pymdownx.details
+    - pymdownx.snippets
+    - pymdownx.superfences
+    - pymdownx.tabbed:
+          alternate_style: true
+    - pymdownx.emoji:
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+    - toc:
+          toc_depth: 0
 
 extra_css:
-  - stylesheets/extra.css
+    - stylesheets/extra.css
 
 nav:
-  - index.md
-  - launch.md
-  - concept.md
-  - config.md
-  - Reference:
-    - Клиент: ref/client.md
-    - Базовые модели: ref/base.md
-    - Посты: ref/posts.md
-    - Пользователи: ref/users.md
-    - Уведомления: ref/notifications.md
-    - WIP: ref/wip.md
-  - API:
-    - api/client.md
-    - api/user.md
-    - api/post.md
-    - api/comment.md
-    - api/notification.md
-    - api/file.md
-    - api/exceptions.md
-    - api/hashtag.md
-    - api/logger.md
-    - api/pin.md
-    - api/poll.md
-    - api/clan.md
-    - api/report.md
-    - api/span.md
-    - api/request.md
-    - api/enums.md
-    - api/utils.md
+    - index.md
+    - launch.md
+    - concept.md
+    - config.md
+    - Reference:
+          - Клиент: ref/client.md
+          - Базовые модели: ref/base.md
+          - Посты: ref/posts.md
+          - Пользователи: ref/users.md
+          - Уведомления: ref/notifications.md
+          - WIP: ref/wip.md
+    - API:
+          - api/client.md
+          - api/user.md
+          - api/post.md
+          - api/comment.md
+          - api/notification.md
+          - api/file.md
+          - api/exceptions.md
+          - api/hashtag.md
+          - api/logger.md
+          - api/pin.md
+          - api/poll.md
+          - api/clan.md
+          - api/report.md
+          - api/span.md
+          - api/request.md
+          - api/enums.md
+          - api/utils.md
+    - migration.md
 
 # часть кофига взята из aioitd
 plugins:
     - mkdocstrings:
-        handlers:
-          python:
-            paths: [.]
-            options:
-              extensions:
-                - griffe_typingdoc
-              docstring_style: google
-              show_source: false
-              separate_signature: true
-              filters:
-                - '!^_'
-                - '!^l$'
-              show_symbol_type_heading: true
-              show_symbol_type_toc: true
-              show_root_heading: true
-              show_signature_annotations: true
-              signature_crossrefs: true
-              show_labels: false
-              show_if_no_docstring: true
-              inherited_members: true
-              unwrap_annotated: true
+          handlers:
+              python:
+                  paths: [.]
+                  options:
+                      extensions:
+                          - griffe_typingdoc
+                      docstring_style: google
+                      show_source: false
+                      separate_signature: true
+                      filters:
+                          - "!^_"
+                          - "!^l$"
+                      show_symbol_type_heading: true
+                      show_symbol_type_toc: true
+                      show_root_heading: true
+                      show_signature_annotations: true
+                      signature_crossrefs: true
+                      show_labels: false
+                      show_if_no_docstring: true
+                      inherited_members: true
+                      unwrap_annotated: true
