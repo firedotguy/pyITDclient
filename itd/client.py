@@ -33,8 +33,10 @@ l = get_logger('client')
 @dataclass
 class Config:
     rate_limit: RateLimitMode = RateLimitMode.MID
-    rate_limit_default: int | None = None # overrides ratelimit mode  # rate limit for standard actions
-    rate_limit_actions: dict[str, float | int] = field(default_factory=lambda: {}) # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
+    rate_limit_default: int | None = None  # overrides ratelimit mode  # rate limit for standard actions
+    rate_limit_actions: dict[str, float | int] = field(
+        default_factory=lambda: {}
+    )  # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
 
     # is_logging_enabled: bool = True # TODO
     # logging_level = 'DEBUG'
@@ -46,12 +48,13 @@ class Config:
     auto_load: bool = True
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
-    force_load_lists: bool = False # load lists even if has_more is False
+    force_load_lists: bool = False  # load lists even if has_more is False
 
     debug_response: DebugResponseMode = DebugResponseMode.NO
 
     timeout: float = 30
     timeout_file: float = 120
+    timeout_file_download: float = 60
 
     url: str = 'xn--d1ah4a.com'
     url_api: str | None = None
@@ -63,8 +66,8 @@ class Config:
     parse_mode: ParseMode = ParseMode.NO
 
     retry_enabled: bool = True
-    retry_delay: float = 10 # delay before next attempt (after rate limit error) if retry_after is not provided in request
-    retry_max_retries: int | None = None # none for no limit
+    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in request
+    retry_max_retries: int | None = 10  # none for no limit
     retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
     retry_max_retry_after: int = 500
 
@@ -74,13 +77,15 @@ class Config:
     dwell_max_buffer: int = 20
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
-    dwell_wait_durations: bool = True
+    dwell_wait_durations: bool = False
+    post_view_increment: bool = False
+    post_auto_view: bool = True  # view when called post.set_invisible()
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3
 
-    view_read_speed: int = 250 # in WPM # https://scholarwithin.com/average-reading-speed
-    view_images_speed: int = 130 # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
+    view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
+    view_images_speed: int = 130  # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
 
     def __post_init__(self):
         if self.rate_limit_default:
@@ -107,9 +112,14 @@ class Config:
             case _:
                 self._user_agent = self.user_agent
 
+        if self.dwell_wait_durations:
+            l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
-        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (RateLimitError, InternalError, RequestException)
-
+        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
+            RateLimitError,
+            InternalError,
+            RequestException
+        )
 
 
 class Client:
@@ -124,7 +134,7 @@ class Client:
         self.visible_posts: list[Post] = []
 
         self.session = Session()
-        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False) # idk what is this, (claude added) just for better stability
+        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
         self.session.mount('https://', adapter)
 
         if access:
@@ -150,7 +160,6 @@ class Client:
         if self.config.post_update_stats:
             self._start_update_timer()
 
-
     def _start_update_timer(self):
         l.debug('start update timer')
         if not self.config.post_update_stats_interval:
@@ -171,7 +180,6 @@ class Client:
                 self._thread.join(timeout=0)
 
         register(on_exit)
-
 
     def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
         """Сделать запрос
@@ -204,7 +212,6 @@ class Client:
 
         return fetch_stream(self, url)
 
-
     def update_post_stats(self):
         if len(self.visible_posts) == 0:
             return
@@ -216,7 +223,6 @@ class Client:
 
         for post in self.visible_posts:
             post._set_stats(next((stat for stat in stats if stat['id'] == str(post.id))))
-
 
     def refresh_auth(self) -> str:
         """Обновить access token
@@ -234,7 +240,6 @@ class Client:
         assert self.access_token
         return self.access_token
 
-
     @property
     def token(self) -> str:
         assert self.access_token, 'Access token not refreshed yet'
@@ -250,13 +255,10 @@ class Client:
             self._user = Me(self)
         return self._user
 
-
     def logout(self):
-        """Выход из аккаунта
-        """
+        """Выход из аккаунта"""
         res = logout(self)
         res.raise_for_status()
-
 
     def change_password(self, old: str, new: str) -> None:
         """Смена пароля
@@ -272,10 +274,9 @@ class Client:
 
         """
         # if not self.refresh_token:
-            # raise InsufficientAuthLevelError()
+        # raise InsufficientAuthLevelError()
 
         change_password(self, old, new)
-
 
     def search(self, query: str, hashtags_limit: int = 20, users_limit: int = 20) -> tuple[list[User], list[Hashtag]]:
         """Поиск пользователей и хэштэгов
@@ -289,7 +290,7 @@ class Client:
             tuple[list[User], list[Hashtag]]: Результат поиска
         """
         res = search(self, query, users_limit, hashtags_limit).json()['data']
-        return [User._from_dict(user, False, self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
+        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
 
     def search_users(self, query: str, limit: int = 20) -> list[User]:
         """Поиск пользователей
@@ -301,7 +302,7 @@ class Client:
         Returns:
             list[User]: Список пользователей
         """
-        return self.search(query, 1, limit)[0] # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
+        return self.search(query, 1, limit)[0]  # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
 
     def search_hashtags(self, query: str, limit: int = 20) -> list[Hashtag]:
         """Поиск хэштэгов

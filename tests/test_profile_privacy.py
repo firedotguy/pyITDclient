@@ -11,6 +11,7 @@ def me(client):
 
 # --- Profile ---
 
+
 def test_profile_loads(me):
     assert me.profile is not None
 
@@ -34,6 +35,7 @@ def test_profile_user_has_roles(me):
 
 
 # --- Privacy ---
+
 
 def test_privacy_loads(me):
     assert me.privacy is not None

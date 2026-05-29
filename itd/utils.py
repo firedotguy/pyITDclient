@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING
 from itd.span import Span
 from itd.file import PostAttach, File
 from itd.enums import SpanType, AttachType
+
 if TYPE_CHECKING:
     from itd.client import Config
 
 
 def get_sdk_user_agent():
-    from itd import __version__ # i fucking hate circular imports this is sooo stupid
+    from itd import __version__  # i fucking hate circular imports this is sooo stupid
+
     return f'itd-sdk/{__version__} (Python/{version})'
 
 
@@ -21,6 +23,7 @@ def to_uuid(value: str | UUID) -> UUID:
     if isinstance(value, str):
         return UUID(value)
     return value
+
 
 def to_nullable_uuid(value: str | UUID | None) -> UUID | None:
     if value is None:
@@ -38,6 +41,8 @@ def parse_datetime(value: str) -> datetime:
 
 
 ATTACHMENTS = File | UUID | str | list[File | UUID | str]
+
+
 def format_attachments(attachments: ATTACHMENTS = []) -> list[UUID]:
     if isinstance(attachments, list):
         formatted = []
@@ -100,13 +105,8 @@ class HTMLSpanParser(HTMLParser):
                 offset = text_start
                 length = self.text_offset - text_start
                 if span_type == SpanType.LINK and url is None:
-                    url = self.get_text()[offset: offset + length]
-                self.spans.append(Span(
-                    length=length,
-                    offset=offset,
-                    type=span_type,
-                    url=url
-                ))
+                    url = self.get_text()[offset : offset + length]
+                self.spans.append(Span(length=length, offset=offset, type=span_type, url=url))
                 break
 
     def handle_data(self, data: str):
@@ -148,7 +148,7 @@ DELIMITERS = {
     '__': SpanType.UNDERLINE,
     '`': SpanType.MONOSPACE,
     '||': SpanType.SPOILER,
-    '>': SpanType.QUOTE,
+    '>': SpanType.QUOTE
 }
 
 
@@ -196,22 +196,13 @@ def parse_md(s: str) -> tuple[str, list[Span]]:
         elif token in starts:
             start = starts[token]
             del starts[token]
-            spans.append(Span(
-                offset=start,
-                length=len(result) - start,
-                type=DELIMITERS[token]
-            ))
+            spans.append(Span(offset=start, length=len(result) - start, type=DELIMITERS[token]))
         elif token in DELIMITERS:
             starts[token] = len(result)
         elif match := re.match(r'\[([^\]]+)\]\(([^\)]*)\)', token):
             text = match.group(1)
             url = match.group(2)
-            spans.append(Span(
-                offset=len(result),
-                length=len(text),
-                type=SpanType.LINK,
-                url=url if len(url) != 0 else text,
-            ))
+            spans.append(Span(offset=len(result), length=len(text), type=SpanType.LINK, url=url if len(url) != 0 else text))
             result += text
         else:
             result += token

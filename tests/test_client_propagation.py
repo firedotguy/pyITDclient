@@ -49,8 +49,8 @@ def test_me_profile_inherits_client(client2):
 
 
 def test_two_clients_are_independent(client, client2):
-    post1 = Post(POST_ID, client)
-    post2 = Post(POST_ID, client2)
+    post1 = Post(POST_ID, client=client)
+    post2 = Post(POST_ID, client=client2)
     assert post1._client is client
     assert post2._client is client2
     assert post1._client is not post2._client

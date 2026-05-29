@@ -7,6 +7,7 @@ from itd.api.etc import get_top_clans
 
 l = get_logger('clan')
 
+
 class Clan(BaseModel):
     avatar: str
     members_count: int = Field(0, alias='memberCount')
@@ -27,8 +28,8 @@ class TopClans(ITDBaseModel, list[Clan]):
         self.extend([Clan.model_validate(clan) for clan in get_top_clans(self.client).json()['clans']])
         return self
 
-    def refresh(self):
-        l.warning('TopClans.refresh is deprecated and will be removed in 2.6.0. Pleas use TopClans.load')
+    def refresh(self, *, client=None):
+        l.warning('TopClans.refresh is deprecated and will be removed in 2.6.0. Please use TopClans.load')
         self.load()
 
     @classmethod

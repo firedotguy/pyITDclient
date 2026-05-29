@@ -10,18 +10,17 @@ from sseclient import SSEClient
 
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
-from itd.enums import NotificationTargetType, NotificationType, All, ALL
+from itd.enums import NotificationTargetType, NotificationType
 from itd.user import User
-from itd.api.notifications import (
-    mark_as_read, mark_all_as_read, get_notifications, get_unread_notifications_count,
-    stream_notifications
-)
+from itd.api.notifications import mark_as_read, mark_all_as_read, get_notifications, get_unread_notifications_count, stream_notifications
 from itd.logger import get_logger
+
 if TYPE_CHECKING:
     from itd.client import Client
 
 
 l = get_logger('notifications')
+
 
 class Notification(ITDBaseModel):
     _refreshable = False
@@ -30,17 +29,17 @@ class Notification(ITDBaseModel):
     id: UUID
     type: NotificationType
 
-    target_type: NotificationTargetType | None = Field(None, alias='targetType') # none - follows, other - NotificationTragetType.POST
-    target_id: UUID | None = Field(None, alias='targetId') # none - follows
+    target_type: NotificationTargetType | None = Field(None, alias='targetType')  # none - follows, other - NotificationTragetType.POST
+    target_id: UUID | None = Field(None, alias='targetId')  # none - follows
 
-    preview: str | None = None # follow - none, comment/reply - content, repost - original post content, like - post content, wall_post - wall post content
+    preview: str | None = None  # follow - none, comment/reply - content, repost - original post content, like - post content, wall_post - wall post content
 
     is_read: bool = Field(False, alias='read')
     read_at: datetime | None = Field(None, alias='readAt')
     created_at: datetime = Field(alias='createdAt')
 
     actor: User
-    sound: bool = False # for notifications from stream
+    sound: bool = False  # for notifications from stream
 
     def __init__(self, notification: dict, notifications: Notifications | None = None, client: Client | None = None) -> None:
         super().__init__(client)
@@ -52,7 +51,7 @@ class Notification(ITDBaseModel):
     def read(self, client: Client | None = None) -> None:
         mark_as_read(client or self.client, self.id)
 
-        if not self.is_read and self._notifications and self._notifications._unread: # check if already read and has notifications and unread loaded
+        if not self.is_read and self._notifications and self._notifications._unread:  # check if already read and has notifications and unread loaded
             self._notifications._unread -= 1
 
         self.is_read = True
@@ -109,14 +108,12 @@ class _NotificationValidate(BaseModel, Notification):
     @field_validator('actor', mode='plain')
     @classmethod
     def validate_actor(cls, actor: dict):
-        return User._from_dict(actor, False)
-
+        return User.from_dict(actor)
 
 
 class Notifications(ITDList[Notification]):
     _limit = 1000
     _unread: int | None = None
-
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()
@@ -129,8 +126,8 @@ class Notifications(ITDList[Notification]):
     def _get_has_more(data: dict) -> bool:
         return data['hasMore']
 
-    def _extend(self, objects: list, client: Client):
-        return self.extend([Notification(notification, self, client) for notification in objects])
+    def _to_models(self, objects: list, client: Client):
+        return [Notification(notification, self, client) for notification in objects]
 
     def __setattr__(self, name: str, value) -> None:
         if name == '_client':
@@ -157,7 +154,7 @@ class Notifications(ITDList[Notification]):
 
             if 'userId' in data and 'timestamp' in data and 'type' not in data:
                 l.debug('got init message')
-                continue # initial message
+                continue  # initial message
 
             notification = Notification(data, self, self.client)
             self.insert(0, notification)
@@ -184,7 +181,6 @@ class Notifications(ITDList[Notification]):
             assert self._stream
             self._stream.close()
             self._stream = None
-
 
     # redefine this for your needs (eg notifications.on_like = my_function)
     def on_like(self, notification: Notification, /) -> None: ...

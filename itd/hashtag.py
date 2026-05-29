@@ -5,7 +5,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from itd.api.hashtags import get_hashtags, get_posts_by_hashtag
-from itd.base import ITDBaseModel, refresh_wrapper
+from itd.base import ITDBaseModel
+
 if TYPE_CHECKING:
     from itd.client import Client
     from itd.post import HashtagPosts
@@ -22,9 +23,8 @@ class Hashtag(ITDBaseModel):
         super().__init__(client)
         self.name = name.lstrip('#')
 
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return get_posts_by_hashtag(client or self.client, self.name, limit=1).json()['data']['hashtag']
+    def _refresh(self, *, client: Client):
+        return get_posts_by_hashtag(client, self.name, limit=1).json()['data']['hashtag']
 
     @classmethod
     def _from_dict(cls, data: dict, client: Client | None = None):
@@ -46,13 +46,13 @@ class Hashtag(ITDBaseModel):
     def posts(self) -> 'HashtagPosts':
         if not hasattr(self, '_posts'):
             from itd.post import HashtagPosts
+
             self._posts = HashtagPosts(self, client=self.client)
         return self._posts
 
 
 class _HashtagValidate(BaseModel, Hashtag):
     pass
-
 
 
 class Hashtags(ITDBaseModel, list[Hashtag]):

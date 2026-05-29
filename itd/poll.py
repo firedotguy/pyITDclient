@@ -8,6 +8,7 @@ from pydantic import Field, BaseModel, field_validator, model_validator
 from itd.base import ITDBaseModel
 from itd.api.polls import vote
 from itd.utils import parse_datetime
+
 if TYPE_CHECKING:
     from itd.client import Client
 
@@ -127,11 +128,9 @@ class _PollValidate(BaseModel, Poll):
         return parse_datetime(created_at)
 
 
-
-
-
 class _NewPollOption(BaseModel):
     text: str
+
 
 class _NewPoll(BaseModel):
     multiple: bool = Field(False, alias='multipleChoice')
