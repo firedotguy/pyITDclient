@@ -1,32 +1,26 @@
 from __future__ import annotations
-from typing import Any, Callable, TYPE_CHECKING, Iterator, TypeVar, overload
+
+from datetime import datetime, timedelta
 from functools import wraps
 from time import sleep
-from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, overload
 
-from requests import Response
-from requests.exceptions import JSONDecodeError
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefinedType
+from requests import Response
+from requests.exceptions import JSONDecodeError
 
 from itd._default import get_default_client
+from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus, RateLimitMode
+from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
 from itd.logger import get_logger
-from itd.exceptions import ITDException, ValidationError, RateLimitError, UnauthorizedError, AccessTokenExpiredError, DEFAULT_ERRORS, AccountDeletedError
-from itd.enums import All, ALL, DebugResponseMode, RateLimitMode, BATCH, Batch, LoadStatus
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
 l = get_logger('base')
-
-
-def _is_comments_on_post(value: Any, self: Any) -> bool:
-    from itd.comment import Comments
-    from itd.post import Post
-
-    return isinstance(value, Comments) and isinstance(self, Post)
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -118,7 +112,7 @@ class ITDBaseModel:
                 or callable(value)  # функция
                 or isinstance(_getattr(type(self), name), property)
                 or self.load_status == LoadStatus.LOADING  # сейчас загружается (уже вроде как не надо, но пусть будет на всяк)
-                or (not _getattr(self, 'client').config.load_comments_from_post and _is_comments_on_post(value, self))  # коменты
+                or (not _getattr(self, 'client').config.load_comments_from_post and name == 'comments' and self.__class__.__name__ == 'Post')  # коменты
                 or name in self._loaded_attrs
                 or name in self.__dict__  # было загружено или добавлено через setattr
                 or (isinstance(value, ITDBaseModel) and not value._load_with_parent)
@@ -137,7 +131,7 @@ class ITDBaseModel:
 T = TypeVar('T', bound=ITDBaseModel)
 
 
-class ITDList[T](ITDBaseModel, list[T]):
+class ITDList(ITDBaseModel, list[T]):
     """Базовый класс списка"""
 
     _limit: int = 20
@@ -169,7 +163,7 @@ class ITDList[T](ITDBaseModel, list[T]):
         limit = limit or self._limit
         if isinstance(count, int) and count < limit:
             limit = count
-        l.debug('load %s count=%s limit=%s', self.__class__.__name__.lower(), count, limit)
+        l.debug('load %s count=%s limit=%s cursor=%s', self.__class__.__name__.lower(), count, limit, self.cursor)
 
         # Batch = load one batch (limit), All = load everything, int = load exactly N
         left = None if isinstance(count, All) else (count or limit)

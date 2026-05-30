@@ -1,45 +1,45 @@
 from __future__ import annotations
-from uuid import UUID, uuid4
-from datetime import datetime, timedelta
-from typing import Literal, overload, TYPE_CHECKING
-from time import sleep
-from threading import Thread
+
 from atexit import register
+from datetime import datetime, timedelta
+from threading import Thread
+from time import sleep
+from typing import TYPE_CHECKING, Literal, overload
+from uuid import UUID, uuid4
 
-from pydantic import Field, BaseModel, field_validator, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
+from itd.api.dwell import send_interactions, send_views
+from itd.api.hashtags import get_posts_by_hashtag
+from itd.api.posts import (
+    create_post,
+    delete_post,
+    edit_post,
+    get_liked_posts,
+    get_post,
+    get_posts,
+    get_stats,
+    get_user_posts,
+    like_post,
+    pin_post,
+    repost,
+    restore_post,
+    unlike_post,
+    unpin_post,
+    view_post
+)
+from itd.base import ITDBaseModel, ITDList
 from itd.comment import Comment, Comments
+from itd.enums import ALL, InteractionType, LoadStatus, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
+from itd.exceptions import NotFoundError
 from itd.file import PostAttach
 from itd.hashtag import Hashtag
-from itd.poll import Poll, NewPoll, PollOption
+from itd.logger import get_logger
+from itd.poll import NewPoll, Poll, PollOption
 from itd.report import Report
 from itd.span import Span
-from itd.user import User, _UserBase, Me
-
-from itd.api.posts import (
-    get_post,
-    create_post,
-    like_post,
-    unlike_post,
-    repost,
-    view_post,
-    pin_post,
-    unpin_post,
-    delete_post,
-    restore_post,
-    edit_post,
-    get_posts,
-    get_user_posts,
-    get_liked_posts,
-    get_stats
-)
-from itd.api.hashtags import get_posts_by_hashtag
-from itd.api.dwell import send_views, send_interactions
-from itd.base import ITDBaseModel, ITDList
-from itd.enums import PostsTab, UserPostSorting, ReportReason, ReportTargetType, ParseMode, ALL, ViewReason, ViewSource, InteractionType, LoadStatus
-from itd.exceptions import NotFoundError
-from itd.logger import get_logger
-from itd.utils import to_uuid, parse_datetime, format_attachments, ATTACHMENTS, parse_html, parse_md, calc_view_duration
+from itd.user import Me, User, _UserBase
+from itd.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_datetime, parse_html, parse_md, to_uuid
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -262,19 +262,22 @@ class Post(ITDBaseModel):
     vs: str = Field('')  # from 13.05 it is string token
 
     def __init__(self, id: str | UUID, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> None:
+        super().__init__(client)
+
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
-
-        super().__init__(client)
+        if not self.client.config.load_comments_from_post:
+            self.comments = Comments()
+            self.comments._post = self
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
 
     def _post_refresh(self):
         self.visible = False
-        self.comments = Comments()
-        self.comments._post_id = self.id
+        self.comments._post = self
+        self.comments._post_refresh()
         for attachment in self.attachments:
             attachment._post = self
 
@@ -611,7 +614,7 @@ class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have 
     @field_validator('comments', mode='plain')
     @classmethod
     def validate_comments(cls, comments: list[dict]):
-        return Comments(comments)
+        return Comments()._init_raw(comments)
 
     @field_validator('author', mode='plain')
     @classmethod

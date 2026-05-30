@@ -1,8 +1,8 @@
 from __future__ import annotations
-from uuid import UUID
-from typing import TYPE_CHECKING
 
-from itd.request import fetch_stream
+from typing import TYPE_CHECKING
+from uuid import UUID
+
 from itd.base import catch_errors, rate_limit
 from itd.exceptions import NotFoundError
 

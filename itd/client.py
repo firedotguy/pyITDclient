@@ -1,31 +1,30 @@
-from uuid import UUID
 from _io import BufferedReader
-from datetime import datetime
-from dataclasses import dataclass, field
 from atexit import register
-from time import sleep
+from dataclasses import dataclass, field
+from datetime import datetime
 from threading import Thread
+from time import sleep
 from typing import overload
+from uuid import UUID
 
 from requests import Session
-from requests.utils import default_user_agent
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
+from requests.utils import default_user_agent
 
 from itd._default import _default_client, set_default_client
-from itd.exceptions import InsufficientAuthLevelError, RateLimitError, InternalError, NotFoundError
-from itd.hashtag import Hashtag
-from itd.request import fetch, decode_jwt_payload, fetch_stream
-from itd.enums import RateLimitMode, All, DebugResponseMode, ParseMode, Batch, BATCH, UserAgent, AuthLevel
-from itd.user import Me, User
-from itd.post import DwellTracker, Post
-from itd.api.auth import refresh_token, change_password, logout
-from itd.api.search import search
+from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
+from itd.api.search import search
 from itd.api.users import get_follow_status
-from itd.utils import to_uuid, get_sdk_user_agent
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, UserAgent
+from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
+from itd.hashtag import Hashtag
 from itd.logger import get_logger
-
+from itd.post import DwellTracker, Post
+from itd.request import decode_jwt_payload, fetch, fetch_stream
+from itd.user import Me, User
+from itd.utils import get_sdk_user_agent, to_uuid
 
 l = get_logger('client')
 

@@ -8,3 +8,4 @@ class Span(BaseModel):
     offset: int
     type: SpanType
     url: str | None = None
+    tag: str | None = None
