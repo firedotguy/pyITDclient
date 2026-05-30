@@ -121,6 +121,14 @@ class Comment(ITDBaseModel):
             add_comment(client or instance.client, post.id, content, format_attachments(attachments)).json(), post, client=client or instance.client
         )
 
+    @property
+    def url(self):
+        return f'https://xn--d1ah4a.com/@{self._post.author.username}/post/{self._post.id}?comment={self.id}'
+
+    @property
+    def link(self):
+        return self.url
+
 
 class _CommentValidate(BaseModel, Comment):
     @field_validator('attachments', mode='plain')
