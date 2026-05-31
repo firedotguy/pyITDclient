@@ -1,4 +1,5 @@
 # itd-sdk
+[![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff)
 Клиент ITD для python  
 Документация (beta): https://itdsdk.qzz.io/docs
 

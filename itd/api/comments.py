@@ -1,9 +1,10 @@
 from __future__ import annotations
-from uuid import UUID
+
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from itd.base import catch_errors, rate_limit
-from itd.exceptions import ValidationError, NotFoundError, AlreadyDeletedError, BannedWordError, ForbiddenError, RequiresSubscriptionError
+from itd.exceptions import AlreadyDeletedError, BannedWordError, ForbiddenError, NotFoundError, RequiresSubscriptionError, ValidationError
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -62,5 +63,5 @@ def delete_comment(client: Client, comment_id: UUID):
 
 @rate_limit()
 @catch_errors(ValidationError(), NotFoundError('Comment'))
-def get_replies(client: Client, comment_id: UUID, page: int = 1, limit: int = 50, sort: str = 'oldest'):
-    return client.request('get', f'comments/{comment_id}/replies', {'page': page, 'limit': limit, 'sort': sort})
+def get_replies(client: Client, comment_id: UUID, page: int = 1, limit: int = 50):
+    return client.request('get', f'comments/{comment_id}/replies', {'page': page, 'limit': limit})
