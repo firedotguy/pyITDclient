@@ -1,41 +1,42 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, override
-from uuid import UUID
+
 from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from pydantic import Field, BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
+from itd.api.etc import get_who_to_follow
+from itd.api.pins import get_pins, remove_pin
+from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
+from itd.api.users import (
+    block,
+    delete_account,
+    follow,
+    get_blocked,
+    get_followers,
+    get_following,
+    get_privacy,
+    get_profile,
+    get_user,
+    restore_account,
+    unblock,
+    unfollow,
+    update_privacy,
+    update_profile
+)
 from itd.base import ITDBaseModel, ITDList
-from itd.enums import AccessType, Unset, Role, ReportReason, ReportTargetType, LoadStatus
+from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
+from itd.exceptions import AccountDeletedError, PinNotOwnedError
 from itd.pin import Pin
 from itd.poll import NewPoll
 from itd.report import Report
 from itd.span import Span
-from itd.exceptions import PinNotOwnedError, AccountDeletedError
-from itd.utils import to_uuid, ATTACHMENTS, parse_datetime
-from itd.api.etc import get_who_to_follow
-from itd.api.users import (
-    get_user,
-    follow,
-    unfollow,
-    block,
-    unblock,
-    get_followers,
-    get_following,
-    delete_account,
-    restore_account,
-    get_blocked,
-    get_privacy,
-    update_privacy,
-    update_profile,
-    get_profile
-)
-from itd.api.pins import get_pins, remove_pin
-from itd.api.subscription import get_subscription, pay_subscription, get_payment_methods, toggle_subscription_auto_renewal
+from itd.utils import ATTACHMENTS, parse_datetime, to_uuid
 
 if TYPE_CHECKING:
     from itd.client import Client
-    from itd.post import Post, UserPosts, LikedPosts
+    from itd.post import LikedPosts, Post, UserPosts
 
 
 class ProfileUser(BaseModel):
@@ -466,8 +467,10 @@ class Me(_UserBase):
         update_profile(self.client, self.bio, self.display_name, self.username)
 
     def remove_pin(self) -> None:
-        if object.__getattribute__(self, 'pin'):
-            self.pin.remove()  # pyright: ignore[reportOptionalMemberAccess]
+        if (
+            object.__getattribute__(self, 'pin') and self.pin
+        ):  # can be a bit strange for first look, but this prevent loading (itdbasemodel catches) and add rule for type checker
+            self.pin.remove()
         else:
             remove_pin(self.client)  # if pins not loaded just use straight call
 

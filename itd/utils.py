@@ -1,13 +1,13 @@
-from uuid import UUID
-from html.parser import HTMLParser
-from datetime import datetime
 import re
+from datetime import datetime
+from html.parser import HTMLParser
 from sys import version
 from typing import TYPE_CHECKING
+from uuid import UUID
 
+from itd.enums import AttachType, SpanType
+from itd.file import File, PostAttach
 from itd.span import Span
-from itd.file import PostAttach, File
-from itd.enums import SpanType, AttachType
 
 if TYPE_CHECKING:
     from itd.client import Config
@@ -50,7 +50,7 @@ def format_attachments(attachments: ATTACHMENTS = []) -> list[UUID]:
             if isinstance(attachment, File):
                 formatted.append(attachment.id)
             else:
-                formatted.append(to_uuid(attachment))
+                formatted.append(to_uuid(attachment))  # ty: ignore[invalid-argument-type]
         return formatted
     else:
         if isinstance(attachments, File):

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from datetime import datetime, timedelta
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-l = get_logger('base')
+l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -78,7 +79,7 @@ class ITDBaseModel:
 
     def _fill_from_data(self, data: dict):
         assert self._validator, 'Unable to use fill_from_data without a validator'
-        validated = self._validator().model_validate(data)  # pyright: ignore[reportCallIssue]
+        validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
         # self._loaded_attrs = validated.model_fields_set # значения автоматически добавляются через __setattr__
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
@@ -201,6 +202,7 @@ class ITDList(ITDBaseModel, list[T]):
 
     # --- ai end
 
+    @abstractmethod
     def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
     @staticmethod
@@ -249,16 +251,16 @@ class ITDList(ITDBaseModel, list[T]):
         return self.load(ALL, limit, client)
 
     @overload
-    def __getitem__(self, index: int) -> T: ...
+    def __getitem__(self, index: SupportsIndex) -> T: ...
 
     @overload
     def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: int | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, slice):
             value: int | None = index.stop
         else:
-            value = index
+            value = cast(int, index)
 
         if ((value is not None and value > len(self) - 1) or value is None) and self.client.config.load_on_getitem is not None:
             if value:

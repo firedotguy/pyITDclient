@@ -44,7 +44,7 @@ from itd.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse
 if TYPE_CHECKING:
     from itd.client import Client
 
-l = get_logger('post')
+l = get_logger('post')  # noqa: E741
 
 
 class DwellEvent(BaseModel):

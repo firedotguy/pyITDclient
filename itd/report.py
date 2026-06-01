@@ -1,13 +1,14 @@
 from __future__ import annotations
+
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
-from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from itd.api.reports import report
 from itd.base import ITDBaseModel
 from itd.enums import ReportReason, ReportTargetType
-from itd.api.reports import report
 
 if TYPE_CHECKING:
     from itd.client import Client

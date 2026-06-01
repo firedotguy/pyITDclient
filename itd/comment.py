@@ -41,7 +41,7 @@ class Comment(ITDBaseModel):
     _base_comment: Comment | None = None
 
     @classmethod
-    def from_dict(cls, data: dict, post: Post, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_dict(cls, data: dict, post: Post, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
         instance = super().from_dict(data, client=client)
         instance._post = post
         instance._base_comment = base_comment

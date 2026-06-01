@@ -26,7 +26,7 @@ from itd.request import decode_jwt_payload, fetch, fetch_stream
 from itd.user import Me, User
 from itd.utils import get_sdk_user_agent, to_uuid
 
-l = get_logger('client')
+l = get_logger('client')  # noqa: E741
 
 
 @dataclass
@@ -358,7 +358,7 @@ class Client:
                 if isinstance(user, User):
                     user_ids.append(user.id)
                 else:
-                    user_ids.append(to_uuid(user))
+                    user_ids.append(to_uuid(user))  # ty: ignore[invalid-argument-type]
         elif isinstance(users, User):
             user_ids = [users.id]
         else:
@@ -366,5 +366,5 @@ class Client:
 
         res = {UUID(k): v for k, v in get_follow_status(self, user_ids).json()['data'].items()}
         if not isinstance(users, list):
-            return list(res.values())[0]
+            return next(iter(res.values()))
         return res

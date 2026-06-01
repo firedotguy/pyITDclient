@@ -1,25 +1,26 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Literal, cast, Iterator
-from uuid import UUID
+
 from datetime import datetime
 from json import loads
 from threading import Thread
+from typing import TYPE_CHECKING, Iterator, Literal, cast
+from uuid import UUID
 
-from pydantic import Field, BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sseclient import SSEClient
 
+from itd.api.notifications import get_notifications, get_unread_notifications_count, mark_all_as_read, mark_as_read, stream_notifications
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
 from itd.enums import NotificationTargetType, NotificationType
-from itd.user import User
-from itd.api.notifications import mark_as_read, mark_all_as_read, get_notifications, get_unread_notifications_count, stream_notifications
 from itd.logger import get_logger
+from itd.user import User
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-l = get_logger('notifications')
+l = get_logger('notifications')  # noqa: E741
 
 
 class Notification(ITDBaseModel):

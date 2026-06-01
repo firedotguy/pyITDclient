@@ -1,5 +1,5 @@
-from typing import Callable
 from datetime import datetime
+from typing import Callable
 
 from requests import Response
 
