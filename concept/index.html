@@ -46,8 +46,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Iosevka+Charon:300,300i,400,400i,700,700i%7CCascadia+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Iosevka Charon";--md-code-font:"Cascadia Code"}</style>
       
     
     
@@ -1149,7 +1149,6 @@
 <h3 id="_4">Псевдокод</h3>
 <div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="p">(</span>
     <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># приватный аттрибут</span>
-    <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;client&#39;</span> <span class="ow">or</span>
     <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refreshable</span> <span class="ow">or</span> <span class="c1"># (1)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">auto_load</span> <span class="ow">or</span> <span class="c1"># (3)</span>
     <span class="nb">callable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">or</span> <span class="c1"># (2)</span>
@@ -1157,12 +1156,9 @@
 <span class="p">):</span>
     <span class="k">return</span> <span class="n">value</span>
 
-<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ITDBaseModel</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">_load_with_parent</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">_loaded</span><span class="p">):</span> <span class="c1"># тип - pydantic field или модель</span>
-    <span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;refresh </span><span class="si">%s</span><span class="s1"> (caused by </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
-    <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-
-<span class="k">return</span> <span class="n">value</span>
+<span class="n">l</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;refresh </span><span class="si">%s</span><span class="s1"> (caused by </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+<span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 </code></pre></div>
 <ol>
 <li>Пропуск необновляемых моделей, например уведомление (можно получить только из списка)</li>
@@ -1172,7 +1168,7 @@
 </ol>
 <h2 id="-_2">Авто-дозагрузка списков</h2>
 <p>Дозагрузка листов при итерации или получении индекса.<br />
-В базовой модели стоят методы <code>__getitem__</code> и <code>__next__</code>, перехватывающие попытку получения значения которого пока не существует.<br />
+В базовой модели стоит метод <code>__getitem__</code>, перехватывающие попытку получения значения которого пока не существует.<br />
 Можно выключить в конфиге (см. <a href="../config/#load_on_getitem-all-batchint-all-batch">load_on_getitem</a>)
 <div class="highlight"><pre><span></span><code><span class="n">posts</span> <span class="o">=</span> <span class="n">Posts</span><span class="p">()</span>
 <span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># равносильно posts.load(1)</span>
@@ -1181,7 +1177,7 @@
 </code></pre></div>
 После получения значения оно сохраняется, и при повторном получении индекса повторная загрузка не произойдет. Также и с итерацией - после ее окончания весь список будет загружен.</p>
 <h2 id="-_3">Авто-ожидание рейт лимитов</h2>
-<p>При ошибке <code>RateLimit</code> автоматически ожидает указанное время и повторяет запрос.</p>
+<p>При ошибке <code>RateLimitError</code> скрипт автоматически ожидает указанное время и повторяет запрос.</p>
 <h3 id="_5">Псевдокод</h3>
 <div class="highlight"><pre><span></span><code><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
@@ -1191,7 +1187,7 @@
         <span class="n">sleep</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">время_ожидания_из_API</span> <span class="ow">or</span> <span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
 <ol>
-<li>Если рейт-лимит на уровне метода, в ответе приходит необходимое время ожидания (<code>json['error']['retryAfter']</code>). Также бывает рейт-лимит на уровне всех запросов (скорее всего по IP), в таком случае отдает только {'error': 'Too Many Requests'}</li>
+<li>Если рейт-лимит на уровне метода, в ответе приходит необходимое время ожидания (<code>json['error']['retryAfter']</code>). Также бывает рейт-лимит на уровне всех запросов (скорее всего по IP), в таком случае отдает только <code>{'error': 'Too Many Requests'}</code></li>
 </ol>
 
 
