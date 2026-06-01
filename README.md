@@ -1,42 +1,54 @@
 # itd-sdk
+
 [![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff)
-Клиент ITD для python  
-Документация (beta): https://itdsdk.qzz.io/docs
+
+SDK для работы с [https://xn--d1ah4a.com](итд.com) на python.
+
+Документация: https://itdsdk.qzz.io/docs (wip)
 
 ## Установка
+
+```bash
+uv add itd-sdk
+```
+
+или через pip:
 
 ```bash
 pip install itd-sdk
 ```
 
-## Пример
+## Вход
 
-```python
-from itd import ITDClient, Me
+Сейчас есть 3 способа авторизации в SDK:
 
-c = ITDClient('token')
-print(Me())
-```
-<!--
-> [!NOTE]
-> Берите refresh_token из запроса /auth/refresh. В остальных запросах нету refresh_token
-> ![cookie](cookie-screen.png) -->
+1. Без авторизации. Доступен поиск и хэштэги.
+2. Авторизация через `access_token`. Доступны все запросы кроме тех, которые связаны с авторизацией. Токен действует 15 минут.
+3. Авторизация через `refresh_token`. Доступны все запросы. Токен действует 7 дней.
 
-### Получение cookies
-
-Для получения access_token требуются cookies с `refresh_token`. Как их получить:
+### Получение `refresh_token`
 
 1. Откройте [итд.com](https://xn--d1ah4a.com) в браузере
-2. Откройте DevTools (F12)
-3. Перейдите на вкладку **Network**
+2. Откройте DevTools (<kbd>F12</kbd>)
+3. Перейдите на вкладку **"Network"** \ **"Сеть"**
 4. Обновите страницу
-5. Найдите запрос к `/auth/refresh`
-6. Скопируйте значение **refresh_token** из **Cookie** из Request Headers
+5. Найдите запрос к `/v1/auth/refresh`
+6. Скопируйте значение **refresh_token** из **Cookies** \ **Куки**
 
-![cookie](cookie-screen.png)
+![token](get-rtoken.png)
 
+### Получение `access_token`
+
+1. Откройте [итд.com](https://xn--d1ah4a.com) в браузере
+2. Откройте DevTools (<kbd>F12</kbd>)
+3. Перейдите на вкладку **"Network"** \ **"Сеть"**
+4. Откройте любой запрос (если запросов нету, подождите 1-3сек - итд постоянно посылает запросы на обновление статистики постов)
+5. Скопируйте значение **authozation** из **Request headers** \ **Заголовки запроса**
+
+![token](get-atoken.png)
 
 ## API
+
 ```python
 from itd import Me, User, Post, Posts, File, Hashtag, Notifications
 
@@ -49,6 +61,7 @@ user.follow()
 post = Post('725681ba-2aaa-42d8-87fb-490c0f44e162') # получить пост
 post.like()
 post.add_comment('тест комент 6 7')
+Post('02bcbba4-f365-4b98-9291-d0bc1fb36fe4').poll.vote('тест') # голосования в опросах
 
 posts = Posts() # получить посты из ленты
 for i, post in enumerate(Posts()):
@@ -78,28 +91,15 @@ def on_like(notification):
     notifications.stop_stream()
 notifications.on_like = on_like
 stream = notifications.stream_bg() # background SSE
-
-Post('02bcbba4-f365-4b98-9291-d0bc1fb36fe4').poll.vote('тест') # голосования в опросах
-
 ```
 
-### Кастомные запросы
-
-```python
-from itd.request import fetch
-
-fetch(c, 'метод', 'эндпоинт', {'данные': 'данные'})
-```
-Из методов поддерживается `get`, `post`, `put` итд, которые есть в `requests`
-К названию эндпоинта добавляется домен итд и `api`, то есть в этом примере отправится `https://xn--d1ah4a.com/api/эндпоинт`.
-
-> [!NOTE]
-> `xn--d1ah4a.com` - punycode от "итд.com"
+Весь API - https://itdsdk.qzz.io/docs/
 
 ## Прочее
- - Лицезия: [MIT](./LICENSE)
- - Автор:
-   - ИТД: [@itd_sdk](https://xn--d1ah4a.com/@itd_sdk) или [@fdg](https://xn--d1ah4a.com/@pingbot)
-   - ТГ: [@desicars](https://t.me/desicars)
+
+- Лицезия: [MIT](./LICENSE)
+- Автор:
+    - ИТД: [@itd_sdk](https://xn--d1ah4a.com/@itd_sdk) или [@fdg](https://xn--d1ah4a.com/@pingbot)
+    - ТГ: [@desicars](https://t.me/desicars)
 
 [![Star History Chart](https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left)](https://www.star-history.com/?repos=itd-sdk%2Fitd-sdk&type=date&legend=top-left)
