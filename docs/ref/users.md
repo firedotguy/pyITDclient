@@ -1,4 +1,4 @@
-# :fontawesome-solid-user: Пользователь
+# :fontawesome-solid-user: User
 
 ## Аттрибуты
 #### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
@@ -321,8 +321,7 @@ is_succeed = user.complete_actions_for_likes_visibility()
 
 ---
 
-<a id="me"></a>
-# Текущий пользователь
+# Me
 
 ## Аттрибуты
 !!! note
@@ -371,7 +370,7 @@ Username.
 Приватный ли у вас аккаунт.
 
 #### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPhoneVerified</span></span>
-Верифицирован ли норме телефона (подтвережден через телеграм).
+Верифицирован ли номер телефона (подтвережден через телеграм).
 
 #### subscription <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-dollar:</span><span class="mdx-badge__text">Subscription</span></span>
 Данные о подписке. (см. [Subscription](#subscription))
@@ -532,21 +531,120 @@ me.set_pin(me.pins[0])
 ```py
 me.remove_pin()
 ```
+Если пин итак не установлен, ничего не произойдет.
 
 ---
 
-!!! warning "WIP"
-    Страница не доделана.
 
 # Subscription
-todo
+
+### Параметры
+#### active <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isActive</span></span>
+Активна ли подписка.
+
+#### expires_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">expiresAt</span></span>
+Дата истечения подписка. `None`, если подписка не активирована.
+
+#### auto_renewal <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
+Включено ли автопродление (сейчас вроде как не используется).
+
+!!! tip "Интересный факт"
+    Изначально в ИТД хотели сделать свою полноценную платежную систему (видно по тому, что в базе есть такие поля как номер банковской карты, CVC, срок годности и тд), но что-то не получилоь (наверное юридическое), и в итоге они просто сделали интеграцию с Юкасса, которая хэндлит все эти данные сама (в том числе auto renewal).
 
 ---
 
 # Pin
-todo
+
+### Параметры
+#### slug <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Слаг пина латиницей (например `epepuy_202605_78`).
+
+#### name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Название пина (например `78 баллов за написание Единственного Первого Экзамена по Ютубу`).
+
+#### description <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Ивент (например `ЕПЭПЮ 2026 (Май, 2026г)`).
+
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Ссылка на изображение пина.
+
+#### granted_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">grantedAt</span></span>
+Дата выдачи пина. Есть только при получении пинов из списка (`me.pins`).
+
+---
+
+## Установить
+```py
+pin.set()
+```
+
+---
+
+## Снять
+```py
+pin.remove()
+```
+Если этот пин итак не установлен, ничего не произойдет.
 
 ---
 
 # Profile
-todo
+
+### Параметры
+#### user <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[ProfileUser](#profileuser)</span></span>
+Данные о пользователе (похож на `Me`). `None`, если `deleted`, `profile_required` или `banned` == `True` или `authenticated` == `False`.
+
+#### authenticated <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Аутентифицирован ли пользователь.
+
+#### banned <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Забанен ли пользователь.
+
+#### deleted <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Удален ли пользователь.
+
+#### can_restore <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">canRestore</span></span>
+Можно ли восстановить аккаунт.
+
+#### message <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Если пользоатель удален, сообщение об ошибке `Your account has been deleted` (вроде бы при бане тоже используется).
+
+#### profile_required <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">profileRequired</span></span>
+Нужно ли создать профиль.
+
+#### user_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">userId</span></span>
+ID пользователя. `None`, если `authenticated` == `False` или `ProfileUser` == `None` (если есть `ProfileUser`, то надо брать из него).
+
+#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[Role]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
+Роли пользователя. `None`, если `ProfileUser` == `None` (если есть `ProfileUser`, то надо брать из него).
+
+ - `Role.USER`: Обычный пользователь
+ - `Role.ADMIN`: Администратор
+
+
+## ProfileUser
+
+### Параметры
+#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID пользователя.
+
+#### username <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Username.
+
+#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">displayName</span></span>
+Отображаемое имя пользователя.
+
+#### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Эмоджи-клан (аватар) пользователя.
+
+#### verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Верифицирован ли пользователь.
+
+#### bio <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Био пользователя. `None`, если био пустое.
+
+#### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPhoneVerified</span></span>
+Верифицирован ли номер телефона (подтвережден через телеграм).
+
+#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[Role]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
+Роли пользователя.

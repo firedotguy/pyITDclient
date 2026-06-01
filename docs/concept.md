@@ -41,7 +41,6 @@ post.content
 ```python
 if (
     name.startswith('_') or # приватный аттрибут
-    name == 'client' or
     not self._refreshable or # (1)
     self.client.config.auto_load or # (3)
     callable(value) or # (2)
@@ -49,12 +48,9 @@ if (
 ):
     return value
 
-if isinstance(value, FieldInfo) or (isinstance(value, ITDBaseModel) and value._load_with_parent and not value._loaded): # тип - pydantic field или модель
-    l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
-    self.refresh()
-    return object.__getattribute__(self, name)
-
-return value
+l.info('refresh %s (caused by %s)', self.__class__.__name__, name)
+self.refresh()
+return object.__getattribute__(self, name)
 ```
 
 1. Пропуск необновляемых моделей, например уведомление (можно получить только из списка)
@@ -64,7 +60,7 @@ return value
 
 ## Авто-дозагрузка списков
 Дозагрузка листов при итерации или получении индекса.  
-В базовой модели стоят методы `__getitem__` и `__next__`, перехватывающие попытку получения значения которого пока не существует.  
+В базовой модели стоит метод `__getitem__`, перехватывающие попытку получения значения которого пока не существует.  
 Можно выключить в конфиге (см. [load_on_getitem](config.md#load_on_getitem-all-batchint-all-batch))
 ```python
 posts = Posts()
@@ -75,7 +71,7 @@ for post in posts: # равносильно for post in posts.load_all():
 После получения значения оно сохраняется, и при повторном получении индекса повторная загрузка не произойдет. Также и с итерацией - после ее окончания весь список будет загружен.
 
 ## Авто-ожидание рейт лимитов
-При ошибке `RateLimit` автоматически ожидает указанное время и повторяет запрос.
+При ошибке `RateLimitError` скрипт автоматически ожидает указанное время и повторяет запрос.
 
 ### Псевдокод
 ```python
@@ -87,4 +83,4 @@ while True:
         sleep(e.время_ожидания_из_API or 10)
 ```
 
-1. Если рейт-лимит на уровне метода, в ответе приходит необходимое время ожидания (`json['error']['retryAfter']`). Также бывает рейт-лимит на уровне всех запросов (скорее всего по IP), в таком случае отдает только {'error': 'Too Many Requests'}
+1. Если рейт-лимит на уровне метода, в ответе приходит необходимое время ожидания (`json['error']['retryAfter']`). Также бывает рейт-лимит на уровне всех запросов (скорее всего по IP), в таком случае отдает только `{'error': 'Too Many Requests'}`

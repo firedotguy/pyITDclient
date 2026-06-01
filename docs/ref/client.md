@@ -16,7 +16,7 @@ Refresh токен.
 Access токен (JWT).
 
 #### config <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-gear:</span><span class="mdx-badge__text">ITDConfig</span></span>
-Конфиг (см. [параметры](../config.md)).
+[Конфиг](../config.md).
 
 ---
 
@@ -48,7 +48,7 @@ res = c.request(
 Файл для загрузке в формате `{'file': ('имя файла', 'содержание')}`
 
 #### level <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces:</span><span class="mdx-badge__text">dict</span></span>
-Требуемый уровень авторизации для запроса. По умолчанию AuthLevel.ACCESS.
+Требуемый уровень авторизации для запроса. По умолчанию `AuthLevel.ACCESS`.
 
 
 ### Ошибки
@@ -61,7 +61,7 @@ res = c.request(
 c.update_post_stats()
 ```
 Обновить статистики (лайки, комментарии, репосты итд) просмотров в зоне видимости.  
-Для добавления поста в зону видимости используйте `post.set_visible()` или `c.visible_posts.append(post)`
+Для добавления поста в зону видимости используйте `post.set_visible()`.
 
 ### Ошибки
  - `NotFoundError` - пост(ы) не найден(ы)
@@ -90,20 +90,23 @@ users, hashtags = c.search(
 ---
 
 ## Получить статус подписок
-```py
-is_following = c.get_follow_status('14040bb6-5359-455e-a9b6-86b033bc33be')
-```
-или
-```py
-follow_dict = c.get_follow_status(['549bf2fa-7648-43a7-97aa-b49e9baf5814', '2ddc1460-bdf2-4e5d-82f4-0eca0186bc91'])
-is_following1 = follow_dict['549bf2fa-7648-43a7-97aa-b49e9baf5814']
-is_following2 = follow_dict['2ddc1460-bdf2-4e5d-82f4-0eca0186bc91']
-```
+
+=== "один пользователь"
+    ```py
+    is_following = c.get_follow_status('14040bb6-5359-455e-a9b6-86b033bc33be')
+    ```
+
+=== "несколько пользователей"
+    ```py
+    follow_dict = c.get_follow_status(['549bf2fa-7648-43a7-97aa-b49e9baf5814', '2ddc1460-bdf2-4e5d-82f4-0eca0186bc91'])
+    is_following1 = follow_dict['549bf2fa-7648-43a7-97aa-b49e9baf5814']
+    is_following2 = follow_dict['2ddc1460-bdf2-4e5d-82f4-0eca0186bc91']
+    ```
 Проверить статус подписки на пользователей. В ответе выдается `dict[UUID, bool]` (если было запрошено несколько пользователей) или `bool` (если один).
 
 ### Параметры
 #### users <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets:[:material-identifier: | :fontawesome-solid-user:] | :material-identifier: | :fontawesome-solid-user:</span><span class="mdx-badge__text">list[UUID | User] | UUID | User</span></span>
-Пользователи для проверки.
+Пользователь(и) для проверки.
 
 
 ---
@@ -115,17 +118,17 @@ c.change_password(
     new='12345679'
 )
 ```
-!!! caution
+!!! warning
 
     После сброса пароля `refresh token` сбросится. Нужно входить заново.
 
 ### Параметры
 
-#### old <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span> <span class="mdx-badge__text">Required</span></span>
+#### old <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Старый пароль.
 
-#### new <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span> <span class="mdx-badge__text">Required</span></span>
-Новый пароль. 10+ символов, цифры, знаки пунктуации, латиница
+#### new <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+Новый пароль. 10+ символов, цифры, знаки пунктуации, латиница.
 
 ### Ошибки
  - `SamePasswordError` - пароли повторяются.
@@ -139,7 +142,7 @@ c.change_password(
 c.logout()
 ```
 
-!!! caution
+!!! warning
 
     После выхода `refresh token` сбросится. Нужно входить заново.
 
@@ -154,4 +157,3 @@ token = c.refresh_auth()
  - `SessionExpiredError` - рефреш токен истек (7 дней)
  - `SessionNotFoundError` - сессия не найдена (неправильный рефреш токен)
  - `SessionRevokedError` - сессия была ревокнута (выход из аккаунта)
-

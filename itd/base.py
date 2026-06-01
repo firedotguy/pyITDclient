@@ -310,7 +310,7 @@ def _filter_bytes(args: tuple):
     return filtered
 
 
-# user calls `Me` -> model calls `get_me` -> `catch_errors` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `catch_errors` -> `client.resuest` -> `fetch` -> token refreshed -> `catch_errors` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model # hell what the monster i did
+# user calls `Me` -> model calls `get_me` -> `catch_errors` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `catch_errors` -> `client.resuest` -> `fetch` -> token refreshed -> `catch_errors` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model
 def catch_errors(*exceptions: ITDException):
     """Декоратор для отлавливания ошибок
 
@@ -344,14 +344,11 @@ def catch_errors(*exceptions: ITDException):
                     (exception.res_check and exception.res_check(res))
                     or (exception.text_check and exception.text_check(res.text))
                     or (exception.json_check and exception.json_check(json))
-                    or exception.status_code is not None
-                    and res.status_code == exception.status_code
+                    or (exception.status_code is not None and res.status_code == exception.status_code)
                     or isinstance(json.get('error'), dict)
                     and (
-                        exception.code is not None
-                        and json['error'].get('code') == exception.code
-                        or exception.message is not None
-                        and json['error'].get('message') == exception.message
+                        (exception.code is not None and json['error'].get('code') == exception.code)
+                        or (exception.message is not None and json['error'].get('message') == exception.message)
                     )
                 ):
                     if isinstance(exception, ValidationError):

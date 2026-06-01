@@ -59,10 +59,11 @@ for notification in notifications.stream():
 ```py
 thread = notifications.stream_bg()
 ```
+Чтобы получать уведомления из фона, утсановите каллбэки.
 
 ---
 
-## Осатновка фонового стрима
+## Остановка фонового стрима
 ```py
 notifications.stop_stream()
 ```

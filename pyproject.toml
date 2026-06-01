@@ -64,6 +64,7 @@ dev = [
 [tool.ruff]
 line-length = 160
 ignore = ["COM", "D300", "E501"]
+exclude = ['.yaml']
 
 [tool.ruff.format]
 quote-style = "preserve"

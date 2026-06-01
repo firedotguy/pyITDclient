@@ -65,13 +65,14 @@ ITDClient('xxx', config=config)
     ```
 
 #### load_on_iter <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | ALL | BATCH</span><span class="mdx-badge__text">int | All | Batch</span></span>
-Количество загружаемых объектов при итерации списка (например `for post in Posts()`). По умолчанию `BATCH`. `All` - загрузить все. `Batch` - загрузить следующий батч (следующий по курсору). `None` - выключить авто загрузку.
+Количество загружаемых объектов при итерации списка (например `for post in Posts()`) Если вы итеририуете сразу весь список без `break`, то этот пратаметр особо не играет роли. По умолчанию `BATCH`. `All` - загружать все. `Batch` - загружать следующий батч. `None` - выключить авто загрузку.
 
 #### force_load_lists <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Загружать список, даже если `has_more = False`. Может уйти в бесконечный цикл при итерации. По умолчанию `False`.
 
 #### debug_response <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">DebugResponseMode</span></span>
 Режим показа сырых данных ответа API (response). Для работы должен быть установлен логгер с режимом `DEBUG`.
+
  - `DebugResponseMode.NO`: Не показывать ответ.
  - `DebugResponseMode.BEFORE`: Показывать ответ до обработки (сырой).
  - `DebugResponseMode.AFTER`: Показывать ответ после обработки (если при обработке возникла ошибка, ответ не выведется).
@@ -108,18 +109,8 @@ User-Agent, под которым обращатся к API ИТД. Если в�
  - `ParseMode.HTML`: HTML парсинг
 По умолчанию `ParseMode.NO`
 
-#### rate_limit_wait <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
-!!! danger "Deprecated"
-    Параметр будет удален в 2.4.0. Используйте [retry_delay](#retry_delay-float).
-Время ожидания при рейт-лимите.
-
-#### retry_on_rate_limits <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-!!! danger "Deprecated"
-    Параметр будет удален в 2.4.0. Используйте [retry_enabled](#retry_enabled-bool).
-Нужно ли ловить рейт-лимит и автоматически переотправлять вызванную функцию.
-
 #### retry_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию `True`
+Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию `True`.
 
 #### retry_delay <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка перед следующим повтором запроса.
@@ -128,7 +119,7 @@ User-Agent, под которым обращатся к API ИТД. Если в�
 Максимальное количество попыток повторов запроса. По умолчанию `None`. `None` - без лимита.
 
 #### retry_exceptions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-close-circle:</span><span class="mdx-badge__text">list[type[Exception]] | tuple[type[Exception]]</span></span>
-Список ошибок, при которых нужно повторить запрос. По умолчанию `RateLimitError`, `InternalError` и стандартные ошибки из `requests` (`RequestException`)
+Список ошибок, при которых нужно повторить запрос. По умолчанию `RateLimitError`, `InternalError` и стандартные ошибки из `requests` (`RequestException`).
 
 #### bypass_auth_level <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Bypass пре-валидации на проверку уровня авторизации. По умолчанию `False`.
@@ -158,13 +149,13 @@ Bypass пре-валидации на проверку уровня автори
 Отправлять ли несохраненные записи перед закрытием скрипта (делается через atexit). По умолчанию `True`.
 
 #### post_update_stats <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли обновлять статистику видимых постов. По умолчанию False.
+Нужно ли обновлять статистику видимых постов. По умолчанию `False`.
 
 #### post_update_stats_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Задержка между обнолвением статистики видимых постов. По умолчанию 3.
+Задержка между обнолвением статистики видимых постов. По умолчанию `3`.
 
 #### view_read_speed <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
-Скорость чтения (в WPM). Используется для более правдоподобного времени просмотра поста.
+Скорость чтения (в WPM). Используется для более правдоподобного времени просмотра поста. По умолчанию `250`.
 
 #### view_images_speed <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
-Скорость понимания картинок. Используется для более правдоподобного времени просмотра поста.
+Скорость понимания картинок. Используется для более правдоподобного времени просмотра поста. По умолчанию `130`.

@@ -46,8 +46,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Iosevka+Charon:300,300i,400,400i,700,700i%7CCascadia+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Iosevka Charon";--md-code-font:"Cascadia Code"}</style>
       
     
     
@@ -1587,14 +1587,14 @@
     <div class="doc doc-contents ">
 
         <p>Парсит markdown, извлекает чистый текст и spans с форматированием.</p>
-<p><strong>жирный</strong>, <em>курсив</em>, ~~зачёркнутый~~, <strong>подчёркнутый</strong>, <code>моноширный</code>, ||спойлер||, &gt;цитата&gt;</p>
+<p><strong>жирный</strong>, <em>курсив</em>, <del>зачёркнутый</del>, <strong>подчёркнутый</strong>, <code>моноширный</code>, ||спойлер||, &gt;цитата&gt;</p>
 <p>Теги могут пересекаться, например: __111<em>1234__32342</em></p>
 <p>Теги могут быть вложенными: <strong>1231<em>1323</em></strong></p>
 <p><code>[текст ссылки](url)</code></p>
 <p>Внутри ссылки остальные теги не парсятся</p>
 <p>Если url пустой, на его место будет поставлен текст ссылки, то есть:</p>
 <p><code>[текст ссылки]() = [текст ссылки](текст ссылки)</code></p>
-<p>используйте \ для экранирования символов</p>
+<p>используйте  для экранирования символов</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
