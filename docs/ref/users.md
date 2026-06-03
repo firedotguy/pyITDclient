@@ -7,10 +7,10 @@ ID пользователя.
 #### username <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Username.
 
-#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">displayName</span></span>
+#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Отображаемое имя пользователя.
 
-#### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+#### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-emoticon:</span><span class="mdx-badge__text">str</span></span>
 Эмоджи-клан (аватар) пользователя.
 
 #### verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
@@ -23,65 +23,60 @@ Username.
 Ссылка на баннер пользователя. `None`, если баннер не установлен.
 
 #### bio <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Био пользователя. `None`, если он не задал описание или аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+Био пользователя. `None`, если он не задал описание или [аккаунт приватный](#is_private-bool).
 
 !!! note
-    Если пользователь поставит в био пробел (`" "`), то значение будет `""` (хотя если бы он оставил поле пустое, то значение было бы `None`)
+    Если пользователь поставит в био пробел (`" "`), то значение будет `""` (хотя если бы он оставил поле пустое, то значение было бы `None`).
 
 #### followers <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">list[User]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Статичный список подписчиков. Максимальная длина - `20`, отсортирован по дате подписки (первые 20 подписавшихся). Если еще не загружен, автоматически подгрузится. Пустой список, если пользователь заблокирован или аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+Статичный список подписчиков. Максимальная длина - `20`, отсортирован по дате подписки (первые 20 подписавшихся). Если еще не загружен, автоматически подгрузится. Пустой список, если пользователь заблокирован или [аккаунт приватный](#is_private-bool).
 
 #### following <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">list[User]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Статичный список подписок (на кого подписан пользователь). Максимальная длина - `20`, отсортирован по дате подписки (первые 20 подписок). Если еще не загружен, автоматически подгрузится. Пустой список, если пользователь заблокирован или аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+Статичный список подписок (на кого подписан пользователь). Максимальная длина - `20`, отсортирован по дате подписки (первые 20 подписок). Если еще не загружен, автоматически подгрузится. Пустой список, если [пользователь заблокирован](#is_blocked_by-bool) или [аккаунт приватный](#is_private-bool).
 
-#### is_following <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isFollowing</span></span>
-Подписаны ли вы на пользователя. Автоматически изменяется при [`follow()`](#follow)/[`unfollow()`](#unfollow).
+#### is_following <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Подписаны ли вы на пользователя. Автоматически изменяется при [`user.follow()`](#follow)/[`user.unfollow()`](#unfollow).
 
-#### is_followed_by <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isFollowedBy</span></span>
+#### is_followed_by <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Подписаны ли пользователь на вас.
 
-#### is_blocking <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isBlocking</span></span>
-Заблокировали ли вы пользователя. Автоматически изменяется при `user.block()`/`user.unblock()`.
+#### is_blocking <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Заблокировали ли вы пользователя. Автоматически изменяется при [`user.block()`](#block)/[`user.unblock()`](#unblock).
 
-#### is_blocked_by <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isBlockedBy</span></span>
+#### is_blocked_by <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Заблокировал ли вас пользователь.
 
 !!! info
-    Если [`is_blocking`](#is_blocking-bool-aliasisblocking) или [`is_blocked_by`](#is_blocked_by-bool-aliasisblockedby) == `True`, то большинство данных (такие как `bio`, `followers`, `posts`, `created_at` и тд) будут `None`.
+    Если [`is_blocking`](#is_blocking-bool) или [`is_blocked_by`](#is_blocked_by-bool) == `True`, то большинство данных (такие как `bio`, `followers`, `posts`, `created_at` и тд) будут `None`.
 
-#### blocked_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">blockedAt</span></span>
-Дата блокировки. Известна только когда [`is_blocking`](#is_blocking-bool-aliasisblocking) == `True`.
+#### blocked_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
+Дата блокировки. Известна только когда [вы заблокировали пользователя](#is_blocking-bool). `None`, если пользователь заблокировал вас (а не вы его) или никто не блокировал друг друга.
 
-#### followers_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">followersCount</span></span>
-Количество подписчиков (отличается от `len([followers](#followers-list-user))`, так как самих пользователей показывает только первые 20шт). `None`, если аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+#### followers_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество подписчиков (отличается от `len([followers](#followers-list-user))`, так как самих пользователей показывает только первые 20шт). `None`, если [аккаунт приватный](#is_private-bool).
 
-#### following_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">followingCount</span></span>
-Количество подписок (отличается от `len([following](#following-list-user))`, так как самих пользователей показывает только первые 20шт). `None`, если аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+#### following_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество подписок (отличается от `len([following](#following-list-user))`, так как самих пользователей показывает только первые 20шт). `None`, если [аккаунт приватный](#is_private-bool).
 
-#### posts_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">postsCount</span></span>
-Количество постов. `None`, если аккаунт приватный (см. [is_private](#is_private-bool-aliasisprivate)).
+#### posts_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество постов. `None`, если [аккаунт приватный](#is_private-bool)).
 
-#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">wallAccess</span></span>
-Доступ к созданию постов на стене пользователя. `None`, если пользователь заблокирован.
+#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
+Доступ к созданию постов на стене пользователя. `None`, если [пользователь заблокирован](#is_blocked_by-bool).
 
- - `AccessType.NOBODY` - никто
- - `AccessType.MUTUAL` - взаимные подписки (вы подписаны на пользователя и он подписан на вас)
- - `AccessType.FOLLOWERS` - подписчики
- - `AccessType.EVERYONE` - все
+#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
+Доступ к лайкнутым постам пользователя. `None`, если [пользователь заблокирован](#is_blocked_by-bool).
 
-#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">likesVisibility</span></span>
-Доступ к лайкнутым постам пользователя. `None`, если пользователь заблокирован.
-
-#### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPrivate</span></span>
-Приватный ли аккаунт пользователя. `None`, если вы подписаны на пользователя (при подписке ограничения приватности пропадают).
+#### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Приватный ли аккаунт пользователя. `None`, если вы подписаны на пользователя (при подписке ограничения приватности пропадают, и нельзя узнать, приватный вообще пользователь или нет).
 
 !!! info
     Если `is_private` == `True`, то большинство данных (такие как `bio`, `followers`, `posts`, `created_at` и тд) будут `None`. Для получения реальных значений нужно [подписаться на пользователя](#follow).
 
-#### is_subscribed <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">hasNuksta</span></span>
+#### is_subscribed <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Есть ли у пользователя подписка ИТД НУСКТА.
 
-#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: | :material-calendar:</span><span class="mdx-badge__text">dict | datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">lastSeen</span></span>
+#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: | :material-calendar:</span><span class="mdx-badge__text">dict | datetime</span></span>
 Дата последней активности. Может быть как и точным временем `datetime`, так и относительным `dict` (`недавно`, `несколько минут назад` и тд). Пока точно неизвестны все возможные значения. `None`, если пользователь заблокирован, приватный аккаунт или показ скрыт в настройках приватности пользователя.  
 Примерная структура словаря:
 ```json
@@ -107,19 +102,17 @@ Username.
 #### online <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Находится ли пользователь в онлайне.
 
-#### pinned_post_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">pinnedPostId</span></span>
+#### pinned_post_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
 ID закрепленного поста. `None`, если у пользователя нет закрепа.
 
-#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">createdAt</span></span>
+#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата создания аккаунта. `None`, если пользователь заблокирован или у него приватный аккаунт.
 
-#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">UserPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
-Список постов. (см. [UserPosts](posts.md/#userposts))
+#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[UserPosts](posts.md#userposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+Список постов.
 
-#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">LikedPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
-Список лайкнутых постов. (см. [LikedPosts](posts.md/#likedposts))
-
----
+#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+Список лайкнутых постов.
 
 ## Получить пользователя
 ```python
@@ -161,8 +154,6 @@ Username или ID пользователя.
 !!! note
     Для проверки на существование (`NotFoundError`) вызовите [`user.refresh()`](#_9) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
 
----
-
 ## :octicons-report-16: Пожаловаться
 ```py
 report = user.report(
@@ -173,15 +164,8 @@ report = user.report(
 Пожаловаться на пользователя.
 
 ### Параметры
-#### reason <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-report-16:</span><span class="mdx-badge__text">ReportReason</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+#### reason <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-report-16:</span><span class="mdx-badge__text">[ReportReason](enums.md#reportreason)</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Причина жалобы.
-
- - `ReportReason.SPAM`: Спам или нежелательный контент
- - `ReportReason.VIOLENCE`: Насилие или опасные действия
- - `ReportReason.HATE`: Ненависть или травля
- - `ReportReason.ADULT`: Контент для взрослых (18+)
- - `ReportReason.FRAUD`: Дезинформация или обман
- - `ReportReason.OTHER`: Другое
 
 #### description <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Описание жалобы.
@@ -191,9 +175,7 @@ report = user.report(
  - `AlreadyReportedError` - вы уже оставляли жалобу на этого пользователя.
  - `ValidationError` - ошибка валидации (слишком длинное описание).
 
----
-
-<a id="follow"></a>
+ <a id="follow"></a>
 ## :fontawesome-solid-user-plus: Подписаться
 ```py
 followers_count = user.follow()
@@ -208,8 +190,6 @@ followers_count = user.follow()
  - `UserBlockedError` - пользователь заблокирован (или вы заблокировали его).
  - `TargetUserBannedError` - пользователь забанен.
 
----
-
 <a id="unfollow"></a>
 ## :fontawesome-solid-user-minus: Отписаться
 ```py
@@ -222,8 +202,7 @@ followers_count = user.unfollow()
  - `TooLargeError` - слишком длинный юзернейм.
  - `TargetUserBannedError` - пользователь забанен.
 
----
-
+<a id="block"></a>
 ## :material-block-helper: Заблокировать
 ```py
 user.block()
@@ -238,9 +217,7 @@ user.block()
  - `CantBlockYourselfError` - нельзя заблокировать самого себя.
  - `TargetUserBannedError` - пользователь забанен.
 
----
-
-<a id="unblock"></a>
+ <a id="unblock"></a>
 ## Разблокировать
 ```py
 user.unblock()
@@ -251,8 +228,6 @@ user.unblock()
  - `TooLargeError` - слишком длинный юзернейм.
  - `NotBlockedError` - пользователь итак не заблокирован.
  - `TargetUserBannedError` - пользователь забанен.
-
----
 
 ## :material-post: Пост на стене
 ```py
@@ -292,8 +267,6 @@ user.post(
  - `RequiresSubscriptionError` - для публикации видео нужна верификация или НУКСТА.
  - `BannedWordError` - в посте содержатся [запрещенные слова](https://itdsdk.qzz.io/banned-words).
 
----
-
 ## :material-refresh: Обновить
 ```python
 user.refresh()
@@ -305,14 +278,10 @@ user.refresh()
  - `NotFoundError` (`Profile`) - профиль не найден (пользователь только привязал почту, но еще не добавил эмоджи клан и имя)
  - `TargetUserBannedError` - пользователь забанен.
 
----
-
 ## Выполнить действия для постов на стену
 ```py
 is_succeed = user.complete_actions_for_wall_access()
 ```
-
----
 
 ## Выполнить действия для просмотра лайков
 ```py
@@ -333,7 +302,7 @@ ID пользователя.
 #### username <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Username.
 
-#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">displayName</span></span>
+#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Отображаемое имя пользователя.
 
 #### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
@@ -351,55 +320,62 @@ Username.
 #### bio <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Био пользователя. `None`, если био пустое.
 
-#### followers_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">followersCount</span></span>
+#### followers_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Количество подписчиков.
 
-#### following_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">followingCount</span></span>
+#### following_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Количество подписок.
 
-#### posts_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">postsCount</span></span>
+#### posts_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Количество постов.
 
-#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">wallAccess</span></span>
+#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
 Доступ к созданию постов на вашей стене.
 
-#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">likesVisibility</span></span>
+#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
 Доступ к лайкнутым постам.
 
-#### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPrivate</span></span>
+#### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Приватный ли у вас аккаунт.
 
-#### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPhoneVerified</span></span>
+#### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Верифицирован ли номер телефона (подтвережден через телеграм).
 
-#### subscription <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-dollar:</span><span class="mdx-badge__text">Subscription</span></span>
-Данные о подписке. (см. [Subscription](#subscription))
+#### subscription <span class="mdx-badge"><span class="mdx-badge__icon">:material-diamond:</span><span class="mdx-badge__text">[Subscription](#subscription)</span></span>
+Данные о подписке.
 
-#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">createdAt</span></span>
+#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата создания аккаунта.
 
-#### followers <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Followers</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
+#### followers <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Followers</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
 Список подписчиков.
 
-#### following <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Following</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
+#### following <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Following</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
 Список подписок.
 
-#### blocked <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Blocked</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
+#### blocked <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Blocked</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
 Список заблокированных пользователей.
 
-#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">UserPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
-Список постов. (см. [UserPosts](posts.md/#userposts))
+#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">UserPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+Список постов.
 
-#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">LikedPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <a href="../base#itdlist"><span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">ITDList</span></span></a>
-Список лайкнутых постов. (см. [LikedPosts](posts.md/#likedposts))
+#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+Список лайкнутых постов.
 
-#### pins <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-pin:</span><span class="mdx-badge__text">list[Pin]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Список пинов. (см. [Pin](#pin))
+#### pins <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-pin:</span><span class="mdx-badge__text">list[[Pin](#pin)]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Список пинов.
 
-#### profile <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">Profile</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Профиль пользователя (чем-то похож на сам `Me`, но берется отдельным зарпосом `/api/profile`). (см. [`Profile`](#profile))
+#### profile <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[Profile](#profile)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Профиль пользователя (чем-то похож на сам `Me`, но берется отдельным зарпосом `/api/profile`).
 
----
+#### privacy <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[Privacy](#privacy)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Данные приватности пользователя.
+
+## Конвертировать в User
+```py
+user = me.to_user()
+```
+В ответ отдает [`User`](#user).
 
 ## :fontawesome-solid-user-edit: Обновить профиль
 ```python
@@ -449,8 +425,6 @@ ID баннера (должен быть загружен через `upload_fil
  - `RequiresVerificationError` - требуется верификация для загрузки GIF-баннера.
  - `UsernameTakenError` - username уже занят.
 
----
-
 ## :fontawesome-solid-user-lock: Обновить настройки приватности
 ```python
 from itd.models.user import UserPrivacyData
@@ -468,10 +442,10 @@ privacy = me.update_privacy(
 #### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Приватный профиль. Посты не будут попадать в ленту, профиль будет виден только для подписчиков.
 
-#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span>
+#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
 Доступ к стене.
 
-#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">AccessType</span></span>
+#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
 Доступ к лайкнутым постам.
 
 #### show_last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
@@ -479,8 +453,6 @@ privacy = me.update_privacy(
 
 ### Ошибки
  - `ValidationError` (скорее всего ошибка в sdk)
-
----
 
 ## :material-delete: Удалить аккаунт
 ```python
@@ -497,8 +469,6 @@ me.delete()
 ### Ошибки
  - `AlreadyDeletedError` - аккаунт уже удален.
 
----
-
 ## :material-delete-off: Восстановить аккаунт
 ```python
 me.restore()
@@ -509,8 +479,6 @@ me.restore()
 
 !!! note
     Здесь также должна быть ошибка, что уже слишком поздно, но к сожалению у меня нет дополнительного аккаунта для удаления, чтобы посмотреть как она называется 🫤.
-
----
 
 ## :material-pin: Установить пин
 ```py
@@ -525,8 +493,6 @@ me.set_pin(me.pins[0])
  - `ValueError` - список пинов пустой (если pin is None).
  - `PinNotOwnedError` - пин не принадлежит вам.
 
----
-
 ## :material-pin-off: Снять пин
 ```py
 me.remove_pin()
@@ -535,27 +501,46 @@ me.remove_pin()
 
 ---
 
+# :material-diamond: Subscription
 
-# Subscription
-
-### Параметры
-#### active <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isActive</span></span>
+### Аттрибуты
+#### active <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Активна ли подписка.
 
-#### expires_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">expiresAt</span></span>
+#### expires_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата истечения подписка. `None`, если подписка не активирована.
 
-#### auto_renewal <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
+#### auto_renewal <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Включено ли автопродление (сейчас вроде как не используется).
 
 !!! tip "Интересный факт"
-    Изначально в ИТД хотели сделать свою полноценную платежную систему (видно по тому, что в базе есть такие поля как номер банковской карты, CVC, срок годности и тд), но что-то не получилоь (наверное юридическое), и в итоге они просто сделали интеграцию с Юкасса, которая хэндлит все эти данные сама (в том числе auto renewal).
+    Изначально в ИТД хотели сделать свою полноценную платежную систему (видно по тому, что в базе есть такие поля как номер банковской карты, CVC, срок годности и тд), но что-то не получилось (наверное юридическое), и в итоге они просто сделали интеграцию с Юкасса, которая хэндлит все эти данные сама (в том числе auto renewal). Поэтому auto_renewal сейчас ничего не делает, а также он убран с фронтенда.
+
+## :material-credit-card: Оплатить попдиску
+```py
+link = subscription.pay()
+```
+В ответ приходит ссылка на оплату.
+
+## :material-autorenew: Установить значение авто-проделния
+```py
+enabled = subscription.set_auto_renewal(True)
+```
+
+### Параметры
+#### enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Значение авто-продления.
+
+## :material-autorenew: Переключить авто-продление
+```py
+enabled = subscription.toggle_auto_renewal()
+```
 
 ---
 
-# Pin
+# :material-pin: Pin
 
-### Параметры
+### Аттрибуты
 #### slug <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Слаг пина латиницей (например `epepuy_202605_78`).
 
@@ -568,17 +553,13 @@ me.remove_pin()
 #### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Ссылка на изображение пина.
 
-#### granted_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">grantedAt</span></span>
+#### granted_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата выдачи пина. Есть только при получении пинов из списка (`me.pins`).
-
----
 
 ## Установить
 ```py
 pin.set()
 ```
-
----
 
 ## Снять
 ```py
@@ -588,9 +569,9 @@ pin.remove()
 
 ---
 
-# Profile
+# :fontawesome-solid-user: Profile
 
-### Параметры
+### Аттрибуты
 #### user <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[ProfileUser](#profileuser)</span></span>
 Данные о пользователе (похож на `Me`). `None`, если `deleted`, `profile_required` или `banned` == `True` или `authenticated` == `False`.
 
@@ -603,35 +584,33 @@ pin.remove()
 #### deleted <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Удален ли пользователь.
 
-#### can_restore <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">canRestore</span></span>
+#### can_restore <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Можно ли восстановить аккаунт.
 
 #### message <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Если пользоатель удален, сообщение об ошибке `Your account has been deleted` (вроде бы при бане тоже используется).
 
-#### profile_required <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">profileRequired</span></span>
+#### profile_required <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли создать профиль.
 
-#### user_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">userId</span></span>
-ID пользователя. `None`, если `authenticated` == `False` или `ProfileUser` == `None` (если есть `ProfileUser`, то надо брать из него).
+#### user_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID пользователя. `None`, если `authenticated` == `False` или `ProfileUser` != `None` (если есть `ProfileUser`, то надо брать из него).
 
-#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[Role]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
-Роли пользователя. `None`, если `ProfileUser` == `None` (если есть `ProfileUser`, то надо брать из него).
+#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[[Role](enums.md#role)]</span></span>
+Роли пользователя. `None`, если `ProfileUser` != `None` (если есть `ProfileUser`, то надо брать из него).
 
- - `Role.USER`: Обычный пользователь
- - `Role.ADMIN`: Администратор
-
+---
 
 ## ProfileUser
 
-### Параметры
+### Аттрибуты
 #### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
 ID пользователя.
 
 #### username <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Username.
 
-#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">displayName</span></span>
+#### display_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Отображаемое имя пользователя.
 
 #### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
@@ -643,8 +622,8 @@ Username.
 #### bio <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Био пользователя. `None`, если био пустое.
 
-#### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">isPhoneVerified</span></span>
+#### is_phone_verified <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Верифицирован ли номер телефона (подтвережден через телеграм).
 
-#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[Role]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">alias</span><span class="mdx-badge__text">autoRenewal</span></span>
+#### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[[Role](enums.md#role)]</span></span>
 Роли пользователя.

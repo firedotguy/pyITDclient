@@ -1,13 +1,11 @@
 # ITDBaseModel
-Каждая модель наследуется от `ITDBaseModel`
+Каждая модель наследуется от `ITDBaseModel`.
 
 ### Аттрибуты
 #### client <span class="mdx-badge"><span class="mdx-badge__icon">client</span><span class="mdx-badge__text">Client</span></span>
 Установленный по умолчанию клиент.
 
 Почти ко всем функциям можно передать `client` как именованный параметр. Если он не задан, берется дефолтный `self.client`.
-
----
 
 <a id="refresh"></a>
 ## Обновить
@@ -17,8 +15,6 @@ base.refresh()
 
 ### Ошибки
  - `NotFoundError` - объект не найден
-
----
 
 ## ITDlist
 Каждый список с пагинацией наследуется от `ITDlist` (например `Posts`, `Followers`, `Comments` и тд).
@@ -36,8 +32,6 @@ base.refresh()
 #### cursor <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | :material-text: | :material-calendar: | None</span><span class="mdx-badge__text">int | str | datetime | None</span></span>
 Следующий курсор (или страница). Тип зависит от модели (например у `LikedPosts` - `datetime`). По умолчанию обычно `0` или `None`.
 
----
-
 ## Перезагрузить
 ```py
 objects = base.refresh(
@@ -52,9 +46,7 @@ objects = base.refresh(
 Количество объектов для загрузки. По умолчанию количество текущих объектов.
 
 #### limit <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | Batch</span><span class="mdx-badge__text">int | BATCH</span></span>
-Лимит получения за раз. По умолчанию BATCH (один батч, у каждого списка он свой).
-
----
+Лимит получения за раз. По умолчанию `BATCH` (один батч, у каждого списка он свой).
 
 ## Загрузить
 ```py
@@ -67,12 +59,10 @@ new_objects = base.load(
 
 ### Параметры
 #### count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | Batch | All</span><span class="mdx-badge__text">int | BATCH | ALL</span></span>
-Количество объектов для загрузки. По умолчанию BATCH.
+Количество объектов для загрузки. По умолчанию `BATCH`.
 
 #### limit <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | Batch</span><span class="mdx-badge__text">int | BATCH</span></span>
-Лимит получения за раз. По умолчанию BATCH.
-
----
+Лимит получения за раз. По умолчанию `BATCH`.
 
 ## Загрузить все
 ```py
@@ -83,4 +73,4 @@ new_objects = base.load_all(
 Загрузить все доступные объекты. Тоже самое, что и `base.load(ALL)`
 
 #### limit <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | Batch</span><span class="mdx-badge__text">int | BATCH</span></span>
-Лимит получения за раз. По умолчанию BATCH.
+Лимит получения за раз. По умолчанию `BATCH`.

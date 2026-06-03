@@ -12,13 +12,8 @@ ITDClient('xxx', config=config)
 
 ## Параметры
 
-#### rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">RateLimitMode</span></span>
+#### rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[RateLimitMode](ref/enums.md#ratelimitmode)</span></span>
 Устанавливает дефолтные значения задержек.
-
- - `RateLmitMode.NO`: 0 сек - для простых скриптов
- - `RateLimitMode.MIN`: Небольшие задержки (0 сек для обычных запросов) - для кастомных клиентов или маленьких скриптов
- - `RateLimitMode.MID`: Средние задержки (0.2 сек для обычных запросов) - для обычных скриптов
- - `RateLimitMode.MAX`: Большие задержки (0.4 сек для обычных запросов) - для больших ботов, парсеров
 <!-- Также планируется режим `SMART`, который будет выставлять динамическую задержку (например при первых трех комментариях не делать задержку). -->
 По умолчанию `RateLimitMode.MID`.
 
@@ -70,13 +65,9 @@ ITDClient('xxx', config=config)
 #### force_load_lists <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Загружать список, даже если `has_more = False`. Может уйти в бесконечный цикл при итерации. По умолчанию `False`.
 
-#### debug_response <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">DebugResponseMode</span></span>
+#### debug_response <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[DebugResponseMode](ref/enums.md#debugresponsemode)</span></span>
 Режим показа сырых данных ответа API (response). Для работы должен быть установлен логгер с режимом `DEBUG`.
 
- - `DebugResponseMode.NO`: Не показывать ответ.
- - `DebugResponseMode.BEFORE`: Показывать ответ до обработки (сырой).
- - `DebugResponseMode.AFTER`: Показывать ответ после обработки (если при обработке возникла ошибка, ответ не выведется).
- - `DebugResponseMode.KEYS`: Показывать только ключи ответа (после обработки).
 !!! warning
     Может раскрыть ваши ключи (при `refresh_auth` в терминале будет виден `access_token`)
 По умолчанию `DebugResponseMode.NO`.
@@ -102,12 +93,8 @@ User-Agent, под которым обращатся к API ИТД. Если в�
 #### load_comments_from_post <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли брать комментарии из уже полученного поста (ИТД дает 3-4 комментария при получении поста). При загрузке следующего батча комментарии могут дублироваться. По умолчанию `False`.
 
-#### parse_mode <span class="mdx-badge"><span class="mdx-badge__icon">:simple-markdown:</span><span class="mdx-badge__text">ParseMode</span></span>
-Режим парсинга (автоматически генерирует `spans` при создании или редоктаировании постов).
- - `ParseMode.NO`: Выключить парсинг
- - `ParseMode.MARKDOWN`: Markdown парсинг
- - `ParseMode.HTML`: HTML парсинг
-По умолчанию `ParseMode.NO`
+#### parse_mode <span class="mdx-badge"><span class="mdx-badge__icon">:simple-markdown:</span><span class="mdx-badge__text">[ParseMode](ref/enums.md#parsemode)</span></span>
+Режим парсинга (автоматически генерирует `spans` при создании или редактировании постов). По умолчанию `ParseMode.NO`.
 
 #### retry_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию `True`.

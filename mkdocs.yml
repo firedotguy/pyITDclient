@@ -47,6 +47,7 @@ nav:
         - Посты: ref/posts.md
         - Пользователи: ref/users.md
         - Уведомления: ref/notifications.md
+        - ref/enums.md
         - WIP: ref/wip.md
     - API:
         - api/client.md

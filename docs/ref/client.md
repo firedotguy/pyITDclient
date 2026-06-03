@@ -1,4 +1,4 @@
-# Клиент
+# ITDClient
 
 ```py
 c = ITDClient(
@@ -17,8 +17,6 @@ Access токен (JWT).
 
 #### config <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-gear:</span><span class="mdx-badge__text">ITDConfig</span></span>
 [Конфиг](../config.md).
-
----
 
 ## Сделать запрос
 ```py
@@ -47,14 +45,12 @@ res = c.request(
 #### files <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: [:material-text:, :material-code-parentheses:] :material-file:</span><span class="mdx-badge__text">dict[str, tuple[str, BufferedReader | bytes]]</span></span>
 Файл для загрузке в формате `{'file': ('имя файла', 'содержание')}`
 
-#### level <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces:</span><span class="mdx-badge__text">dict</span></span>
+#### level <span class="mdx-badge"><span class="mdx-badge__icon">:material-select-form:</span><span class="mdx-badge__text">[AuthLevel](enums.md#authlevel)</span></span>
 Требуемый уровень авторизации для запроса. По умолчанию `AuthLevel.ACCESS`.
 
 
 ### Ошибки
  - `InsufficientAuthLevelError` - недостаточный уровень авторизации
-
----
 
 ## Обновить статистики постов
 ```py
@@ -65,8 +61,6 @@ c.update_post_stats()
 
 ### Ошибки
  - `NotFoundError` - пост(ы) не найден(ы)
-
----
 
 ## Поиск
 ```py
@@ -87,8 +81,6 @@ users, hashtags = c.search(
 #### users_limit <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Лимит пользователей (от 1 до 20).
 
----
-
 ## Получить статус подписок
 
 === "один пользователь"
@@ -108,8 +100,6 @@ users, hashtags = c.search(
 #### users <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets:[:material-identifier: | :fontawesome-solid-user:] | :material-identifier: | :fontawesome-solid-user:</span><span class="mdx-badge__text">list[UUID | User] | UUID | User</span></span>
 Пользователь(и) для проверки.
 
-
----
 
 ## Изменить пароль
 ```python
@@ -135,8 +125,6 @@ c.change_password(
  - `InvalidOldPasswordError` - старый пароль неверный.
  - `InvalidPasswordError` - пароль не соответствует требованиям.
 
----
-
 ## Выйти
 ```python
 c.logout()
@@ -145,8 +133,6 @@ c.logout()
 !!! warning
 
     После выхода `refresh token` сбросится. Нужно входить заново.
-
----
 
 ## Обновить `access_token`
 ```python

@@ -492,6 +492,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ref/enums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ref/wip/" class="md-nav__link">
         
   
@@ -1122,14 +1150,8 @@
 <span class="n">ITDClient</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="_2">Параметры</h2>
-<h4 id="rate_limit-ratelimitmode">rate_limit <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 5h3l-1.5 2zM5 2h14a2 2 0 0 1 2 2v16c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2m0 2v4h14V4zm0 16h14V10H5zm2-8h10v2H7zm0 4h10v2H7z"/></svg></span></span><span class="mdx-badge__text">RateLimitMode</span></span></h4>
+<h4 id="rate_limit-ratelimitmode">rate_limit <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 5h3l-1.5 2zM5 2h14a2 2 0 0 1 2 2v16c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2m0 2v4h14V4zm0 16h14V10H5zm2-8h10v2H7zm0 4h10v2H7z"/></svg></span></span><span class="mdx-badge__text"><a href="../ref/enums/#ratelimitmode">RateLimitMode</a></span></span></h4>
 <p>Устанавливает дефолтные значения задержек.</p>
-<ul>
-<li><code>RateLmitMode.NO</code>: 0 сек - для простых скриптов</li>
-<li><code>RateLimitMode.MIN</code>: Небольшие задержки (0 сек для обычных запросов) - для кастомных клиентов или маленьких скриптов</li>
-<li><code>RateLimitMode.MID</code>: Средние задержки (0.2 сек для обычных запросов) - для обычных скриптов</li>
-<li><code>RateLimitMode.MAX</code>: Большие задержки (0.4 сек для обычных запросов) - для больших ботов, парсеров</li>
-</ul>
 <!-- Также планируется режим `SMART`, который будет выставлять динамическую задержку (например при первых трех комментариях не делать задержку). -->
 <p>По умолчанию <code>RateLimitMode.MID</code>.</p>
 <h4 id="rate_limit_default-float">rate_limit_default <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M9 4.75A.75.75 0 0 1 9.75 4h4a.75.75 0 0 1 .53 1.28l-1.89 1.892c.312.076.604.18.867.319.742.391 1.244 1.063 1.244 2.005 0 .653-.231 1.208-.629 1.627-.386.408-.894.653-1.408.777-1.01.243-2.225.063-3.124-.527a.751.751 0 0 1 .822-1.254c.534.35 1.32.474 1.951.322.306-.073.53-.201.67-.349.129-.136.218-.32.218-.596 0-.308-.123-.509-.444-.678-.373-.197-.98-.318-1.806-.318a.75.75 0 0 1-.53-1.28l1.72-1.72H9.75A.75.75 0 0 1 9 4.75m-3.587 5.763c-.35-.05-.77.113-.983.572a.75.75 0 1 1-1.36-.632c.508-1.094 1.589-1.565 2.558-1.425 1 .145 1.872.945 1.872 2.222 0 1.433-1.088 2.192-1.79 2.681-.308.216-.571.397-.772.573H7a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75c0-.69.3-1.211.67-1.61.348-.372.8-.676 1.15-.92.8-.56 1.18-.904 1.18-1.474 0-.473-.267-.69-.587-.737M5.604.089A.75.75 0 0 1 6 .75v4.77h.711a.75.75 0 0 1 0 1.5H3.759a.75.75 0 0 1 0-1.5H4.5V2.15l-.334.223a.75.75 0 0 1-.832-1.248l1.5-1a.75.75 0 0 1 .77-.037Z"/></svg></span></span><span class="mdx-badge__text">float</span></span></h4>
@@ -1172,14 +1194,8 @@
 <p>Количество загружаемых объектов при итерации списка (например <code>for post in Posts()</code>) Если вы итеририуете сразу весь список без <code>break</code>, то этот пратаметр особо не играет роли. По умолчанию <code>BATCH</code>. <code>All</code> - загружать все. <code>Batch</code> - загружать следующий батч. <code>None</code> - выключить авто загрузку.</p>
 <h4 id="force_load_lists-bool">force_load_lists <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg></span></span><span class="mdx-badge__text">bool</span></span></h4>
 <p>Загружать список, даже если <code>has_more = False</code>. Может уйти в бесконечный цикл при итерации. По умолчанию <code>False</code>.</p>
-<h4 id="debug_response-debugresponsemode">debug_response <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 5h3l-1.5 2zM5 2h14a2 2 0 0 1 2 2v16c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2m0 2v4h14V4zm0 16h14V10H5zm2-8h10v2H7zm0 4h10v2H7z"/></svg></span></span><span class="mdx-badge__text">DebugResponseMode</span></span></h4>
+<h4 id="debug_response-debugresponsemode">debug_response <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 5h3l-1.5 2zM5 2h14a2 2 0 0 1 2 2v16c0 1.11-.89 2-2 2H5a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2m0 2v4h14V4zm0 16h14V10H5zm2-8h10v2H7zm0 4h10v2H7z"/></svg></span></span><span class="mdx-badge__text"><a href="../ref/enums/#debugresponsemode">DebugResponseMode</a></span></span></h4>
 <p>Режим показа сырых данных ответа API (response). Для работы должен быть установлен логгер с режимом <code>DEBUG</code>.</p>
-<ul>
-<li><code>DebugResponseMode.NO</code>: Не показывать ответ.</li>
-<li><code>DebugResponseMode.BEFORE</code>: Показывать ответ до обработки (сырой).</li>
-<li><code>DebugResponseMode.AFTER</code>: Показывать ответ после обработки (если при обработке возникла ошибка, ответ не выведется).</li>
-<li><code>DebugResponseMode.KEYS</code>: Показывать только ключи ответа (после обработки).</li>
-</ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Может раскрыть ваши ключи (при <code>refresh_auth</code> в терминале будет виден <code>access_token</code>)</p>
@@ -1199,12 +1215,8 @@
 <p>Нужно ли проходить JS-challenge (защита от скриптов). Иногда включается при запросах к API. Если выключена, скрипт может упасть с ошибкой <code>fail to parse json</code>.</p>
 <h4 id="load_comments_from_post-bool">load_comments_from_post <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg></span></span><span class="mdx-badge__text">bool</span></span></h4>
 <p>Нужно ли брать комментарии из уже полученного поста (ИТД дает 3-4 комментария при получении поста). При загрузке следующего батча комментарии могут дублироваться. По умолчанию <code>False</code>.</p>
-<h4 id="parse_mode-parsemode">parse_mode <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.27 19.385H1.73A1.73 1.73 0 0 1 0 17.655V6.345a1.73 1.73 0 0 1 1.73-1.73h20.54A1.73 1.73 0 0 1 24 6.345v11.308a1.73 1.73 0 0 1-1.73 1.731zM5.769 15.923v-4.5l2.308 2.885 2.307-2.885v4.5h2.308V8.078h-2.308l-2.307 2.885-2.308-2.885H3.46v7.847zM21.232 12h-2.309V8.077h-2.307V12h-2.308l3.461 4.039z"/></svg></span></span><span class="mdx-badge__text">ParseMode</span></span></h4>
-<p>Режим парсинга (автоматически генерирует <code>spans</code> при создании или редоктаировании постов).
- - <code>ParseMode.NO</code>: Выключить парсинг
- - <code>ParseMode.MARKDOWN</code>: Markdown парсинг
- - <code>ParseMode.HTML</code>: HTML парсинг
-По умолчанию <code>ParseMode.NO</code></p>
+<h4 id="parse_mode-parsemode">parse_mode <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.27 19.385H1.73A1.73 1.73 0 0 1 0 17.655V6.345a1.73 1.73 0 0 1 1.73-1.73h20.54A1.73 1.73 0 0 1 24 6.345v11.308a1.73 1.73 0 0 1-1.73 1.731zM5.769 15.923v-4.5l2.308 2.885 2.307-2.885v4.5h2.308V8.078h-2.308l-2.307 2.885-2.308-2.885H3.46v7.847zM21.232 12h-2.309V8.077h-2.307V12h-2.308l3.461 4.039z"/></svg></span></span><span class="mdx-badge__text"><a href="../ref/enums/#parsemode">ParseMode</a></span></span></h4>
+<p>Режим парсинга (автоматически генерирует <code>spans</code> при создании или редактировании постов). По умолчанию <code>ParseMode.NO</code>.</p>
 <h4 id="retry_enabled-bool">retry_enabled <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg></span></span><span class="mdx-badge__text">bool</span></span></h4>
 <p>Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию <code>True</code>.</p>
 <h4 id="retry_delay-float">retry_delay <span class="mdx-badge"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M9 4.75A.75.75 0 0 1 9.75 4h4a.75.75 0 0 1 .53 1.28l-1.89 1.892c.312.076.604.18.867.319.742.391 1.244 1.063 1.244 2.005 0 .653-.231 1.208-.629 1.627-.386.408-.894.653-1.408.777-1.01.243-2.225.063-3.124-.527a.751.751 0 0 1 .822-1.254c.534.35 1.32.474 1.951.322.306-.073.53-.201.67-.349.129-.136.218-.32.218-.596 0-.308-.123-.509-.444-.678-.373-.197-.98-.318-1.806-.318a.75.75 0 0 1-.53-1.28l1.72-1.72H9.75A.75.75 0 0 1 9 4.75m-3.587 5.763c-.35-.05-.77.113-.983.572a.75.75 0 1 1-1.36-.632c.508-1.094 1.589-1.565 2.558-1.425 1 .145 1.872.945 1.872 2.222 0 1.433-1.088 2.192-1.79 2.681-.308.216-.571.397-.772.573H7a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75c0-.69.3-1.211.67-1.61.348-.372.8-.676 1.15-.92.8-.56 1.18-.904 1.18-1.474 0-.473-.267-.69-.587-.737M5.604.089A.75.75 0 0 1 6 .75v4.77h.711a.75.75 0 0 1 0 1.5H3.759a.75.75 0 0 1 0-1.5H4.5V2.15l-.334.223a.75.75 0 0 1-.832-1.248l1.5-1a.75.75 0 0 1 .77-.037Z"/></svg></span></span><span class="mdx-badge__text">float</span></span></h4>

@@ -1,4 +1,4 @@
-# Уведомление
+# :material-bell: Notification
 
 !!! note
     В билиотеке есть пока еще нерабочие типы уведомлений, такие как `follow_request`, `mention`, `comment_like` и др. Все эти типы взяты из [декомпилированного фронтенда](https://github.com/itd-frontend), то есть на оф. клиенте они также работают. Ождиается только появление на бэкенде.
@@ -10,8 +10,6 @@ notification.read()
 
 ### Ошибки
  - `NotFoundError` - уведомление не найдено, уже прочитано или не принадлежит клиенту
-
----
 
 ## Получить текст
 ```py
@@ -28,24 +26,18 @@ notification.get_text(
 !!! note "glossary"
     Актор (англ. actor) - "создатель" уведомления - комментатор, репостер, подписчик.
 
----
-
 ## Получить цвет
 ```py
 color = notification.get_color()
 ```
 Получить цвет уведомления (`blue`, `green`, `red` или `purple`) (не API метод, сделано для удобства, создается на основе `type`).
 
----
-
-# Уведомления
+# :material-code-brackets: :material-bell: Уведомления
 
 ## Получить
 ```py
 notifications = Notifications()
 ```
-
----
 
 ## Стрим уведолмений
 ```py
@@ -53,22 +45,16 @@ for notification in notifications.stream():
     pass
 ```
 
----
-
 ## Стрим уведомлений в фоне
 ```py
 thread = notifications.stream_bg()
 ```
 Чтобы получать уведомления из фона, утсановите каллбэки.
 
----
-
 ## Остановка фонового стрима
 ```py
 notifications.stop_stream()
 ```
-
----
 
 ## Каллбэки
 

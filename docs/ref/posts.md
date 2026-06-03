@@ -1,5 +1,73 @@
 # :material-post: Post
 
+### Аттрибуты
+#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID поста.
+
+#### author <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[User](users.md#user)</span></span>
+Автора поста.
+
+#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
+Дата создания поста.
+
+#### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Содержание поста. `None`, если нет содержания (тогда должны быть вложения или опросник).
+
+#### spans <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text-short:</span><span class="mdx-badge__text">list[[Span](#span)]</span></span>
+Стилизация (жирный, курсив, подчеркивание итд).
+
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[PostAttach](file.md#postattach)]</span></span>
+Вложения.
+
+#### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDBaseModel](base.md#itdbasemodel)</span></span></a>
+Опросник.
+
+#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comments](comment.md#comments)]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+Комментарии.
+
+#### likes_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество лайков.
+
+#### comments_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество комментариев.
+
+#### reposts_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество репостов.
+
+#### views_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество просмотров.
+
+#### edited_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
+Дата редактирования. `None`, если пост не редактировали.
+
+#### is_liked <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Лайкнут ли пост.
+
+#### is_reposted <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Репостнут ли пост.
+
+#### is_viewed <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Просмотрен ли пост.
+
+#### is_owner <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Являетесь ли вы владельцем поста.
+
+#### is_pinned <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Закреплен ли пост. Отдает правильное значение только при получении поста из [`UserPosts`](#userposts).
+
+#### dominant <span class="mdx-badge"><span class="mdx-badge__icon">:material-emoticon:</span><span class="mdx-badge__text">str</span></span>
+Эмоджи клан, который чаще всего лайкал пост. `None`, если никто пока еще не лайкнул пост.
+
+#### wall_recipient_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID получателя поста. `None`, если пост создан не на чужой стене.
+
+#### wall_recipient <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[User](users.md#user)</span></span>
+Получать поста. `None`, если пост создан не на чужой стене.
+
+#### vs <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Уникальный токен поста, для каждого пользователя он свой. Обновляется при получении поста. Испольуется при [просмотре поста](#view).
+
+
 ## Получить
 ```python
 post = Post(
@@ -14,8 +82,6 @@ ID поста.
 
 !!! note
     Для проверки на существование (`NotFoundError`) вызовите [`post.refresh()`](base.md#refresh) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
-
----
 
 ## :fontawesome-solid-add: Создать
 ```python
@@ -36,7 +102,7 @@ post = Post.new(
 #### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Содержание поста.
 
-#### spans <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text-short:</span><span class="mdx-badge__text">list[Span]</span></span>
+#### spans <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text-short:</span><span class="mdx-badge__text">list[[Span](#span)]</span></span>
 Стилизация (жирный, курсив, подчеркивание итд). Автоматически заполняется, если установлен [parse_mode](../config.md#parse_mode-parsemode). У ручного заполнения приоритет больше, чем у дефолтного (если у вас стоит `parse_mode` в конфиге, и вы напишите свой `spans`, применится ваш вариант).
 
 #### wall_recipient <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier: | :fontawesome-solid-user:</span><span class="mdx-badge__text">UUID | User</span></span>
@@ -75,8 +141,6 @@ post = Post.new(
  - `RequiresSubscriptionError` - для публикации видео нужна верификация или НУКСТА.
  - `BannedWordError` - в посте содержатся [запрещенные слова](https://itdsdk.qzz.io/banned-words).
 
----
-
 ## :material-vote: Проголосовать
 
 === "Через `post`"
@@ -100,7 +164,7 @@ post = Post.new(
 
 ### Параметры
 
-#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: [:material-identifier: | :material-poll:] | :material-poll: | :material-identifier:</span><span class="mdx-badge__text">list[UUID | PollOption] | UUID | PollOption</span></span> <span class="mdx-badge mdx-badge_required"> <span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-poll: || :material-identifier: | :material-poll:</span><span class="mdx-badge__text">list[UUID | PollOption] | UUID | PollOption</span></span> <span class="mdx-badge mdx-badge_required"> <span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Опции для голосования. Может быть списком, объектом опции (можно взять из `poll.options`) или UUID.
 
 !!! example
@@ -129,8 +193,6 @@ post = Post.new(
  - `OptionsNotBelongError` - опции не принадлежат к этом опросу.
  - `NotMultipleChoiceError` - в опросе можно проголосовать только за одну опцию.
 
----
-
 ## :material-heart: Лайкнуть
 ```python
 likes_count = post.like()
@@ -140,8 +202,6 @@ likes_count = post.like()
 ### Ошибки
  - `NotFoundError` - пост не найден.
 
----
-
 ## :material-heart-off: Убрать лайк
 ```python
 likes_count = post.unlike()
@@ -150,8 +210,6 @@ likes_count = post.unlike()
 
 ### Ошибки
  - `NotFoundError` - пост не найден.
-
----
 
 ## :material-repeat: Репостнуть
 ```python
@@ -167,8 +225,7 @@ post = post.repost(
  - `ValidationError` - ошибка валидации (вероятно из-за слишком большого количества символов).
  - `BannedWordError` - в посте есть [запрещенные слова](https://itdsdk.qzz.io/banned-words).
 
----
-
+<a id="view"></a>
 ## :material-eye: Просмотреть
 ```python
 post.view()
@@ -176,8 +233,6 @@ post.view()
 
 ### Ошибки
  - `NotFoundError` - пост не найден.
-
----
 
 ## :material-pin: Закрепить
 ```python
@@ -188,8 +243,6 @@ post.pin()
  - `NotFoundError` - пост не найден.
  - `ForbiddenError` - нет прав на закрепление (пост должен быть на вашей стене).
 
----
-
 ## :material-pin-off: Открепить
 ```python
 post.unpin()
@@ -197,8 +250,6 @@ post.unpin()
 
 ### Ошибки
  - `NotPinnedError` - пост не закреплен или не найден.
-
----
 
 ## :material-delete: Удалить
 ```python
@@ -209,8 +260,6 @@ post.delete()
  - `NotFoundError` - пост не найден.
  - `ForbiddenError` - нету прав на удаление (пост должен быть на вашей стене).
 
----
-
 ## :material-delete-off: Восстановить
 ```python
 post.restore()
@@ -220,8 +269,6 @@ post.restore()
 ### Ошибки
  - `NotFoundError` - пост не найден.
  - `ForbiddenError` - нету прав на восстановление (пост должен быть на вашей стене).
-
----
 
 ## :material-pencil: Редактировать
 ```python
@@ -246,8 +293,6 @@ edited_at = post.edit(
  - `ForbiddenError` - нету прав на редактирование (вы должны быть автором поста).
  - `EditExpiredError` - истекло время на редактирование ("edit window expired").
  - `BannedWordError` - в посте есть [запрещенные слова](https://itdsdk.qzz.io/banned-words).
-
----
 
 ## :material-comment: Прокомментировать
 
@@ -283,7 +328,7 @@ edited_at = post.edit(
 #### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Содержание комментария (стилизация не поддерживается на стороне ИТД).
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: [:material-identifier: | :material-file:] | :material-identifier: | :material-file:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-file: || :material-identifier: | :material-file:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения. Может быть списком, объектом файла или UUID.
 
 ### Ошибки
@@ -292,8 +337,6 @@ edited_at = post.edit(
  - `BannedWordError` - в комментарии есть [запрещенные слова](https://itdsdk.qzz.io/banned-words).
  - `ForbiddenError` - некоторые вложения не принадлежат клиенту или не существуют. Вложения должны быть загружены одним и тем же клиентом через `upload_file`.
  - `RequiresSubscriptionError` - для загрузки видео требуется верификация или подписка НУКСТА.
-
----
 
 ## :octicons-report-16: Пожаловаться
 ```python
@@ -306,15 +349,8 @@ post.report(
 ```
 
 ### Параметры
-#### reason <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-report-16:</span><span class="mdx-badge__text">ReportReason</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+#### reason <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-report-16:</span><span class="mdx-badge__text">[ReportReason](enums.md#reportreason)</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Причина жалобы.
-
- - `ReportReason.SPAM`: Спам или нежелательный контент
- - `ReportReason.VIOLENCE`: Насилие или опасные действия
- - `ReportReason.HATE`: Ненависть или травля
- - `ReportReason.ADULT`: Контент для взрослых (18+)
- - `ReportReason.FRAUD`: Дезинформация или обман
- - `ReportReason.OTHER`: Другое
 
 #### description <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Описание жалобы.
@@ -324,8 +360,6 @@ post.report(
  - `AlreadyReportedError` - жалоба уже отправлена.
  - `ValidationError` - ошибка валидации (слишком длинное описание).
 
----
-
 ## :material-link: Получить ссылку на пост
 ```python
 link = post.url
@@ -334,6 +368,26 @@ link = post.url
 ```python
 link = post.link
 ```
+
+---
+
+# :material-text-short: Span
+
+### Аттрибуты
+#### length <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Длина спана.
+
+#### offset <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Смещение.
+
+#### type <span class="mdx-badge"><span class="mdx-badge__icon">:material-text-short:</span><span class="mdx-badge__text">[SpanType](enums.md#spantype)</span></span>
+Тип спана.
+
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Ссылка. `None`, если `type` != `SpanType.LINK`.
+
+#### tag <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Хэштэг. `None`, если `type` != `SpanType.HASHTAG`.
 
 ---
 
@@ -349,12 +403,8 @@ posts = Posts()
 ```
 
 ### Параметры
-#### tab <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">PostsTab</span></span>
+#### tab <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[PostsTab](enums.md#poststab)</span></span>
 Вкладка постов. По умолчанию `PostsTab.POPULAR`.
-
- - `PostsTab.POPULAR`: Обычная лента постов.
- - `PostsTab.FOLLOWING`: Лента постов от авторов, на которых вы подписаны.
- - `PostsTab.CLAN`: Лента постов от авторов, у которых одинаковый с вами клан.
 
  Также вкладку можно задать через клаcсметод:
 
@@ -382,8 +432,6 @@ posts = Posts.clan()
 
  - `ValidationError`: ошибка валидации (из-за слишком большого лимита батча).
 
----
-<a id="userposts"></a>
 ## :fontawesome-solid-user: UserPosts
 Посты пользователя.
 
@@ -415,9 +463,6 @@ posts = Posts.clan()
 #### sort <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">UserPostSorting</span></span>
 Сортировка постов. По умолчанию `UserPostSorting.NEW`.
 
- - `UserPostSorting.NEW`: Сортировка постов по дате создания.
- - `UserPostSorting.POPULAR`: Сортировка постов по количеству лайков.
-
 Также вкладку можно задать через клаcсметод:
 
 ### :new: Новые посты
@@ -448,9 +493,6 @@ post = posts.wait_for_post(
 #### delay <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка при проверке (без учета anti-ratelimit). По умолчанию `5`.
 
----
-
-<a id="likedposts"></a>
 ## :material-heart: LikedPosts
 Лайкнутые посты пользователя.
 
@@ -483,8 +525,6 @@ post = posts.wait_for_post(
 
 #### delay <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка при проверке (без учета anti-ratelimit). По умолчанию `5`.
-
----
 
 ## :fontawesome-solid-hashtag: HashtagPosts
 Посты по хэштэгу.
