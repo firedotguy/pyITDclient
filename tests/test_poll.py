@@ -9,16 +9,16 @@ from itd.poll import Poll, NewPoll
 POLL_DATA = {
     'id': '00000000-0000-0000-0000-000000000001',
     'postId': '00000000-0000-0000-0000-000000000002',
-    'createdAt': '2024-12-01T00:00:00Z', # итд 2024 кста
+    'createdAt': '2024-12-01T00:00:00Z',  # итд 2024 кста
     'question': 'Лучший язык?',
     'options': [
         {'id': '00000000-0000-0000-0000-000000000010', 'text': 'Python', 'votesCount': 5, 'position': 0},
-        {'id': '00000000-0000-0000-0000-000000000011', 'text': 'Rust', 'votesCount': 3, 'position': 1},
+        {'id': '00000000-0000-0000-0000-000000000011', 'text': 'Rust', 'votesCount': 3, 'position': 1}
     ],
     'multipleChoice': False,
     'hasVoted': False,
     'votedOptionIds': [],
-    'totalVotes': 8,
+    'totalVotes': 8
 }
 
 PYTHON_ID = UUID('00000000-0000-0000-0000-000000000010')

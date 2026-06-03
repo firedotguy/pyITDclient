@@ -6,22 +6,13 @@ import sys
 
 from itd import ITDClient
 
+
 def main():
-    parser = ArgumentParser(
-        description='Upload image and set it as profile banner'
-    )
+    parser = ArgumentParser(description='Upload image and set it as profile banner')
 
-    parser.add_argument(
-        '--token',
-        default=getenv('ITD_TOKEN'),
-        help='API token (or ITD_TOKEN env var)'
-    )
+    parser.add_argument('--token', default=getenv('ITD_TOKEN'), help='API token (or ITD_TOKEN env var)')
 
-    parser.add_argument(
-        '--file',
-        required=True,
-        help='Path to image file'
-    )
+    parser.add_argument('--file', required=True, help='Path to image file')
 
     args = parser.parse_args()
 

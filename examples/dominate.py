@@ -14,7 +14,7 @@ while True:
                 post = c.get_post(post.id)
             except NotFoundError:
                 continue
-            if post.likes_count == 0: # re-check likes count
+            if post.likes_count == 0:  # re-check likes count
                 c.like_post(post.id)
             sleep(2)
     sleep(5)

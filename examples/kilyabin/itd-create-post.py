@@ -6,32 +6,17 @@ from os.path import isfile, basename
 
 from itd import ITDClient
 
+
 def main():
-    parser = ArgumentParser(
-        description='Create a post on ITD via CLI'
-    )
+    parser = ArgumentParser(description='Create a post on ITD via CLI')
 
-    parser.add_argument(
-        '--token',
-        default=getenv('ITD_TOKEN'),
-        help='Refresh token (or set ITD_TOKEN environment variable)'
-    )
+    parser.add_argument('--token', default=getenv('ITD_TOKEN'), help='Refresh token (or set ITD_TOKEN environment variable)')
 
-    parser.add_argument(
-        '--text',
-        required=True,
-        help='Text content of the post'
-    )
+    parser.add_argument('--text', required=True, help='Text content of the post')
 
-    parser.add_argument(
-        '--file',
-        help='Optional file to attach to the post'
-    )
+    parser.add_argument('--file', help='Optional file to attach to the post')
 
-    parser.add_argument(
-        '--filename',
-        help='Filename on server (if --file is used, default: local filename)'
-    )
+    parser.add_argument('--filename', help='Filename on server (if --file is used, default: local filename)')
 
     args = parser.parse_args()
 
@@ -73,6 +58,7 @@ def main():
     except Exception as e:
         print('❌ Error:', e)
         quit()
+
 
 if __name__ == '__main__':
     main()

@@ -11,6 +11,7 @@ from itd.post import Post
 load_dotenv()
 config = ITDConfig(RateLimitMode.NO)
 
+
 @pytest.fixture(scope="session")
 def client():
     token = getenv('TOKEN')
@@ -36,5 +37,5 @@ def client_sub(client):
 
 
 @pytest.fixture(scope="session")
-def redis_post(client): # думаешь redis это какое нибудь заумное важное название? а нет, это просто редис зплвца
+def redis_post(client):  # думаешь redis это какое нибудь заумное важное название? а нет, это просто редис зплвца
     return Post('1cbe5926-2d08-4e17-879d-7732b94ed354')

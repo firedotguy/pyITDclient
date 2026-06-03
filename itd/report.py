@@ -1,15 +1,18 @@
 from __future__ import annotations
+
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
-from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from itd.base import ITDBaseModel, refresh_wrapper
-from itd.enums import ReportReason, ReportTargetType
 from itd.api.reports import report
+from itd.base import ITDBaseModel
+from itd.enums import ReportReason, ReportTargetType
+
 if TYPE_CHECKING:
     from itd.client import Client
+
 
 class Report(ITDBaseModel):
     _refreshable = False
@@ -26,13 +29,7 @@ class Report(ITDBaseModel):
         self.reason = reason
         self.description = description
 
-        self.refresh()
-
-
-    @refresh_wrapper
-    def refresh(self, client: Client | None = None):
-        return report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data']
-
+        self._fill_from_data(report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data'])
 
 
 class _ReportValidate(BaseModel, Report):

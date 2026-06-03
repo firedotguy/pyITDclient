@@ -3,18 +3,22 @@ from typing import TYPE_CHECKING
 
 from itd.exceptions import PinNotOwnedError
 from itd.base import rate_limit, catch_errors
+
 if TYPE_CHECKING:
     from itd.client import Client
+
 
 @rate_limit()
 @catch_errors()
 def get_pins(client: Client):
     return client.request('get', 'users/me/pins')
 
+
 @rate_limit()
 @catch_errors()
 def remove_pin(client: Client):
     return client.request('delete', 'users/me/pin')
+
 
 @rate_limit()
 @catch_errors(PinNotOwnedError())

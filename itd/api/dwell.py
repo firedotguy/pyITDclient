@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from itd.base import catch_errors, rate_limit
+
 if TYPE_CHECKING:
     from itd.client import Client
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 # moved from posts.py due to circular import
 from uuid import UUID
 from typing import TYPE_CHECKING

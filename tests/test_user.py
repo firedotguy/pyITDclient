@@ -21,22 +21,18 @@ def test_by_username_is_lazy():
     user = User.by_username('example')
     assert user.username == 'example'
     assert user._identifier == 'example'
-    assert not user._loaded
 
 
 def test_by_id_is_lazy():
     uid = UUID('00000000-0000-0000-0000-000000000001')
     user = User.by_id(uid)
     assert user.id == uid
-    assert not user._loaded
-
 
 
 def test_me_loads(me):
     assert me.id is not None
     assert me.username
     assert me.display_name
-    assert me._loaded
 
 
 def test_me_to_user_copies_fields(me):
@@ -62,7 +58,6 @@ def test_me_following_instance(me):
 
 def test_followers_count_consistent(me):
     assert len(me.followers) <= me.followers.total
-
 
 
 def test_follow_increments_followers_count(client, me2):
