@@ -8,6 +8,7 @@ from itd.enums import SpanType
 
 # --- to_uuid ---
 
+
 def test_to_uuid_from_str():
     result = to_uuid('00000000-0000-0000-0000-000000000001')
     assert isinstance(result, UUID)
@@ -26,6 +27,7 @@ def test_to_uuid_invalid_raises():
 
 # --- to_nullable_uuid ---
 
+
 def test_to_nullable_uuid_none():
     assert to_nullable_uuid(None) is None
 
@@ -41,6 +43,7 @@ def test_to_nullable_uuid_uuid():
 
 
 # --- parse_datetime ---
+
 
 def test_parse_datetime_z_suffix():
     dt = parse_datetime('2024-01-15T10:30:00Z')
@@ -62,6 +65,7 @@ def test_parse_datetime_with_microseconds():
 
 # --- format_attachments ---
 
+
 def test_format_attachments_empty():
     assert format_attachments([]) == []
 
@@ -79,10 +83,7 @@ def test_format_attachments_uuid():
 
 
 def test_format_attachments_list_of_strs():
-    result = format_attachments([
-        '00000000-0000-0000-0000-000000000001',
-        '00000000-0000-0000-0000-000000000002',
-    ])
+    result = format_attachments(['00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002'])
     assert len(result) == 2
     assert all(isinstance(x, UUID) for x in result)
 
@@ -95,6 +96,7 @@ def test_format_attachments_mixed():
 
 
 # --- parse_html ---
+
 
 def test_parse_html_plain_text():
     text, spans = parse_html('Hello world')
@@ -162,6 +164,7 @@ def test_parse_html_nested():
 
 
 # --- parse_md ---
+
 
 def test_parse_md_plain():
     text, spans = parse_md('Hello world')

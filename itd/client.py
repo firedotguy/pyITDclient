@@ -1,40 +1,41 @@
-from uuid import UUID
 from _io import BufferedReader
-from datetime import datetime
-from dataclasses import dataclass, field
 from atexit import register
-from time import sleep
+from dataclasses import dataclass, field
+from datetime import datetime
 from threading import Thread
+from time import sleep
 from typing import overload
+from uuid import UUID
 
 from requests import Session
-from requests.utils import default_user_agent
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
+from requests.utils import default_user_agent
 
 from itd._default import _default_client, set_default_client
-from itd.exceptions import InsufficientAuthLevelError, RateLimitError, InternalError, NotFoundError
-from itd.hashtag import Hashtag
-from itd.request import fetch, decode_jwt_payload, fetch_stream
-from itd.enums import RateLimitMode, All, DebugResponseMode, ParseMode, Batch, BATCH, UserAgent, AuthLevel
-from itd.user import Me, User
-from itd.post import DwellTracker, Post
-from itd.api.auth import refresh_token, change_password, logout
-from itd.api.search import search
+from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
+from itd.api.search import search
 from itd.api.users import get_follow_status
-from itd.utils import to_uuid, get_sdk_user_agent
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, UserAgent
+from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
+from itd.hashtag import Hashtag
 from itd.logger import get_logger
+from itd.post import DwellTracker, Post
+from itd.request import decode_jwt_payload, fetch, fetch_stream
+from itd.user import Me, User
+from itd.utils import get_sdk_user_agent, to_uuid
 
-
-l = get_logger('client')
+l = get_logger('client')  # noqa: E741
 
 
 @dataclass
 class Config:
     rate_limit: RateLimitMode = RateLimitMode.MID
-    rate_limit_default: int | None = None # overrides ratelimit mode  # rate limit for standard actions
-    rate_limit_actions: dict[str, float | int] = field(default_factory=lambda: {}) # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
+    rate_limit_default: int | None = None  # overrides ratelimit mode  # rate limit for standard actions
+    rate_limit_actions: dict[str, float | int] = field(
+        default_factory=lambda: {}
+    )  # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
 
     # is_logging_enabled: bool = True # TODO
     # logging_level = 'DEBUG'
@@ -46,12 +47,13 @@ class Config:
     auto_load: bool = True
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
-    force_load_lists: bool = False # load lists even if has_more is False
+    force_load_lists: bool = False  # load lists even if has_more is False
 
     debug_response: DebugResponseMode = DebugResponseMode.NO
 
     timeout: float = 30
     timeout_file: float = 120
+    timeout_file_download: float = 60
 
     url: str = 'xn--d1ah4a.com'
     url_api: str | None = None
@@ -62,11 +64,9 @@ class Config:
 
     parse_mode: ParseMode = ParseMode.NO
 
-    rate_limit_wait: int | None = None # DEPRECATED
-    retry_on_rate_limits: bool | None = None # DEPRECATED
     retry_enabled: bool = True
-    retry_delay: float = 10 # delay before next attempt (after rate limit error) if retry_after is not provided in request
-    retry_max_retries: int | None = None # none for no limit
+    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in request
+    retry_max_retries: int | None = 10  # none for no limit
     retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
     retry_max_retry_after: int = 500
 
@@ -76,13 +76,15 @@ class Config:
     dwell_max_buffer: int = 20
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
-    dwell_wait_durations: bool = True
+    dwell_wait_durations: bool = False
+    post_view_increment: bool = False
+    post_auto_view: bool = True  # view when called post.set_invisible()
 
     post_update_stats: bool = False
     post_update_stats_interval: int = 3
 
-    view_read_speed: int = 250 # in WPM # https://scholarwithin.com/average-reading-speed
-    view_images_speed: int = 130 # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
+    view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
+    view_images_speed: int = 130  # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
 
     def __post_init__(self):
         if self.rate_limit_default:
@@ -109,15 +111,14 @@ class Config:
             case _:
                 self._user_agent = self.user_agent
 
-        if self.rate_limit_wait is not None:
-            l.warning('config.rate_limit_wait is deprecated and will be removed in 2.4.0. Please use config.retry_delay')
-            self.retry_delay = self.rate_limit_wait
-        if self.retry_on_rate_limits is not None:
-            l.warning('config.retry_on_rate_limits is deprecated and will be removed in 2.4.0. Please use config.retry_enabled')
-            self.retry_enabled = self.retry_on_rate_limits
+        if self.dwell_wait_durations:
+            l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
-        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (RateLimitError, InternalError, RequestException)
-
+        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
+            RateLimitError,
+            InternalError,
+            RequestException
+        )
 
 
 class Client:
@@ -132,7 +133,7 @@ class Client:
         self.visible_posts: list[Post] = []
 
         self.session = Session()
-        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False) # idk what is this, (claude added) just for better stability
+        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
         self.session.mount('https://', adapter)
 
         if access:
@@ -158,7 +159,6 @@ class Client:
         if self.config.post_update_stats:
             self._start_update_timer()
 
-
     def _start_update_timer(self):
         l.debug('start update timer')
         if not self.config.post_update_stats_interval:
@@ -179,7 +179,6 @@ class Client:
                 self._thread.join(timeout=0)
 
         register(on_exit)
-
 
     def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
         """Сделать запрос
@@ -208,7 +207,6 @@ class Client:
 
         return fetch_stream(self, url)
 
-
     def update_post_stats(self):
         if len(self.visible_posts) == 0:
             return
@@ -220,7 +218,6 @@ class Client:
 
         for post in self.visible_posts:
             post._set_stats(next((stat for stat in stats if stat['id'] == str(post.id))))
-
 
     def refresh_auth(self) -> str:
         """Обновить access token
@@ -238,7 +235,6 @@ class Client:
         assert self.access_token
         return self.access_token
 
-
     @property
     def token(self) -> str:
         assert self.access_token, 'Access token not refreshed yet'
@@ -254,13 +250,10 @@ class Client:
             self._user = Me(self)
         return self._user
 
-
     def logout(self):
-        """Выход из аккаунта
-        """
+        """Выход из аккаунта"""
         res = logout(self)
         res.raise_for_status()
-
 
     def change_password(self, old: str, new: str) -> None:
         """Смена пароля
@@ -276,10 +269,9 @@ class Client:
 
         """
         # if not self.refresh_token:
-            # raise InsufficientAuthLevelError()
+        # raise InsufficientAuthLevelError()
 
         change_password(self, old, new)
-
 
     def search(self, query: str, hashtags_limit: int = 20, users_limit: int = 20) -> tuple[list[User], list[Hashtag]]:
         """Поиск пользователей и хэштэгов
@@ -293,7 +285,7 @@ class Client:
             tuple[list[User], list[Hashtag]]: Результат поиска
         """
         res = search(self, query, users_limit, hashtags_limit).json()['data']
-        return [User._from_dict(user, False, self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
+        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
 
     def search_users(self, query: str, limit: int = 20) -> list[User]:
         """Поиск пользователей
@@ -305,7 +297,7 @@ class Client:
         Returns:
             list[User]: Список пользователей
         """
-        return self.search(query, 1, limit)[0] # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
+        return self.search(query, 1, limit)[0]  # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
 
     def search_hashtags(self, query: str, limit: int = 20) -> list[Hashtag]:
         """Поиск хэштэгов
@@ -366,7 +358,7 @@ class Client:
                 if isinstance(user, User):
                     user_ids.append(user.id)
                 else:
-                    user_ids.append(to_uuid(user))
+                    user_ids.append(to_uuid(user))  # ty: ignore[invalid-argument-type]
         elif isinstance(users, User):
             user_ids = [users.id]
         else:
@@ -374,5 +366,5 @@ class Client:
 
         res = {UUID(k): v for k, v in get_follow_status(self, user_ids).json()['data'].items()}
         if not isinstance(users, list):
-            return list(res.values())[0]
+            return next(iter(res.values()))
         return res

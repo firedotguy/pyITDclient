@@ -1,12 +1,15 @@
 """
 Пример фильтрации уведомлений по типу
 """
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from itd import ITDClient, StreamConnect
 from itd.enums import NotificationType
+
 
 def main():
     cookies = 'YOUR_COOKIES_HERE'
@@ -18,11 +21,7 @@ def main():
 
     client = ITDClient(cookies=cookies)
 
-    SHOW_TYPES = {
-        NotificationType.LIKE,
-        NotificationType.FOLLOW,
-        NotificationType.COMMENT
-    }
+    SHOW_TYPES = {NotificationType.LIKE, NotificationType.FOLLOW, NotificationType.COMMENT}
 
     print('-- Подключение к SSE...')
     print(f'-- Фильтр: {", ".join(t.value for t in SHOW_TYPES)}\n')
@@ -48,6 +47,7 @@ def main():
 
     except KeyboardInterrupt:
         print(f'\n! Отключение...')
+
 
 if __name__ == '__main__':
     main()

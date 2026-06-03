@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+from itd.api.pins import remove_pin, set_pin
 from itd.base import ITDBaseModel
-from itd.api.pins import set_pin, remove_pin
 
 if TYPE_CHECKING:
     from itd.client import Client

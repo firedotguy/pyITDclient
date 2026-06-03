@@ -5,13 +5,16 @@ from typing import TYPE_CHECKING
 from itd.exceptions import TooLargeError, NotFoundError
 from itd.base import catch_errors, rate_limit
 from itd.enums import AuthLevel
+
 if TYPE_CHECKING:
     from itd.client import Client
+
 
 @rate_limit()
 @catch_errors()
 def get_hashtags(client: Client, limit: int = 10):
     return client.request('get', 'hashtags/trending', {'limit': limit}, level=AuthLevel.NO)
+
 
 @rate_limit()
 @catch_errors(TooLargeError('Hashtag'), NotFoundError('Hashtag', json_check=lambda json: json.get('data', {}).get('hashtag', '') is None))

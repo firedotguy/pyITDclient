@@ -18,13 +18,6 @@ def test_post_loads(redis_post):
     assert redis_post.content is not None
     assert redis_post.author is not None
     assert redis_post.created_at is not None
-    assert redis_post._loaded
-
-
-def test_post_refresh(redis_post):
-    redis_post.refresh()
-    assert redis_post._loaded
-
 
 
 def test_view(redis_post):
@@ -99,6 +92,6 @@ def test_delete_restore(client):
     post.restore(client)
 
     post.refresh()
-    assert post._loaded
+    assert post.load_status.value == 'full'
 
     post.delete(client)

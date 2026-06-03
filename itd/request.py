@@ -1,20 +1,22 @@
+from _io import BufferedReader
 from base64 import urlsafe_b64decode
 from json import loads
-from _io import BufferedReader
 from time import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
-from typing import TYPE_CHECKING
 
 from requests import Response, Session
+
 from itd.logger import get_logger
+
 if TYPE_CHECKING:
     from itd.client import Client
 
-l = get_logger('request')
+l = get_logger('request')  # noqa: E741
 
 
 # ai begin ---
+
 
 def _get_jhash(b: int) -> int:
     """Calculate DDoS-Guard challenge hash (JS get_jhash port)."""
@@ -47,7 +49,10 @@ def _solve_ddos_guard(session: Session, response: Response, domain: str = 'xn--d
     session.cookies.set('__jua_', quote(user_agent, safe=''), domain=domain, path='/')
 
     return True
+
+
 # --- ai end
+
 
 def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:
     """Декодирует payload jwt.
@@ -82,10 +87,7 @@ def is_token_expired(access_token: str) -> bool:
 
 
 def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}) -> Response:
-    headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
-    }
+    headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3"}
     if client.config._user_agent:
         headers['User-Agent'] = client.config._user_agent
     if client.access_token:
@@ -95,12 +97,7 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
     def _do_request():
         m = method.lower()
         if m == "get":
-            return client.session.get(
-                f'{client.config._url_api}/{url}',
-                timeout=client.config.timeout,
-                params=params,
-                headers=headers
-            )
+            return client.session.get(f'{client.config._url_api}/{url}', timeout=client.config.timeout, params=params, headers=headers)
 
         return client.session.request(
             m.upper(),

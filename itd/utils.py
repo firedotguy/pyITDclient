@@ -1,24 +1,26 @@
-from uuid import UUID
-from html.parser import HTMLParser
-from datetime import datetime
 import re
+from datetime import datetime
+from html.parser import HTMLParser
 from sys import version
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from telegramify_markdown import convert, converter
 import pyromark
 from lxml import html
 
+from itd.enums import AttachType, SpanType
+from itd.file import File, PostAttach
 from itd.span import Span
-from itd.file import PostAttach, File
-from itd.enums import SpanType, AttachType
+
 if TYPE_CHECKING:
     from itd.client import Config
 
 converter.STANDARD_OPTIONS = pyromark.Options.ENABLE_STRIKETHROUGH
 
 def get_sdk_user_agent():
-    from itd import __version__ # i fucking hate circular imports this is sooo stupid
+    from itd import __version__  # i fucking hate circular imports this is sooo stupid
+
     return f'itd-sdk/{__version__} (Python/{version})'
 
 
@@ -26,6 +28,7 @@ def to_uuid(value: str | UUID) -> UUID:
     if isinstance(value, str):
         return UUID(value)
     return value
+
 
 def to_nullable_uuid(value: str | UUID | None) -> UUID | None:
     if value is None:
@@ -43,6 +46,8 @@ def parse_datetime(value: str) -> datetime:
 
 
 ATTACHMENTS = File | UUID | str | list[File | UUID | str]
+
+
 def format_attachments(attachments: ATTACHMENTS = []) -> list[UUID]:
     if isinstance(attachments, list):
         formatted = []
@@ -50,7 +55,7 @@ def format_attachments(attachments: ATTACHMENTS = []) -> list[UUID]:
             if isinstance(attachment, File):
                 formatted.append(attachment.id)
             else:
-                formatted.append(to_uuid(attachment))
+                formatted.append(to_uuid(attachment))  # ty: ignore[invalid-argument-type]
         return formatted
     else:
         if isinstance(attachments, File):
