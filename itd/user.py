@@ -419,13 +419,14 @@ class Me(_UserBase):
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)
 
-        self._blocked = Blocked()
-        self._followers = Followers()
-        self._following = Following()
+        self.blocked: Blocked = Blocked()
+        self._followers: Followers | None = None
+        self._following: Following | None = None
         self._pins: list[Pin] = []
         self.privacy: Privacy = Privacy._from_user(self, self.client)
         self.profile: Profile = Profile(self.client)
-        self.client._user = self
+        if not self.client._user:
+            self.client._user = self
 
     def to_user(self) -> User:
         instance = User.__new__(User)
@@ -493,26 +494,15 @@ class Me(_UserBase):
                 raise PinNotOwnedError(pin.slug)
 
     @property
-    def blocked(self) -> 'Blocked':
-        if not self._blocked:
-            self._blocked._client = self.client
-            self._blocked.load()
-        return self._blocked
-
-    @property
     def followers(self) -> 'Followers':
         if not self._followers:
-            self._followers._user_id = self.id
-            self._followers._client = self._client
-            self._followers.load()
+            self._followers = Followers(self.id)
         return self._followers
 
     @property
     def following(self) -> 'Following':
         if not self._following:
-            self._following._user_id = self.id
-            self._following._client = self._client
-            self._following.load()
+            self._following = Following(self.id)
         return self._following
 
     @property
@@ -550,11 +540,13 @@ class _MeValidate(BaseModel, Me):
 
 class Followers(ITDList[User]):
     _load_with_parent = False
-    _user_id: UUID
     cursor: int = 1
 
+    def __init__(self, id: UUID):
+        self.user_id = id
+
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_followers(client, self._user_id, self.cursor).json()['data']
+        return get_followers(client, self.user_id, self.cursor).json()['data']
 
     @staticmethod
     def _get_has_more(data: dict) -> bool:
@@ -575,20 +567,17 @@ class Followers(ITDList[User]):
     def _to_models(self, objects: list, client: Client):
         return [User.from_dict(user, client=client) for user in objects]
 
-    def __setattr__(self, name: str, value) -> None:
-        if name == '_client':
-            for user in self.copy():
-                user._client = value
-        super().__setattr__(name, value)
-
 
 class Following(Followers):
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_following(client, self._user_id, self.cursor).json()['data']
+        return get_following(client, self.user_id, self.cursor).json()['data']
 
 
 class Blocked(Followers):
     limit = 100
+
+    def __init__(self):
+        super(Followers, self).__init__()
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_blocked(client, self.cursor, limit).json()['data']
