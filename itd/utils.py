@@ -1,13 +1,11 @@
-import re
 from datetime import datetime
-from html.parser import HTMLParser
 from sys import version
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from telegramify_markdown import convert, converter
 import pyromark
 from lxml import html
+from telegramify_markdown import convert, converter
 
 from itd.enums import AttachType, SpanType
 from itd.file import File, PostAttach
@@ -16,7 +14,8 @@ from itd.span import Span
 if TYPE_CHECKING:
     from itd.client import Config
 
-converter.STANDARD_OPTIONS = pyromark.Options.ENABLE_STRIKETHROUGH
+converter.STANDARD_OPTIONS = pyromark.Options.ENABLE_STRIKETHROUGH  # ty: ignore[invalid-assignment]
+
 
 def get_sdk_user_agent():
     from itd import __version__  # i fucking hate circular imports this is sooo stupid
@@ -81,13 +80,12 @@ TAG_MAP = {
     'a': SpanType.LINK
 }
 
+
 def parse_html(text: str) -> tuple[str, list[Span]]:
-    """
-    Парсит HTML-текст, извлекает чистый текст и spans с форматированием.
+    """Спарсить HTML
 
     Поддерживаемые теги:
-    - <b>, <i>, <s>, <u>, <code>, <spoiler>, <q>
-    - <a href="url">text</a> или <а>url</а> (ссылки)
+    - <b>, <i>, <s>, <u>, <code>, <spoiler>, <q>, <a href="url">text</a>, <a>url</a>
 
     Args:
         text: HTML-строка для парсинга
@@ -109,10 +107,22 @@ def parse_html(text: str) -> tuple[str, list[Span]]:
 
         length = len(element.text_content())
         offset = len(''.join(element.xpath('./preceding::text()')))
-        spans.append(Span(length=length, offset=offset, type=TAG_MAP[element.tag], url=element.get('href')))
+        spans.append(Span(length=length, offset=offset, type=TAG_MAP[element.tag], url=None if element.tag != 'a' else element.get('href', element.text)))
     return root.text_content(), spans
 
 
 def parse_md(md: str) -> tuple[str, list[Span]]:
+    """Спарсить markdown
+
+    Поддерживаемые теги:
+    - *, _, **, __, ~, ~~, `, ||, \[text](url)
+
+    Args:
+        text: строка для парсинга
+
+    Returns:
+        str: чистая строка
+        list[Span]: список спанов
+    """
     text, spans = convert(md, latex_escape=False)
     return text, [Span.model_validate(span, from_attributes=True) for span in spans]
