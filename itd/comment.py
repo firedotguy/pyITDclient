@@ -161,8 +161,6 @@ class _CommentValidate(BaseModel, Comment):
 class Comments(ITDList[Comment]):
     """Список комментариев с функцией дозагрузки"""
 
-    _limit = 500
-
     _post: Post
     total: int
     cursor: int = 0
@@ -220,7 +218,6 @@ class Comments(ITDList[Comment]):
 
 
 class Replies(ITDList[Comment]):
-    _limit = 100
     _base_comment: 'Comment'
 
     _post: Post

@@ -1,25 +1,26 @@
 from __future__ import annotations
-from uuid import UUID
-from typing import TYPE_CHECKING
 
-from itd.enums import Unset, UNSET, AccessType
-from itd.exceptions import (
-    NotFoundError,
-    TooLargeError,
-    ValidationError,
-    RequiresVerificationError,
-    UsernameTakenError,
-    AlreadyFollowingError,
-    AlreadyDeletedError,
-    NotDeletedError,
-    AlreadyBlockedError,
-    NotBlockedError,
-    CantFollowYourselfError,
-    UserBlockedError,
-    CantBlockYourselfError,
-    TargetUserBannedError
-)
+from typing import TYPE_CHECKING
+from uuid import UUID
+
 from itd.base import catch_errors, rate_limit
+from itd.enums import UNSET, AccessType, AuthLevel, Unset
+from itd.exceptions import (
+    AlreadyBlockedError,
+    AlreadyDeletedError,
+    AlreadyFollowingError,
+    CantBlockYourselfError,
+    CantFollowYourselfError,
+    NotBlockedError,
+    NotDeletedError,
+    NotFoundError,
+    RequiresVerificationError,
+    TargetUserBannedError,
+    TooLargeError,
+    UserBlockedError,
+    UsernameTakenError,
+    ValidationError
+)
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -93,14 +94,14 @@ def unfollow(client: Client, username_or_id: str | UUID):
 
 @rate_limit()
 @catch_errors(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
-def get_followers(client: Client, username_or_id: str | UUID, page: int = 1):  # !! page not works if not me
-    return client.request('get', f'users/{username_or_id}/followers', {'page': page})
+def get_followers(client: Client, username_or_id: str | UUID, page: int = 1, limit: int = 20):  # !! page not works if not me
+    return client.request('get', f'users/{username_or_id}/followers', {'page': page, 'limit': limit})
 
 
 @rate_limit()
 @catch_errors(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
-def get_following(client: Client, username_or_id: str | UUID, page: int = 1):  # !! page not works if not me
-    return client.request('get', f'users/{username_or_id}/following', {'page': page})
+def get_following(client: Client, username_or_id: str | UUID, page: int = 1, limit: int = 20):  # !! page not works if not me
+    return client.request('get', f'users/{username_or_id}/following', {'page': page, 'limit': limit})
 
 
 @rate_limit()

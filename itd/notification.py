@@ -113,7 +113,6 @@ class _NotificationValidate(BaseModel, Notification):
 
 
 class Notifications(ITDList[Notification]):
-    _limit = 1000
     _unread: int | None = None
 
     def _fetch(self, client: Client, limit: int) -> dict:

@@ -133,7 +133,6 @@ T = TypeVar('T', bound=ITDBaseModel)
 class ITDList(ITDBaseModel, list[T]):
     """Базовый класс списка"""
 
-    _limit: int = 20
     _get_total = None
     _refreshable = False
     has_more = True
@@ -159,7 +158,7 @@ class ITDList(ITDBaseModel, list[T]):
             l.warning('skip load because has_more=False')
             return []
 
-        limit = limit or self._limit
+        limit = limit or (client or self.client).config.batch_sizes._values[self.__class__.__name__.lower()]
         if isinstance(count, int) and count < limit:
             limit = count
         l.debug('load %s count=%s limit=%s cursor=%s', self.__class__.__name__.lower(), count, limit, self.cursor)

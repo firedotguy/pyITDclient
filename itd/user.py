@@ -546,7 +546,7 @@ class Followers(ITDList[User]):
         self.user_id = id
 
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_followers(client, self.user_id, self.cursor).json()['data']
+        return get_followers(client, self.user_id, self.cursor, limit).json()['data']
 
     @staticmethod
     def _get_has_more(data: dict) -> bool:
@@ -570,12 +570,10 @@ class Followers(ITDList[User]):
 
 class Following(Followers):
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_following(client, self.user_id, self.cursor).json()['data']
+        return get_following(client, self.user_id, self.cursor, limit).json()['data']
 
 
 class Blocked(Followers):
-    limit = 100
-
     def __init__(self):
         super(Followers, self).__init__()
 

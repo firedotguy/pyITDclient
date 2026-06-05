@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from threading import Thread
 from time import sleep
-from typing import Callable, overload
+from typing import Callable, Literal, overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -28,6 +28,44 @@ from itd.user import Me, User
 from itd.utils import get_sdk_user_agent, to_uuid
 
 l = get_logger('client')  # noqa: E741
+
+
+@dataclass
+class BatchSizes:
+    preset: Literal['decreased', 'default', 'increased', 'max'] = 'default'
+    comments: int | None = None
+    replies: int | None = None
+    hashtags: int | None = None
+    notifications: int | None = None
+    posts: int | None = None
+    user_posts: int | None = None
+    liked_posts: int | None = None
+    hashtag_posts: int | None = None
+    followers: int | None = None
+    following: int | None = None
+    blocked: int | None = None
+
+    def __post_init__(self):
+        presets = {
+            'comments': [50, 100, 200, 500],
+            'replies': [20, 100, 100, 100],
+            'hashtags': [5, 10, 20, 50],
+            'notifications': [10, 20, 50, 1000],
+            'posts': [10, 20, 30, 50],
+            'user_posts': [10, 20, 30, 50],
+            'liked_posts': [10, 20, 30, 50],
+            'hashtag_posts': [10, 20, 30, 50],
+            'followers': [10, 20, 50, 100],
+            'following': [10, 20, 50, 100],
+            'blocked': [10, 20, 50, 100]
+        }
+        presets_map = ['decreased', 'default', 'increased', 'max']
+        self._values: dict[str, int] = {}
+        for k, v in presets.items():
+            if getattr(self, k) is None:
+                self._values[k.replace('_', '')] = v[presets_map.index(self.preset)]
+            else:
+                self._values[k.replace('_', '')] = getattr(self, k)
 
 
 @dataclass
@@ -88,6 +126,7 @@ class Config:
     view_images_speed: int = 130  # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
 
     on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
+    batch_sizes: BatchSizes = field(default_factory=BatchSizes)
 
     def __post_init__(self):
         if self.rate_limit_default:

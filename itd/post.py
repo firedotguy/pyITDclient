@@ -633,7 +633,6 @@ class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have 
 
 
 class _BasePosts(ITDList[Post]):
-    _limit = 50
     source: ViewSource
     source_context: str | None = None
 
