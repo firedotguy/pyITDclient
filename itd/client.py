@@ -7,6 +7,7 @@ from time import sleep
 from typing import overload
 from uuid import UUID
 
+from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
@@ -17,7 +18,7 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.api.users import get_follow_status
-from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, UserAgent
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
 from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
 from itd.hashtag import Hashtag
 from itd.logger import get_logger
@@ -121,6 +122,22 @@ class Config:
         )
 
 
+class AccessToken(BaseModel):
+    roles: list[Role]
+    session_id: UUID = Field(alias='sid')
+    is_active: bool = Field(alias='isActive')
+    subject_id: UUID = Field(alias='sub')
+    issued_at: datetime = Field(alias='iat')
+    issuer: str = Field(alias='iss')  # "auth-service"
+    expired_at: datetime = Field(alias='exp')
+    jwt_id: UUID = Field(alias='jti')
+
+    @field_validator('issued_at', 'expired_at', mode='plain')
+    @classmethod
+    def validate_datetimes(cls, v):
+        return datetime.fromtimestamp(v)
+
+
 class Client:
     def __init__(self, refresh: str | None = None, access: str | None = None, config: Config = Config()):
         l.info('init client refresh=%s access=%s', refresh is not None, access is not None)
@@ -128,6 +145,7 @@ class Client:
         self.last_actions: dict[str, datetime] = {}
         self.auth_level: AuthLevel = AuthLevel.NO
         self.access_token: str | None = None
+        self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
         self._user: Me | None = None
         self.visible_posts: list[Post] = []
@@ -231,6 +249,7 @@ class Client:
         res.raise_for_status()
 
         self.access_token = res.json()['accessToken']
+        self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
 
         assert self.access_token
         return self.access_token
@@ -242,7 +261,8 @@ class Client:
 
     @property
     def user_id(self) -> UUID:
-        return UUID(decode_jwt_payload(self.token)['sub'])
+        assert self.access_token_data
+        return self.access_token_data.subject_id
 
     @property
     def user(self):
@@ -297,7 +317,7 @@ class Client:
         Returns:
             list[User]: Список пользователей
         """
-        return self.search(query, 1, limit)[0]  # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
+        return self.search(query, 1, limit)[0]  # cant hashtags_limit=0 because it gives validationerr, ну это вам только хуже будет так что сервера страдайте
 
     def search_hashtags(self, query: str, limit: int = 20) -> list[Hashtag]:
         """Поиск хэштэгов

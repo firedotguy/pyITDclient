@@ -18,7 +18,7 @@ version = "2.4.4"
 description = "ITD client for python"
 readme = "README.md"
 authors = [
-  { name = "firedotguy", email = "nta16022013@gmail.com" }
+  { name = "fi-res", email = "nta16022013@gmail.com" }
 ]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
