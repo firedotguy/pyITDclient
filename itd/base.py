@@ -7,8 +7,6 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
-from pydantic_core import PydanticUndefinedType
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
@@ -31,13 +29,13 @@ def _getattr(self: object, name: str, default: Any | None = None) -> Any:
         return default
 
 
-def _field_has_default(cls: type, name: str) -> bool:
-    """Returns True if the field is declared as Field(...) with a default value."""
-    for klass in cls.__mro__:
-        val = klass.__dict__.get(name)
-        if isinstance(val, FieldInfo):
-            return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
-    return False
+# def _field_has_default(cls: type, name: str) -> bool:
+#     """Returns True if the field is declared as Field(...) with a default value."""
+#     for klass in cls.__mro__:
+#         val = klass.__dict__.get(name)
+#         if isinstance(val, FieldInfo):
+#             return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
+#     return False
 
 
 class ITDBaseModel:
@@ -112,7 +110,7 @@ class ITDBaseModel:
                 or not _getattr(self, 'client').config.auto_load  # отключено в конфиге
                 or callable(value)  # функция
                 or isinstance(_getattr(type(self), name), property)
-                or self.load_status == LoadStatus.LOADING  # сейчас загружается (уже вроде как не надо, но пусть будет на всяк)
+                or self.load_status == LoadStatus.FULL
                 or (not _getattr(self, 'client').config.load_comments_from_post and name == 'comments' and self.__class__.__name__ == 'Post')  # коменты
                 or name in self._loaded_attrs
                 or name in self.__dict__  # было загружено или добавлено через setattr
@@ -369,6 +367,7 @@ def catch_errors(*exceptions: ITDException):
                     if isinstance(exception, AccountDeletedError):
                         exception.can_restore = json.get('error', {}).get('canRestore', True)
 
+                    client._process_exc_callbacks(exception)
                     raise exception
 
             if client.config.debug_response == DebugResponseMode.AFTER:

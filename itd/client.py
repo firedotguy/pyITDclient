@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from threading import Thread
 from time import sleep
-from typing import overload
+from typing import Callable, overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -86,6 +86,8 @@ class Config:
 
     view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
     view_images_speed: int = 130  # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
+
+    on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.rate_limit_default:
@@ -237,6 +239,27 @@ class Client:
         for post in self.visible_posts:
             post._set_stats(next((stat for stat in stats if stat['id'] == str(post.id))))
 
+    @property
+    def token(self) -> str:
+        assert self.access_token, 'Access token not refreshed yet'
+        return self.access_token
+
+    @property
+    def user_id(self) -> UUID:
+        assert self.access_token_data
+        return self.access_token_data.subject_id
+
+    @property
+    def user(self):
+        if not self._user:
+            self._user = Me(self)
+        return self._user
+
+    def _process_exc_callbacks(self, exception: Exception):
+        l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
+        for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
+            callback(exception)
+
     def refresh_auth(self) -> str:
         """Обновить access token
 
@@ -253,22 +276,6 @@ class Client:
 
         assert self.access_token
         return self.access_token
-
-    @property
-    def token(self) -> str:
-        assert self.access_token, 'Access token not refreshed yet'
-        return self.access_token
-
-    @property
-    def user_id(self) -> UUID:
-        assert self.access_token_data
-        return self.access_token_data.subject_id
-
-    @property
-    def user(self):
-        if not self._user:
-            self._user = Me(self)
-        return self._user
 
     def logout(self):
         """Выход из аккаунта"""

@@ -115,7 +115,7 @@ def parse_md(md: str) -> tuple[str, list[Span]]:
     """Спарсить markdown
 
     Поддерживаемые теги:
-    - *, _, **, __, ~, ~~, `, ||, \[text](url)
+    - *, _, **, __, ~, ~~, `, ||, \\[text](url)
 
     Args:
         text: строка для парсинга
