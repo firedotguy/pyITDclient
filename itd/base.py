@@ -111,7 +111,6 @@ class ITDBaseModel:
                 or callable(value)  # функция
                 or isinstance(_getattr(type(self), name), property)
                 or self.load_status == LoadStatus.FULL
-                or (not _getattr(self, 'client').config.load_comments_from_post and name == 'comments' and self.__class__.__name__ == 'Post')  # коменты
                 or name in self._loaded_attrs
                 or name in self.__dict__  # было загружено или добавлено через setattr
                 or (isinstance(value, ITDBaseModel) and not value._load_with_parent)

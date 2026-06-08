@@ -41,9 +41,10 @@ class Comment(ITDBaseModel):
     _base_comment: Comment | None = None
 
     @classmethod
-    def from_dict(cls, data: dict, post: Post, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
+    def from_dict(cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
         instance = super().from_dict(data, client=client)
-        instance._post = post
+        if post:
+            instance._post = post
         instance._base_comment = base_comment
         instance.replies._post = post
         instance.replies._post_refresh()

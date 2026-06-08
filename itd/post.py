@@ -238,7 +238,7 @@ class Post(ITDBaseModel):
     attachments: list[PostAttach]
     poll: Poll | None = None
 
-    comments: Comments = Field(default_factory=lambda: Comments())
+    first_comments: list[Comment] = Field(alias='comments')
 
     likes_count: int = Field(0, alias='likesCount')
     comments_count: int = Field(0, alias='commentsCount')  # ! Comments + replies, so len(comments) != comments_count
@@ -267,9 +267,8 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
-        if not self.client.config.load_comments_from_post:
-            self.comments = Comments()
-            self.comments._post = self
+        self.comments = Comments()
+        self.comments._post = self
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
@@ -278,6 +277,8 @@ class Post(ITDBaseModel):
         self.visible = False
         self.comments._post = self
         self.comments._post_refresh()
+        for comment in self.first_comments:
+            comment._post = self
         for attachment in self.attachments:
             attachment._post = self
 
@@ -328,6 +329,7 @@ class Post(ITDBaseModel):
             setattr(instance, name, value)
 
         instance.load_status = LoadStatus.PARTIALLY
+        instance.comments = Comments()
         instance._post_refresh()
 
         return instance
@@ -611,10 +613,10 @@ class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have 
             return
         return Poll(poll)
 
-    @field_validator('comments', mode='plain')
+    @field_validator('first_comments', mode='plain')
     @classmethod
-    def validate_comments(cls, comments: list[dict]):
-        return Comments()._init_raw(comments)
+    def validate_first_comments(cls, comments: list[dict]):
+        return [Comment.from_dict(comment) for comment in comments]
 
     @field_validator('author', mode='plain')
     @classmethod

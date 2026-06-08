@@ -99,7 +99,7 @@ class Config:
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
-    load_comments_from_post: bool = False
+    load_comments_from_post: bool | None = None
 
     parse_mode: ParseMode = ParseMode.NO
 
@@ -155,6 +155,8 @@ class Config:
 
         if self.dwell_wait_durations:
             l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
+        if self.load_comments_from_post is not None:
+            l.warning('load_comments_from_post is deprecated and will be removed int 2.7.0.')
 
         self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
             RateLimitError,
