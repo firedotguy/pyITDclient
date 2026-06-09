@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from itd._limiter import RateLimiter
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 _default_client: Client | None = None
+limiters: dict[str, RateLimiter] = {}
 
 
 def get_default_client() -> Client:

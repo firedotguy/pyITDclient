@@ -70,20 +70,28 @@ class BatchSizes:
 
 @dataclass
 class Config:
-    rate_limit: RateLimitMode = RateLimitMode.MID
-    rate_limit_default: int | None = None  # overrides ratelimit mode  # rate limit for standard actions
-    rate_limit_actions: dict[str, float | int] = field(
-        default_factory=lambda: {}
-    )  # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
+    # для реальных клиентов включен калбэк на ошибки (сами ошибки не выбрасываются) и выключен логгер. Передает ошибки в калбэк, в консоль ничего не пишет, при ошибках сети падает.
+    # для ботов включен отлов всех ошибок, а также калбэк при ошибках сети (шоб отправлять в тг например), включен логгер на инфо. Показывает ошибки в консоли, но не завершшает скрипт.
+    # для одноразовых скриптов стандартное поведение, отловов ошибок нет, включен логгер на дебаг.
+    # client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
-    # is_logging_enabled: bool = True # TODO
+    rate_limit: RateLimitMode | None = None  # deprecated
+    rate_limit_default: int | None = None  # deprecated
+    rate_limit_actions: dict[str, float | int] | None = None  # deprecated
+    anti_rate_limit: bool = True
+    anti_ip_ban: bool = True
+    anti_ip_ban_limit: int = 100
+
+    # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
 
     is_default: bool = False
 
     userposts_add_pinned_post: bool = True
 
-    auto_load: bool = True
+    # load_on_init: bool = True
+    # load_on_getattr: bool = False
+    auto_load: bool | None = None
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
     force_load_lists: bool = False  # load lists even if has_more is False
@@ -129,15 +137,6 @@ class Config:
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
 
     def __post_init__(self):
-        if self.rate_limit_default:
-            self._rate_limit_default = self.rate_limit_default
-        elif self.rate_limit == RateLimitMode.MIN:
-            self._rate_limit_default = 0
-        elif self.rate_limit == RateLimitMode.MID:
-            self._rate_limit_default = 0.2
-        else:
-            self._rate_limit_default = 0.4
-
         self._url_api = self.url_api if self.url_api else f'https://{self.url}/api'
         self.url = self.url.split('https://')[0].split('http://')[0]
 
@@ -154,13 +153,19 @@ class Config:
                 self._user_agent = self.user_agent
 
         if self.dwell_wait_durations:
-            l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
+            l.warning('config.dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
         self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
             RateLimitError,
             InternalError,
             RequestException
         )
+        if self.rate_limit is not None:
+            l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
+        if self.rate_limit_default is not None:
+            l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
+        if self.rate_limit_actions is not None:
+            l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
 
 
 class AccessToken(BaseModel):
@@ -183,7 +188,7 @@ class Client:
     def __init__(self, refresh: str | None = None, access: str | None = None, config: Config = Config()):
         l.info('init client refresh=%s access=%s', refresh is not None, access is not None)
         self.config = config
-        self.last_actions: dict[str, datetime] = {}
+        self.last_actions: dict[str, int | float] = {}
         self.auth_level: AuthLevel = AuthLevel.NO
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
@@ -295,7 +300,7 @@ class Client:
         return self._user
 
     def _process_exc_callbacks(self, exception: Exception):
-        l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
+        # l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
         for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
             callback(exception)
 

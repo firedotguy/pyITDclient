@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from datetime import datetime, timedelta
 from functools import wraps
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
@@ -10,8 +9,9 @@ from pydantic import BaseModel
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_default_client
-from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus, RateLimitMode
+from itd._default import get_default_client, limiters
+from itd._limiter import RateLimiter
+from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
 from itd.logger import get_logger
 
@@ -309,8 +309,8 @@ def _filter_bytes(args: tuple):
     return filtered
 
 
-# user calls `Me` -> model calls `get_me` -> `catch_errors` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `catch_errors` -> `client.resuest` -> `fetch` -> token refreshed -> `catch_errors` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model # hell what the monster i did
-def catch_errors(*exceptions: ITDException):
+# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model # hell what the monster i did
+def api_wrapper(*exceptions: ITDException):
     """Декоратор для отлавливания ошибок
 
     Args:
@@ -321,6 +321,9 @@ def catch_errors(*exceptions: ITDException):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
             l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
+            if func.__name__ in limiters:
+                limiters[func.__name__].acquire()
+
             res: Response = func(client, *args, **kwargs)
 
             assert isinstance(res, Response)
@@ -328,6 +331,26 @@ def catch_errors(*exceptions: ITDException):
                 if client.config.debug_response != DebugResponseMode.NO:
                     l.debug('no response')
                 return res
+
+            # if res.headers.get('x-ratelimit-limit') and client.last_actions.get(func.__name__):
+            #     delay = 60 / int(res.headers['x-ratelimit-limit']) * 0.9 - (time() - client.last_actions[func.__name__])
+            #     if delay > 0:
+            #         l.debug('sleep %s limit=%s (max %s req/s)', round(1 / delay, 3), res.headers['x-ratelimit-limit'], round(delay, 3))
+            #         sleep(1 / delay)
+            # client.last_actions[func.__name__] = time()
+            remaining = int(res.headers.get('x-ratelimit-remaining', 0))
+            limit = int(res.headers.get('x-ratelimit-limit', 0))
+
+            if client.config.anti_rate_limit:
+                if func.__name__ not in limiters:
+                    l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
+                    limiters[func.__name__] = RateLimiter(limit)
+                else:
+                    l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
+                limiters[func.__name__].sync(remaining)
+
+            if limit > client.config.anti_ip_ban_limit:
+                sleep(2 / client.config.anti_ip_ban_limit)  # prevent ip ban
 
             if client.config.debug_response == DebugResponseMode.BEFORE:
                 l.debug('response (raw): %s', res.text)
@@ -358,6 +381,8 @@ def catch_errors(*exceptions: ITDException):
 
                     if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                         exception.retry_after = json.get('error', {}).get('retryAfter', 0)
+                        if exception.retry_after == 0 and limit:
+                            client.last_actions[func.__name__] = limit
 
                     if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
                         client.refresh_auth()
@@ -396,20 +421,19 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
     def decorator(func):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            if func.__name__ in client.config.rate_limit_actions:
-                delay = client.config.rate_limit_actions[func.__name__]
-            elif client.config.rate_limit == RateLimitMode.NO:
-                delay = 0
-            elif any((delay_min, delay_mid, delay_max)):
-                delay = eval(f'delay_{client.config.rate_limit.value}') or next((i for i in (delay_min, delay_mid, delay_max) if i is not None))
-            else:
-                delay = client.config._rate_limit_default
+            # if func.__name__ in client.config.rate_limit_actions:
+            #     delay = client.config.rate_limit_actions[func.__name__]
+            # elif client.config.rate_limit == RateLimitMode.NO:
+            #     delay = 0
+            # elif any((delay_min, delay_mid, delay_max)):
+            #     delay = eval(f'delay_{client.config.rate_limit.value}') or next((i for i in (delay_min, delay_mid, delay_max) if i is not None))
+            # else:
+            #     delay = client.config._rate_limit_default
 
-            if datetime.now() - timedelta(seconds=delay) < client.last_actions.get(func.__name__, datetime(1990, 1, 1)):
-                delay -= (datetime.now() - client.last_actions[func.__name__]).seconds
-                l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
-                sleep(max(delay, 0))
-            client.last_actions[func.__name__] = datetime.now()
+            # if datetime.now() - timedelta(seconds=delay) < client.last_actions.get(func.__name__, datetime(1990, 1, 1)):
+            #     delay -= (datetime.now() - client.last_actions[func.__name__]).seconds
+            #     l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
+            #     sleep(max(delay, 0))
 
             if not client.config.retry_enabled:
                 return func(client, *args, **kwargs)

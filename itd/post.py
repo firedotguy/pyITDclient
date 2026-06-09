@@ -200,9 +200,9 @@ class DwellTracker(ITDBaseModel):
             self.send_interactions()
 
     def _start_timer(self):
-        l.debug('start dwell timer')
         if not self.client.config.dwell_send_interval:
             return
+        l.debug('start dwell timer')
 
         def loop():
             while True:

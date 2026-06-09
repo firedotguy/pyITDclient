@@ -1,17 +1,18 @@
 from __future__ import annotations
-from uuid import UUID
-from typing import TYPE_CHECKING
 
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from itd.base import api_wrapper, rate_limit
 from itd.enums import ReportReason, ReportTargetType
 from itd.exceptions import AlreadyReportedError, NotFoundError, ValidationError
-from itd.base import catch_errors, rate_limit
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
 @rate_limit(5, 30, 60)  # это стоило мне одного ака виталия
-@catch_errors(
+@api_wrapper(
     AlreadyReportedError(), NotFoundError('Report target', json_check=lambda json: 'не найден' in json.get('error', {}).get('message', '')), ValidationError()
 )
 def report(client: Client, id: UUID, type: ReportTargetType = ReportTargetType.POST, reason: ReportReason = ReportReason.OTHER, description: str | None = None):

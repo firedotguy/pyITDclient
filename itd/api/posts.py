@@ -1,29 +1,30 @@
 from __future__ import annotations
-from datetime import datetime
-from uuid import UUID
-from typing import TYPE_CHECKING
 
+from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from itd.base import api_wrapper, rate_limit
 from itd.enums import PostsTab, UserPostSorting
-from itd.poll import NewPoll
 from itd.exceptions import (
-    NotFoundError,
-    ForbiddenError,
-    RequiresSubscriptionError,
-    ValidationError,
     AlreadyRepostedError,
+    BannedWordError,
     CantRepostYourselfError,
-    NotPinnedError,
     EditExpiredError,
-    BannedWordError
+    ForbiddenError,
+    NotFoundError,
+    NotPinnedError,
+    RequiresSubscriptionError,
+    ValidationError
 )
-from itd.base import rate_limit, catch_errors
+from itd.poll import NewPoll
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
 @rate_limit(1, 10, 30)
-@catch_errors(
+@api_wrapper(
     NotFoundError('Wall recipient'),
     ForbiddenError('post - some files not owned'),
     RequiresSubscriptionError('Video uploading'),
@@ -52,7 +53,7 @@ def create_post(
 
 
 @rate_limit()
-@catch_errors(ValidationError())
+@api_wrapper(ValidationError())
 def get_posts(client: Client, cursor: str | datetime | None = None, limit: int = 20, tab: PostsTab = PostsTab.POPULAR):
     data = {'limit': limit, 'tab': tab.value}
     if cursor is not None:
@@ -61,43 +62,43 @@ def get_posts(client: Client, cursor: str | datetime | None = None, limit: int =
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Post'))
+@api_wrapper(NotFoundError('Post'))
 def get_post(client: Client, id: UUID):
     return client.request('get', f'posts/{id}')
 
 
 @rate_limit(None, 1, 5)
-@catch_errors(NotFoundError('Post'), ForbiddenError('edit post'), EditExpiredError(), BannedWordError('Post'))
+@api_wrapper(NotFoundError('Post'), ForbiddenError('edit post'), EditExpiredError(), BannedWordError('Post'))
 def edit_post(client: Client, id: UUID, content: str, spans: list[dict] = []):
     return client.request('put', f'posts/{id}', {'content': content, 'spans': spans})
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Post'), ForbiddenError('delete post'))
+@api_wrapper(NotFoundError('Post'), ForbiddenError('delete post'))
 def delete_post(client: Client, id: UUID):
     return client.request('delete', f'posts/{id}')
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Post'), ForbiddenError('restore post'))
+@api_wrapper(NotFoundError('Post'), ForbiddenError('restore post'))
 def restore_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/restore')
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Post'), ForbiddenError('pin post'))
+@api_wrapper(NotFoundError('Post'), ForbiddenError('pin post'))
 def pin_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/pin')
 
 
 @rate_limit()
-@catch_errors(NotPinnedError())
+@api_wrapper(NotPinnedError())
 def unpin_post(client: Client, id: UUID):
     return client.request('delete', f'posts/{id}/pin')
 
 
 @rate_limit(1, 10, 30)
-@catch_errors(NotFoundError('Post'), AlreadyRepostedError(), CantRepostYourselfError(), ValidationError(), BannedWordError('Post'))
+@api_wrapper(NotFoundError('Post'), AlreadyRepostedError(), CantRepostYourselfError(), ValidationError(), BannedWordError('Post'))
 def repost(client: Client, id: UUID, content: str | None = None):
     data = {}
     if content:
@@ -106,19 +107,19 @@ def repost(client: Client, id: UUID, content: str | None = None):
 
 
 @rate_limit(0, 0.05)
-@catch_errors(NotFoundError('Post'))
+@api_wrapper(NotFoundError('Post'))
 def view_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/view')
 
 
 @rate_limit()
-@catch_errors(ValidationError(), NotFoundError('User'))
+@api_wrapper(ValidationError(), NotFoundError('User'))
 def get_liked_posts(client: Client, username_or_id: str | UUID, cursor: datetime | None = None, limit: int = 20):
     return client.request('get', f'posts/user/{username_or_id}/liked', {'limit': limit, 'cursor': cursor})
 
 
 @rate_limit()
-@catch_errors(ValidationError(), NotFoundError('User', res_check=lambda res: res.status_code == 404 and res.text == 'NOT_FOUND'))
+@api_wrapper(ValidationError(), NotFoundError('User', res_check=lambda res: res.status_code == 404 and res.text == 'NOT_FOUND'))
 def get_user_posts(
     client: Client,
     username_or_id: str | UUID,
@@ -131,18 +132,18 @@ def get_user_posts(
 
 
 @rate_limit(None, 3, 15)
-@catch_errors(NotFoundError('Post'))
+@api_wrapper(NotFoundError('Post'))
 def like_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/like')
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Post'))
+@api_wrapper(NotFoundError('Post'))
 def unlike_post(client: Client, id: UUID):
     return client.request('delete', f'posts/{id}/like')
 
 
 @rate_limit()
-@catch_errors(ValidationError())
+@api_wrapper(ValidationError())
 def get_stats(client: Client, ids: list[UUID]):
     return client.request('post', 'posts/stats', {'ids': [str(id) for id in ids]})  # if not found, will return empty list
