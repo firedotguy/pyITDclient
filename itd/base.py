@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from functools import wraps
+from textwrap import wrap
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
@@ -55,7 +56,8 @@ class ITDBaseModel:
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
-
+        if '_loaded_attrs' in self.__dict__:
+            self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...
@@ -78,7 +80,7 @@ class ITDBaseModel:
     def _fill_from_data(self, data: dict):
         assert self._validator, 'Unable to use fill_from_data without a validator'
         validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
-        # self._loaded_attrs = validated.model_fields_set # значения автоматически добавляются через __setattr__
+        self._loaded_attrs = validated.model_fields_set  # значения автоматически добавляются через __setattr__
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
@@ -93,37 +95,34 @@ class ITDBaseModel:
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
-    if not TYPE_CHECKING:
+    # if not TYPE_CHECKING:
 
-        def __getattribute__(self, name: str) -> Any:
-            try:
-                value = object.__getattribute__(self, name)
-                exists = True
-            except AttributeError:
-                value = None
-                exists = False
+    def __getattribute__(self, name: str) -> Any:
 
-            if (
-                name.startswith('_')  # приватный аттрибут
-                or name in ('client', 'model_fields_set', 'load_status')  # спец. имя
-                or not _getattr(self, '_refreshable')  # не рефрешабельная модель
-                or not _getattr(self, 'client').config.auto_load  # отключено в конфиге
-                or callable(value)  # функция
-                or isinstance(_getattr(type(self), name), property)
-                or self.load_status == LoadStatus.FULL
-                or name in self._loaded_attrs
-                or name in self.__dict__  # было загружено или добавлено через setattr
-                or (isinstance(value, ITDBaseModel) and not value._load_with_parent)
-            ):
-                # l.debug('return %s as is', name)
-                if not exists:
-                    raise AttributeError
-                return value
+        try:
+            value = object.__getattribute__(self, name)
+            exists = True
+        except AttributeError:
+            value = None
+            exists = False
 
-            # if isinstance(value, FieldInfo) or self.load_status != LoadStatus.FULL:
-            l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
+        if (
+            _getattr(self, '_refreshable')
+            and not name.startswith('_')
+            and name not in ('client', 'model_fields_set', 'load_status')
+            and not callable(value)
+            and not isinstance(_getattr(type(self), name), property)
+            and (name not in _getattr(self, '_loaded_attrs') or name not in self.__dict__)
+            and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
+            and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
+        ):
+            l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
             self.refresh()
             return object.__getattribute__(self, name)
+
+        if not exists:
+            raise AttributeError
+        return value
 
 
 T = TypeVar('T', bound=ITDBaseModel)
@@ -428,3 +427,14 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
         return wrapper
 
     return decorator
+
+
+def anti_refresh(func):
+    def wrapper(self: ITDBaseModel, *args, **kwargs):
+        previous = self.load_status
+        self.load_status = LoadStatus.LOADING
+        res = func(self, *args, **kwargs)
+        self.load_status = previous
+        return res
+
+    return wrapper

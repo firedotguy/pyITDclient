@@ -140,7 +140,7 @@ class _CommentValidate(BaseModel, Comment):
     @field_validator('replies', mode='plain')
     @classmethod
     def validate_replies(cls, replies: list[dict]):
-        return Replies()._init_raw(replies)
+        return Replies(replies)
 
     @field_validator('created_at', mode='plain')
     @classmethod
@@ -162,21 +162,11 @@ class _CommentValidate(BaseModel, Comment):
 class Comments(ITDList[Comment]):
     """Список комментариев с функцией дозагрузки"""
 
+    _load_with_parent = False
     _post: Post
     total: int
     cursor: int = 0
     _sorting: CommentSorting = CommentSorting.POPULAR
-    _raw: list[dict] = []
-
-    def _init_raw(self, data: list[dict] = []):
-        self._raw = data
-        if data:
-            self.cursor = len(data) + 1
-        return self
-
-    def _post_refresh(self):
-        self.extend(self._to_models(self._raw, self.client))
-        # self._raw.clear()
 
     def _fetch(self, client: Client, limit: int):
         return get_comments(client, self._post.id, self.cursor, limit).json()['data']
@@ -226,9 +216,9 @@ class Replies(ITDList[Comment]):
     cursor: int = 1
     _raw: list[dict] = []
 
-    def _init_raw(self, data: list[dict] = []):
+    def __init__(self, data: list[dict] = []):
+        super().__init__()
         self._raw = data
-        return self
 
     def _fetch(self, client: Client, limit: int):
         if self._raw:

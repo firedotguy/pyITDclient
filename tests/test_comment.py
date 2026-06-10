@@ -1,8 +1,8 @@
 import pytest
 
-from itd.post import Post
 from itd.comment import Comment
 from itd.exceptions import NotFoundError
+from itd.post import Post
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_comment_delete(owned_post, client):
 
 
 def test_comment_new_adds_to_post(owned_post, client):
-    comment = Comment.new(owned_post.id, 'напрямую через Comment.new', client=client)
+    comment = Comment.new(owned_post, 'напрямую через Comment.new', client=client)
     assert comment.id is not None
     assert comment.content == 'напрямую через Comment.new'
     comment.delete(client)

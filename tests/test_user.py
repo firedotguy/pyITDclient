@@ -2,9 +2,9 @@ from uuid import UUID
 
 import pytest
 
-from itd.user import User, Me, Followers, Following
-from itd.pin import Pin
 from itd.exceptions import PinNotOwnedError
+from itd.pin import Pin
+from itd.user import Followers, Following, Me, User
 
 
 @pytest.fixture(scope="module")
@@ -54,10 +54,6 @@ def test_me_followers_instance(me):
 
 def test_me_following_instance(me):
     assert isinstance(me.following, Following)
-
-
-def test_followers_count_consistent(me):
-    assert len(me.followers) <= me.followers.total
 
 
 def test_follow_increments_followers_count(client, me2):

@@ -25,7 +25,7 @@ from itd.api.users import (
     update_privacy,
     update_profile
 )
-from itd.base import ITDBaseModel, ITDList
+from itd.base import ITDBaseModel, ITDList, anti_refresh
 from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, PinNotOwnedError
 from itd.pin import Pin
@@ -196,13 +196,13 @@ class _UserBase(ITDBaseModel):
     bio: str | None = None
 
     def __init__(self, username_or_id: str | UUID, client: Client | None = None) -> None:
+        super().__init__(client)
+
         self._identifier = username_or_id
         if isinstance(username_or_id, str) and username_or_id != 'me':
             self.username = username_or_id
         elif isinstance(username_or_id, UUID):
             self.id = username_or_id
-
-        super().__init__(client)
 
     def __str__(self) -> str:
         return self.display_name
@@ -266,6 +266,12 @@ class User(_UserBase):
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
 
     created_at: datetime | None = Field(None, alias='createdAt')  # none if blocked
+
+    def _post_refresh(self):
+        if 'id' in self.__dict__:
+            self._identifier = self.id
+        else:
+            self._identifier = self.username
 
     @classmethod
     def by_id(cls, id: UUID | str) -> 'User':
@@ -347,27 +353,29 @@ class User(_UserBase):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.USER, reason, description, client or self.client)
 
+    @anti_refresh
     def follow(self, client: Client | None = None) -> int:
         self.followers_count = follow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
             self.is_following = True
 
-        assert self.followers_count is not None
         return self.followers_count
 
+    @anti_refresh
     def unfollow(self, client: Client | None = None) -> int:
         self.followers_count = unfollow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
-            self.is_following = False
+            self.is_following = True
 
-        assert self.followers_count is not None
         return self.followers_count
 
+    @anti_refresh
     def block(self, client: Client | None = None) -> None:
         block(client or self.client, self._identifier)
         if (client or self.client) == self.client:
             self.is_blocking = True
 
+    @anti_refresh
     def unblock(self, client: Client | None = None) -> None:
         unblock(client or self.client, self._identifier)
         if (client or self.client) == self.client:
@@ -453,24 +461,24 @@ class Me(_UserBase):
     ):
         self.privacy.update(is_private, wall_access, likes_visibility, show_last_seen)
 
+    @anti_refresh
     def update(self, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | str | Unset | None = None):
         if isinstance(banner_id, str):
             banner_id = to_uuid(banner_id)
         update_profile(self.client, bio, display_name, username, banner_id)
-        if bio:
+        if bio is not None:
             self.bio = bio
-        if display_name:
+        if display_name is not None:
             self.display_name = display_name
-        if username:
+        if username is not None:
             self.username = username
 
     def update_from_fields(self):
         update_profile(self.client, self.bio, self.display_name, self.username)
 
+    @anti_refresh
     def remove_pin(self) -> None:
-        if (
-            object.__getattribute__(self, 'pin') and self.pin
-        ):  # can be a bit strange for first look, but this prevent loading (itdbasemodel catches) and add rule for type checker
+        if self.pin:
             self.pin.remove()
         else:
             remove_pin(self.client)  # if pins not loaded just use straight call

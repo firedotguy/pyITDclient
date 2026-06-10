@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from itd.base import catch_errors, rate_limit
-from itd.enums import UNSET, AccessType, AuthLevel, Unset
+from itd.enums import UNSET, AccessType, Unset
 from itd.exceptions import (
     AlreadyBlockedError,
     AlreadyDeletedError,
