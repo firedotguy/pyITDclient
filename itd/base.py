@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_default_client, limiters
+from itd._default import get_default_client, ip_limiter, limiters
 from itd._limiter import RateLimiter
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
@@ -323,6 +323,7 @@ def api_wrapper(*exceptions: ITDException):
             l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
             if func.__name__ in limiters:
                 limiters[func.__name__].acquire()
+            ip_limiter.acquire()
 
             res: Response = func(client, *args, **kwargs)
 
@@ -435,20 +436,20 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
             #     l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
             #     sleep(max(delay, 0))
 
-            if not client.config.retry_enabled:
-                return func(client, *args, **kwargs)
+            # if not client.config.retry_enabled:
+            return func(client, *args, **kwargs)
 
-            while True:
-                try:
-                    return func(client, *args, **kwargs)
-                except client.config._retry_exceptions as e:
-                    if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
-                        l.error('too large rate limit')
-                        raise
+            # while True:
+            #     try:
+            #         return func(client, *args, **kwargs)
+            #     except client.config._retry_exceptions as e:
+            #         if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
+            #             l.error('too large rate limit')
+            #             raise
 
-                    retry_after = getattr(e, 'retry_after', client.config.retry_delay) or 10
-                    l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
-                    sleep(retry_after)
+            #         retry_after = getattr(e, 'retry_after', client.config.retry_delay) or 10
+            #         l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
+            #         sleep(retry_after)
 
         return wrapper
 
