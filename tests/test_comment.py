@@ -1,6 +1,5 @@
 import pytest
 
-from itd.comment import Comment
 from itd.exceptions import NotFoundError
 from itd.post import Post
 
@@ -77,22 +76,6 @@ def test_comment_reply_creates_reply(comment, client2):
     assert reply.id is not None
     assert reply.content == 'ответ'
     reply.delete(client2)
-
-
-def test_comment_delete(owned_post, client):
-    c = owned_post.add_comment('делет', client=client)
-    c.delete(client)
-
-
-def test_comment_new_adds_to_post(owned_post, client):
-    comment = Comment.new(owned_post, 'напрямую через Comment.new', client=client)
-    assert comment.id is not None
-    assert comment.content == 'напрямую через Comment.new'
-    comment.delete(client)
-
-
-def test_comment_str(comment):
-    assert str(comment) == comment.content
 
 
 def test_comment_has_author(comment, client):

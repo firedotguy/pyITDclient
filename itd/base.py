@@ -95,34 +95,34 @@ class ITDBaseModel:
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
-    # if not TYPE_CHECKING:
+    if not TYPE_CHECKING:
 
-    def __getattribute__(self, name: str) -> Any:
+        def __getattribute__(self, name: str) -> Any:
 
-        try:
-            value = object.__getattribute__(self, name)
-            exists = True
-        except AttributeError:
-            value = None
-            exists = False
+            try:
+                value = object.__getattribute__(self, name)
+                exists = True
+            except AttributeError:
+                value = None
+                exists = False
 
-        if (
-            _getattr(self, '_refreshable')
-            and not name.startswith('_')
-            and name not in ('client', 'model_fields_set', 'load_status')
-            and not callable(value)
-            and not isinstance(_getattr(type(self), name), property)
-            and (name not in _getattr(self, '_loaded_attrs') or name not in self.__dict__)
-            and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
-            and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
-        ):
-            l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
-            self.refresh()
-            return object.__getattribute__(self, name)
+            if (
+                _getattr(self, '_refreshable')
+                and not name.startswith('_')
+                and name not in ('client', 'model_fields_set', 'load_status')
+                and not callable(value)
+                and not isinstance(_getattr(type(self), name), property)
+                and name not in _getattr(self, '_loaded_attrs')
+                and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
+                and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
+            ):
+                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
+                self.refresh()
+                return object.__getattribute__(self, name)
 
-        if not exists:
-            raise AttributeError
-        return value
+            if not exists:
+                raise AttributeError
+            return value
 
 
 T = TypeVar('T', bound=ITDBaseModel)
