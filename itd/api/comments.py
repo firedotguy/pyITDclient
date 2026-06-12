@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit(5, 20, 80)
+@rate_limit()
 @api_wrapper(
     ValidationError(),
     NotFoundError('Post'),
@@ -22,7 +22,7 @@ def add_comment(client: Client, post_id: UUID, content: str | None = None, attac
     return client.request('post', f'posts/{post_id}/comments', {'content': content or '', "attachmentIds": list(map(str, attachment_ids))})
 
 
-@rate_limit(1, 10, 30)
+@rate_limit()
 @api_wrapper(
     ValidationError(),
     NotFoundError('Comment'),
@@ -43,7 +43,7 @@ def get_comments(client: Client, post_id: UUID, cursor: int = 0, limit: int = 20
     return client.request('get', f'posts/{post_id}/comments', {'limit': limit, 'sort': sort, 'cursor': cursor})
 
 
-@rate_limit(None, 3, 15)
+@rate_limit()
 @api_wrapper(NotFoundError('Comment'))
 def like_comment(client: Client, comment_id: UUID):
     return client.request('post', f'comments/{comment_id}/like')

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit(1, 10, 30)
+@rate_limit()
 @api_wrapper(
     NotFoundError('Wall recipient'),
     ForbiddenError('post - some files not owned'),
@@ -67,7 +67,7 @@ def get_post(client: Client, id: UUID):
     return client.request('get', f'posts/{id}')
 
 
-@rate_limit(None, 1, 5)
+@rate_limit()
 @api_wrapper(NotFoundError('Post'), ForbiddenError('edit post'), EditExpiredError(), BannedWordError('Post'))
 def edit_post(client: Client, id: UUID, content: str, spans: list[dict] = []):
     return client.request('put', f'posts/{id}', {'content': content, 'spans': spans})
@@ -97,7 +97,7 @@ def unpin_post(client: Client, id: UUID):
     return client.request('delete', f'posts/{id}/pin')
 
 
-@rate_limit(1, 10, 30)
+@rate_limit()
 @api_wrapper(NotFoundError('Post'), AlreadyRepostedError(), CantRepostYourselfError(), ValidationError(), BannedWordError('Post'))
 def repost(client: Client, id: UUID, content: str | None = None):
     data = {}
@@ -106,7 +106,7 @@ def repost(client: Client, id: UUID, content: str | None = None):
     return client.request('post', f'posts/{id}/repost', data)
 
 
-@rate_limit(0, 0.05)
+@rate_limit()
 @api_wrapper(NotFoundError('Post'))
 def view_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/view')
@@ -131,7 +131,7 @@ def get_user_posts(
     return client.request('get', f'posts/user/{username_or_id}', {'limit': limit, 'cursor': cursor, 'pinnedPostId': pinned_post_id, 'sort': sort.value})
 
 
-@rate_limit(None, 3, 15)
+@rate_limit()
 @api_wrapper(NotFoundError('Post'))
 def like_post(client: Client, id: UUID):
     return client.request('post', f'posts/{id}/like')

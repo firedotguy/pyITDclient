@@ -6,7 +6,6 @@ from uuid import UUID
 if TYPE_CHECKING:
     from itd.client import Client
 from itd.base import api_wrapper, rate_limit
-from itd.exceptions import ValidationError
 
 
 @api_wrapper()

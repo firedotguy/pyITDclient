@@ -10,7 +10,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
-from requests.exceptions import RequestException
 from requests.utils import default_user_agent
 
 from itd._default import _default_client, set_default_client
@@ -19,7 +18,7 @@ from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.api.users import get_follow_status
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
-from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
+from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError
 from itd.hashtag import Hashtag
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
@@ -73,14 +72,14 @@ class Config:
     # для реальных клиентов включен калбэк на ошибки (сами ошибки не выбрасываются) и выключен логгер. Передает ошибки в калбэк, в консоль ничего не пишет, при ошибках сети падает.
     # для ботов включен отлов всех ошибок, а также калбэк при ошибках сети (шоб отправлять в тг например), включен логгер на инфо. Показывает ошибки в консоли, но не завершшает скрипт.
     # для одноразовых скриптов стандартное поведение, отловов ошибок нет, включен логгер на дебаг.
-    # client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
+    client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
     rate_limit: RateLimitMode | None = None  # deprecated
     rate_limit_default: int | None = None  # deprecated
     rate_limit_actions: dict[str, float | int] | None = None  # deprecated
-    anti_rate_limit: bool = True
+    anti_rate_limit: bool | None = None
+    burst_requests: bool = False
     anti_ip_ban: bool = True
-    anti_ip_ban_limit: int = 100
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
@@ -98,9 +97,9 @@ class Config:
 
     debug_response: DebugResponseMode = DebugResponseMode.NO
 
-    timeout: float = 30
-    timeout_file: float = 120
-    timeout_file_download: float = 60
+    timeout: float | None = None
+    timeout_file: float | None = None
+    timeout_file_download: float | None = None
 
     url: str = 'xn--d1ah4a.com'
     url_api: str | None = None
@@ -111,10 +110,10 @@ class Config:
 
     parse_mode: ParseMode = ParseMode.NO
 
-    retry_enabled: bool = True
-    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in request
+    retry_enabled: bool | None = None
+    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
+    retry_exceptions: tuple[type[Exception]] | list[type[Exception]] = field(default_factory=lambda: [RateLimitError])
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -127,7 +126,7 @@ class Config:
     post_view_increment: bool = False
     post_auto_view: bool = True  # view when called post.set_invisible()
 
-    post_update_stats: bool = False
+    post_update_stats: bool | None = None
     post_update_stats_interval: int = 3
 
     view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
@@ -155,17 +154,38 @@ class Config:
         if self.dwell_wait_durations:
             l.warning('config.dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
-        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
-            RateLimitError,
-            InternalError,
-            RequestException
-        )
         if self.rate_limit is not None:
             l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
         if self.rate_limit_default is not None:
             l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
         if self.rate_limit_actions is not None:
             l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
+
+        if self.timeout is None:
+            match self.client_type:
+                case 'onetime':
+                    self._timeout = 5
+                case 'client':
+                    self._timeout = 20
+                case 'bot':
+                    self._timeout = 60
+        else:
+            self._timeout = self.timeout
+
+        if self.retry_enabled is None:
+            self._retry_enabled = self.client_type == 'bot'
+        else:
+            self._retry_enabled = self.retry_enabled
+
+        if self.post_update_stats is None:
+            self._post_update_stats = self.client_type == 'client'
+        else:
+            self._post_update_stats = self.post_update_stats
+
+        if self.anti_rate_limit is None:
+            self._anti_rate_limit = self.client_type == 'bot'
+        else:
+            self._anti_rate_limit = self.anti_rate_limit
 
 
 class AccessToken(BaseModel):

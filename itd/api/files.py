@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit(None, None, 1)
+@rate_limit()
 @api_wrapper(UploadError(), ModerationFailedError(), InvalidFileTypeError(), TooLargeError('File', 413))
 def upload_file(client: Client, name: str, data: BufferedReader | bytes):
     return client.request('post', 'files/upload', files={'file': (name, data)})

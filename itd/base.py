@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import wraps
-from time import sleep
+from time import monotonic, sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
@@ -333,25 +333,25 @@ def api_wrapper(*exceptions: ITDException):
                     l.debug('no response')
                 return res
 
-            # if res.headers.get('x-ratelimit-limit') and client.last_actions.get(func.__name__):
-            #     delay = 60 / int(res.headers['x-ratelimit-limit']) * 0.9 - (time() - client.last_actions[func.__name__])
-            #     if delay > 0:
-            #         l.debug('sleep %s limit=%s (max %s req/s)', round(1 / delay, 3), res.headers['x-ratelimit-limit'], round(delay, 3))
-            #         sleep(1 / delay)
-            # client.last_actions[func.__name__] = time()
             remaining = int(res.headers.get('x-ratelimit-remaining', 0))
             limit = int(res.headers.get('x-ratelimit-limit', 0))
 
-            if client.config.anti_rate_limit:
-                if func.__name__ not in limiters:
-                    l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
-                    limiters[func.__name__] = RateLimiter(limit)
-                else:
-                    l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
-                limiters[func.__name__].sync(remaining)
+            if client.config._anti_rate_limit:
+                if client.config.burst_requests:
+                    if func.__name__ not in limiters:
+                        l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
+                        limiters[func.__name__] = RateLimiter(limit)
+                    else:
+                        l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
+                    limiters[func.__name__].sync(remaining)
 
-            if limit > client.config.anti_ip_ban_limit:
-                sleep(2 / client.config.anti_ip_ban_limit)  # prevent ip ban
+                else:
+                    if limit and client.last_actions.get(func.__name__):
+                        delay = 60 / limit - (monotonic() - client.last_actions[func.__name__])
+                        if delay > 0:
+                            l.debug('sleep %s limit=%s (max %s req/s)', round(1 / delay, 3), limit, round(delay, 3))
+                            sleep(1 / delay)
+                    client.last_actions[func.__name__] = monotonic()
 
             if client.config.debug_response == DebugResponseMode.BEFORE:
                 l.debug('response (raw): %s', res.text)
@@ -382,8 +382,6 @@ def api_wrapper(*exceptions: ITDException):
 
                     if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                         exception.retry_after = json.get('error', {}).get('retryAfter', 0)
-                        if exception.retry_after == 0 and limit:
-                            client.last_actions[func.__name__] = limit
 
                     if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
                         client.refresh_auth()
@@ -410,7 +408,7 @@ def api_wrapper(*exceptions: ITDException):
     return decorator
 
 
-def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, delay_max: float | None = None):
+def rate_limit():
     """Декоратор для рейт лимита
 
     Args:
@@ -436,20 +434,20 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
             #     l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
             #     sleep(max(delay, 0))
 
-            # if not client.config.retry_enabled:
-            return func(client, *args, **kwargs)
+            if not client.config.retry_enabled:
+                return func(client, *args, **kwargs)
 
-            # while True:
-            #     try:
-            #         return func(client, *args, **kwargs)
-            #     except client.config._retry_exceptions as e:
-            #         if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
-            #             l.error('too large rate limit')
-            #             raise
+            while True:
+                try:
+                    return func(client, *args, **kwargs)
+                except tuple(client.config.retry_exceptions) as e:
+                    if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
+                        l.error('too large rate limit')
+                        raise
 
-            #         retry_after = getattr(e, 'retry_after', client.config.retry_delay) or 10
-            #         l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
-            #         sleep(retry_after)
+                    retry_after = getattr(e, 'retry_after') or client.config.retry_delay
+                    l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
+                    sleep(retry_after)
 
         return wrapper
 

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit(5, 30, 60)  # это стоило мне одного ака виталия
+@rate_limit()  # это стоило мне одного ака виталия
 @api_wrapper(
     AlreadyReportedError(), NotFoundError('Report target', json_check=lambda json: 'не найден' in json.get('error', {}).get('message', '')), ValidationError()
 )

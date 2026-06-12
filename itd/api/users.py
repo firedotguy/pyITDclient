@@ -32,7 +32,7 @@ def get_user(client: Client, username_or_id: str | UUID):
     return client.request('get', f'users/{username_or_id}')
 
 
-@rate_limit(None, 10, 25)
+@rate_limit()
 @api_wrapper(ValidationError(), RequiresVerificationError('GIF banner uploading'), UsernameTakenError())
 def update_profile(client: Client, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | Unset | None = None):
     data = {}
@@ -80,7 +80,7 @@ def update_privacy(
     return client.request('put', 'users/me/privacy', data)
 
 
-@rate_limit(5, 30, 80)
+@rate_limit()
 @api_wrapper(NotFoundError('User'), AlreadyFollowingError(), TooLargeError('Username'), CantFollowYourselfError(), UserBlockedError(), TargetUserBannedError())
 def follow(client: Client, username_or_id: str | UUID):
     return client.request('post', f'users/{username_or_id}/follow')
