@@ -41,6 +41,7 @@ nav:
     - launch.md
     - concept.md
     - config.md
+    - limits.md
     - Reference:
         - Клиент: ref/client.md
         - Базовые модели: ref/base.md

@@ -19,10 +19,10 @@ ID поста.
 #### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[PostAttach](file.md#postattach)]</span></span>
 Вложения.
 
-#### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDBaseModel](base.md#itdbasemodel)</span></span></a>
+#### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span>
 Опросник.
 
-#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comments](comment.md#comments)]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comments](comment.md#comments)]</span></span>
 Комментарии.
 
 #### likes_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>

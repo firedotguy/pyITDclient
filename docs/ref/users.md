@@ -108,10 +108,10 @@ ID закрепленного поста. `None`, если у пользоват
 #### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата создания аккаунта. `None`, если пользователь заблокирован или у него приватный аккаунт.
 
-#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[UserPosts](posts.md#userposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[UserPosts](posts.md#userposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список постов.
 
-#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список лайкнутых постов.
 
 ## Получить пользователя
@@ -347,19 +347,19 @@ Username.
 #### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата создания аккаунта.
 
-#### followers <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Followers</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### followers <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Followers</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список подписчиков.
 
-#### following <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Following</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### following <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Following</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список подписок.
 
-#### blocked <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Blocked</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### blocked <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :fontawesome-solid-user:</span><span class="mdx-badge__text">Blocked</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список заблокированных пользователей.
 
-#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">UserPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">UserPosts</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список постов.
 
-#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">bases</span><span class="mdx-badge__text">[ITDList](base.md#itdlist)</span></span></a>
+#### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список лайкнутых постов.
 
 #### pins <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-pin:</span><span class="mdx-badge__text">list[[Pin](#pin)]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>

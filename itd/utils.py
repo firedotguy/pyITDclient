@@ -84,20 +84,16 @@ TAG_MAP = {
 def parse_html(text: str) -> tuple[str, list[Span]]:
     """Спарсить HTML
 
-        Поддерживаемые теги:
-    <<<<<<< HEAD
-        - `<b>, <i>, <s>, <u>, <code>, <spoiler>, <q>`
-        - `<a href="url">text</a>` или `<а>url</а>` (ссылки)
-    =======
-        - <b>, <i>, <s>, <u>, <code>, <spoiler>, <q>, <a href="url">text</a>, <a>url</a>
-    >>>>>>> main
+    Поддерживаемые теги:
+    - `<b>, <i>, <s>, <u>, <code>, <spoiler>, <q>`
+    - `<a href="url">text</a>` или `<а>url</а>` (ссылки)
 
-        Args:
-            text: HTML-строка для парсинга
+    Args:
+        text (str): HTML-строка для парсинга
 
-        Returns:
-            str: чистая строка
-            list[Span]: список спанов
+    Returns:
+        str: чистая строка
+        list[Span]: список спанов
     """
     if not text:
         return text, []
@@ -116,18 +112,18 @@ def parse_html(text: str) -> tuple[str, list[Span]]:
     return root.text_content(), spans
 
 
-def parse_md(md: str) -> tuple[str, list[Span]]:
+def parse_md(text: str) -> tuple[str, list[Span]]:
     """Спарсить markdown
 
     Поддерживаемые теги:
     - *, _, **, __, ~, ~~, `, ||, \\[text](url)
 
     Args:
-        text: строка для парсинга
+        text (str): строка для парсинга
 
     Returns:
         str: чистая строка
         list[Span]: список спанов
     """
-    text, spans = convert(md, latex_escape=False)
+    text, spans = convert(text, latex_escape=False)
     return text, [Span.model_validate(span, from_attributes=True) for span in spans]

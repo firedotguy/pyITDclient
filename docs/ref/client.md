@@ -45,7 +45,7 @@ res = c.request(
 #### files <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: [:material-text:, :material-code-parentheses:] :material-file:</span><span class="mdx-badge__text">dict[str, tuple[str, BufferedReader | bytes]]</span></span>
 Файл для загрузке в формате `{'file': ('имя файла', 'содержание')}`
 
-#### level <span class="mdx-badge"><span class="mdx-badge__icon">:material-select-form:</span><span class="mdx-badge__text">[AuthLevel](enums.md#authlevel)</span></span>
+#### level <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AuthLevel](enums.md#authlevel)</span></span>
 Требуемый уровень авторизации для запроса. По умолчанию `AuthLevel.ACCESS`.
 
 
