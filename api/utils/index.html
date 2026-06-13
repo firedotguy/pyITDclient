@@ -1300,35 +1300,73 @@
     <div class="doc doc-contents ">
 
         <p>Спарсить HTML</p>
-<pre><code>Поддерживаемые теги:
-</code></pre>
-<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
-    - <code>&lt;b&gt;, &lt;i&gt;, &lt;s&gt;, &lt;u&gt;, &lt;code&gt;, &lt;spoiler&gt;, &lt;q&gt;</code>
-    - <code>&lt;a href="url"&gt;text&lt;/a&gt;</code> или <code>&lt;а&gt;url&lt;/а&gt;</code> (ссылки)
-=======
-    - <b>, <i>, <s>, <u>, <code>, <spoiler>, <q>, <a href="url">text</a>, <a>url</a></p>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>main</p>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-</blockquote>
-<pre><code>Args:
-    text: HTML-строка для парсинга
+<p>Поддерживаемые теги:
+- <code>&lt;b&gt;, &lt;i&gt;, &lt;s&gt;, &lt;u&gt;, &lt;code&gt;, &lt;spoiler&gt;, &lt;q&gt;</code>
+- <code>&lt;a href="url"&gt;text&lt;/a&gt;</code> или <code>&lt;а&gt;url&lt;/а&gt;</code> (ссылки)</p>
 
-Returns:
-    str: чистая строка
-    list[Span]: список спанов
-</code></pre>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>text</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>HTML-строка для парсинга</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>чистая строка</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list[Span]: список спанов</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1343,7 +1381,7 @@ Returns:
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_md</span><span class="p">(</span><span class="n">md</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_md</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1369,6 +1407,7 @@ Returns:
                 <code>text</code>
             </td>
             <td>
+                  <code><span title="str">str</span></code>
             </td>
             <td>
               <div class="doc-md-description">
