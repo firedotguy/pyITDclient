@@ -1197,141 +1197,12 @@
 
 
 
-<h3 id="itd.utils.DELIMITERS" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">DELIMITERS</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">DELIMITERS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;**&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            BOLD (itd.enums.SpanType.BOLD)" href="../enums/#itd.enums.SpanType.BOLD">BOLD</a></span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ITALIC (itd.enums.SpanType.ITALIC)" href="../enums/#itd.enums.SpanType.ITALIC">ITALIC</a></span><span class="p">,</span> <span class="s1">&#39;~~&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            STRIKE (itd.enums.SpanType.STRIKE)" href="../enums/#itd.enums.SpanType.STRIKE">STRIKE</a></span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            UNDERLINE (itd.enums.SpanType.UNDERLINE)" href="../enums/#itd.enums.SpanType.UNDERLINE">UNDERLINE</a></span><span class="p">,</span> <span class="s1">&#39;`&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            MONOSPACE (itd.enums.SpanType.MONOSPACE)" href="../enums/#itd.enums.SpanType.MONOSPACE">MONOSPACE</a></span><span class="p">,</span> <span class="s1">&#39;||&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            SPOILER (itd.enums.SpanType.SPOILER)" href="../enums/#itd.enums.SpanType.SPOILER">SPOILER</a></span><span class="p">,</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            QUOTE (itd.enums.SpanType.QUOTE)" href="../enums/#itd.enums.SpanType.QUOTE">QUOTE</a></span><span class="p">}</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="itd.utils.HTMLSpanParser" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">HTMLSpanParser</span>
-
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="html.parser.HTMLParser">HTMLParser</span></code></p>
-
-
-
-        <p>Парсер HTML для извлечения текста и spans с форматированием.</p>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.utils.HTMLSpanParser.TAG_MAP" class="doc doc-heading">
+<h3 id="itd.utils.TAG_MAP" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">TAG_MAP</span>
 
 
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">TAG_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            BOLD (itd.enums.SpanType.BOLD)" href="../enums/#itd.enums.SpanType.BOLD">BOLD</a></span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ITALIC (itd.enums.SpanType.ITALIC)" href="../enums/#itd.enums.SpanType.ITALIC">ITALIC</a></span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            STRIKE (itd.enums.SpanType.STRIKE)" href="../enums/#itd.enums.SpanType.STRIKE">STRIKE</a></span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            UNDERLINE (itd.enums.SpanType.UNDERLINE)" href="../enums/#itd.enums.SpanType.UNDERLINE">UNDERLINE</a></span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            MONOSPACE (itd.enums.SpanType.MONOSPACE)" href="../enums/#itd.enums.SpanType.MONOSPACE">MONOSPACE</a></span><span class="p">,</span> <span class="s1">&#39;spoiler&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            SPOILER (itd.enums.SpanType.SPOILER)" href="../enums/#itd.enums.SpanType.SPOILER">SPOILER</a></span><span class="p">,</span> <span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            QUOTE (itd.enums.SpanType.QUOTE)" href="../enums/#itd.enums.SpanType.QUOTE">QUOTE</a></span><span class="p">}</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.utils.HTMLSpanParser.spans" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">spans</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">spans</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.utils.HTMLSpanParser.stack" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">stack</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">stack</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="            SpanType (itd.enums.SpanType)" href="../enums/#itd.enums.SpanType">SpanType</a></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.utils.HTMLSpanParser.text_offset" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">text_offset</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">text_offset</span> <span class="o">=</span> <span class="mi">0</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.utils.HTMLSpanParser.text_parts" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">text_parts</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">text_parts</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">TAG_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            BOLD (itd.enums.SpanType.BOLD)" href="../enums/#itd.enums.SpanType.BOLD">BOLD</a></span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ITALIC (itd.enums.SpanType.ITALIC)" href="../enums/#itd.enums.SpanType.ITALIC">ITALIC</a></span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            STRIKE (itd.enums.SpanType.STRIKE)" href="../enums/#itd.enums.SpanType.STRIKE">STRIKE</a></span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            UNDERLINE (itd.enums.SpanType.UNDERLINE)" href="../enums/#itd.enums.SpanType.UNDERLINE">UNDERLINE</a></span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            MONOSPACE (itd.enums.SpanType.MONOSPACE)" href="../enums/#itd.enums.SpanType.MONOSPACE">MONOSPACE</a></span><span class="p">,</span> <span class="s1">&#39;spoiler&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            SPOILER (itd.enums.SpanType.SPOILER)" href="../enums/#itd.enums.SpanType.SPOILER">SPOILER</a></span><span class="p">,</span> <span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            QUOTE (itd.enums.SpanType.QUOTE)" href="../enums/#itd.enums.SpanType.QUOTE">QUOTE</a></span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LINK (itd.enums.SpanType.LINK)" href="../enums/#itd.enums.SpanType.LINK">LINK</a></span><span class="p">}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1341,105 +1212,6 @@
 </div>
 
 
-
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="itd.utils.HTMLSpanParser.get_spans" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_spans</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_spans</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="itd.utils.HTMLSpanParser.get_text" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_text</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_text</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="str">str</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="itd.utils.HTMLSpanParser.handle_data" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_data</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">handle_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="itd.utils.HTMLSpanParser.handle_endtag" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_endtag</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">handle_endtag</span><span class="p">(</span><span class="n">tag</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="itd.utils.HTMLSpanParser.handle_starttag" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_starttag</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">handle_starttag</span><span class="p">(</span><span class="n">tag</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span><span class="p">]])</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
 
 
 <div class="doc doc-object doc-function">
@@ -1527,10 +1299,58 @@
 
     <div class="doc doc-contents ">
 
-        <p>Парсит HTML-текст, извлекает чистый текст и spans с форматированием.</p>
+        <p>Спарсить HTML</p>
+<pre><code>Поддерживаемые теги:
+</code></pre>
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    - <code>&lt;b&gt;, &lt;i&gt;, &lt;s&gt;, &lt;u&gt;, &lt;code&gt;, &lt;spoiler&gt;, &lt;q&gt;</code>
+    - <code>&lt;a href="url"&gt;text&lt;/a&gt;</code> или <code>&lt;а&gt;url&lt;/а&gt;</code> (ссылки)
+=======
+    - <b>, <i>, <s>, <u>, <code>, <spoiler>, <q>, <a href="url">text</a>, <a>url</a></p>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>main</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>Args:
+    text: HTML-строка для парсинга
+
+Returns:
+    str: чистая строка
+    list[Span]: список спанов
+</code></pre>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="itd.utils.parse_md" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">parse_md</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_md</span><span class="p">(</span><span class="n">md</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Спарсить markdown</p>
 <p>Поддерживаемые теги:
-- <code>&lt;b&gt;, &lt;i&gt;, &lt;s&gt;, &lt;u&gt;, &lt;code&gt;, &lt;spoiler&gt;, &lt;q&gt;</code>
-- <code>&lt;a href="url"&gt;text&lt;/a&gt;</code> или <code>&lt;а&gt;url&lt;/а&gt;</code> (ссылки)</p>
+- <em>, _, </em>*, __, ~, ~~, `, ||, [text](url)</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1549,103 +1369,10 @@
                 <code>text</code>
             </td>
             <td>
-                  <code><span title="str">str</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>HTML-строка для парсинга</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>str</code></td>            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>чистая строка</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-<td></td>            <td>
-                  <code><span title="list">list</span>[<a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>list[Span]: список спанов</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="itd.utils.parse_md" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">parse_md</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_md</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Span (itd.span.Span)" href="../span/#itd.span.Span">Span</a></span><span class="p">]]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Парсит markdown, извлекает чистый текст и spans с форматированием.</p>
-<p><strong>жирный</strong>, <em>курсив</em>, <del>зачёркнутый</del>, <strong>подчёркнутый</strong>, <code>моноширный</code>, ||спойлер||, &gt;цитата&gt;</p>
-<p>Теги могут пересекаться, например: __111<em>1234__32342</em></p>
-<p>Теги могут быть вложенными: <strong>1231<em>1323</em></strong></p>
-<p><code>[текст ссылки](url)</code></p>
-<p>Внутри ссылки остальные теги не парсятся</p>
-<p>Если url пустой, на его место будет поставлен текст ссылки, то есть:</p>
-<p><code>[текст ссылки]() = [текст ссылки](текст ссылки)</code></p>
-<p>используйте  для экранирования символов</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>s</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>markdown строка для парсинга</p>
+                <p>строка для парсинга</p>
               </div>
             </td>
             <td>
