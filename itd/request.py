@@ -1,18 +1,18 @@
+from _io import BufferedReader
 from base64 import urlsafe_b64decode
 from json import loads
-from _io import BufferedReader
 from time import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
-from typing import TYPE_CHECKING
 
 from requests import Response, Session
+
 from itd.logger import get_logger
 
 if TYPE_CHECKING:
     from itd.client import Client
 
-l = get_logger('request')
+l = get_logger('request')  # noqa: E741
 
 
 # ai begin ---

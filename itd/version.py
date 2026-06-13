@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
 from itd.client import Client
@@ -8,8 +9,8 @@ try:
 except ImportError:
     parse = None
 
+from itd.api.platform import get_apps, get_changelog
 from itd.base import ITDBaseModel
-from itd.api.platform import get_changelog, get_apps
 
 
 class Version(BaseModel):

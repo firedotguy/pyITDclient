@@ -1,13 +1,13 @@
-from uuid import UUID
-from ipaddress import IPv4Address
 from datetime import datetime
+from ipaddress import IPv4Address
+from uuid import UUID
 
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
+from itd.api.sessions import get_sessions, revoke, revoke_all
 from itd.base import ITDBaseModel
 from itd.client import Client
 from itd.enums import DeviceType
-from itd.api.sessions import get_sessions, revoke, revoke_all
 
 
 class Session(ITDBaseModel):

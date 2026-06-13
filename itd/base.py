@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from datetime import datetime, timedelta
 from functools import wraps
+from textwrap import wrap
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Iterator, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
-from pydantic_core import PydanticUndefinedType
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-l = get_logger('base')
+l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -30,13 +30,13 @@ def _getattr(self: object, name: str, default: Any | None = None) -> Any:
         return default
 
 
-def _field_has_default(cls: type, name: str) -> bool:
-    """Returns True if the field is declared as Field(...) with a default value."""
-    for klass in cls.__mro__:
-        val = klass.__dict__.get(name)
-        if isinstance(val, FieldInfo):
-            return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
-    return False
+# def _field_has_default(cls: type, name: str) -> bool:
+#     """Returns True if the field is declared as Field(...) with a default value."""
+#     for klass in cls.__mro__:
+#         val = klass.__dict__.get(name)
+#         if isinstance(val, FieldInfo):
+#             return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
+#     return False
 
 
 class ITDBaseModel:
@@ -56,7 +56,8 @@ class ITDBaseModel:
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
-
+        if '_loaded_attrs' in self.__dict__:
+            self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...
@@ -78,8 +79,8 @@ class ITDBaseModel:
 
     def _fill_from_data(self, data: dict):
         assert self._validator, 'Unable to use fill_from_data without a validator'
-        validated = self._validator().model_validate(data)  # pyright: ignore[reportCallIssue]
-        # self._loaded_attrs = validated.model_fields_set # значения автоматически добавляются через __setattr__
+        validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
+        self._loaded_attrs = validated.model_fields_set  # значения автоматически добавляются через __setattr__
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
@@ -97,6 +98,7 @@ class ITDBaseModel:
     if not TYPE_CHECKING:
 
         def __getattribute__(self, name: str) -> Any:
+
             try:
                 value = object.__getattribute__(self, name)
                 exists = True
@@ -105,27 +107,22 @@ class ITDBaseModel:
                 exists = False
 
             if (
-                name.startswith('_')  # приватный аттрибут
-                or name in ('client', 'model_fields_set', 'load_status')  # спец. имя
-                or not _getattr(self, '_refreshable')  # не рефрешабельная модель
-                or not _getattr(self, 'client').config.auto_load  # отключено в конфиге
-                or callable(value)  # функция
-                or isinstance(_getattr(type(self), name), property)
-                or self.load_status == LoadStatus.LOADING  # сейчас загружается (уже вроде как не надо, но пусть будет на всяк)
-                or (not _getattr(self, 'client').config.load_comments_from_post and name == 'comments' and self.__class__.__name__ == 'Post')  # коменты
-                or name in self._loaded_attrs
-                or name in self.__dict__  # было загружено или добавлено через setattr
-                or (isinstance(value, ITDBaseModel) and not value._load_with_parent)
+                _getattr(self, '_refreshable')
+                and not name.startswith('_')
+                and name not in ('client', 'model_fields_set', 'load_status')
+                and not callable(value)
+                and not isinstance(_getattr(type(self), name), property)
+                and name not in _getattr(self, '_loaded_attrs')
+                and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
+                and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
-                # l.debug('return %s as is', name)
-                if not exists:
-                    raise AttributeError
-                return value
+                l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
+                self.refresh()
+                return object.__getattribute__(self, name)
 
-            # if isinstance(value, FieldInfo) or self.load_status != LoadStatus.FULL:
-            l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, self.load_status.value)
-            self.refresh()
-            return object.__getattribute__(self, name)
+            if not exists:
+                raise AttributeError
+            return value
 
 
 T = TypeVar('T', bound=ITDBaseModel)
@@ -134,7 +131,6 @@ T = TypeVar('T', bound=ITDBaseModel)
 class ITDList(ITDBaseModel, list[T]):
     """Базовый класс списка"""
 
-    _limit: int = 20
     _get_total = None
     _refreshable = False
     has_more = True
@@ -160,7 +156,7 @@ class ITDList(ITDBaseModel, list[T]):
             l.warning('skip load because has_more=False')
             return []
 
-        limit = limit or self._limit
+        limit = limit or (client or self.client).config.batch_sizes._values[self.__class__.__name__.lower()]
         if isinstance(count, int) and count < limit:
             limit = count
         l.debug('load %s count=%s limit=%s cursor=%s', self.__class__.__name__.lower(), count, limit, self.cursor)
@@ -201,6 +197,7 @@ class ITDList(ITDBaseModel, list[T]):
 
     # --- ai end
 
+    @abstractmethod
     def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
     @staticmethod
@@ -249,16 +246,16 @@ class ITDList(ITDBaseModel, list[T]):
         return self.load(ALL, limit, client)
 
     @overload
-    def __getitem__(self, index: int) -> T: ...
+    def __getitem__(self, index: SupportsIndex) -> T: ...
 
     @overload
     def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: int | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, slice):
             value: int | None = index.stop
         else:
-            value = index
+            value = cast(int, index)
 
         if ((value is not None and value > len(self) - 1) or value is None) and self.client.config.load_on_getitem is not None:
             if value:
@@ -364,6 +361,7 @@ def catch_errors(*exceptions: ITDException):
                     if isinstance(exception, AccountDeletedError):
                         exception.can_restore = json.get('error', {}).get('canRestore', True)
 
+                    client._process_exc_callbacks(exception)
                     raise exception
 
             if client.config.debug_response == DebugResponseMode.AFTER:
@@ -426,3 +424,14 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
         return wrapper
 
     return decorator
+
+
+def anti_refresh(func):
+    def wrapper(self: ITDBaseModel, *args, **kwargs):
+        previous = self.load_status
+        self.load_status = LoadStatus.LOADING
+        res = func(self, *args, **kwargs)
+        self.load_status = previous
+        return res
+
+    return wrapper

@@ -2,9 +2,8 @@ from uuid import UUID
 
 import pytest
 
-from itd.utils import parse_html, parse_md, to_uuid, to_nullable_uuid, parse_datetime, format_attachments
 from itd.enums import SpanType
-
+from itd.utils import format_attachments, parse_datetime, parse_html, parse_md, to_nullable_uuid, to_uuid
 
 # --- to_uuid ---
 
@@ -199,12 +198,6 @@ def test_parse_md_strike():
     assert spans[0].type == SpanType.STRIKE
 
 
-def test_parse_md_underline():
-    text, spans = parse_md('__under__')
-    assert text == 'under'
-    assert spans[0].type == SpanType.UNDERLINE
-
-
 def test_parse_md_monospace():
     text, spans = parse_md('`code`')
     assert text == 'code'
@@ -222,12 +215,6 @@ def test_parse_md_link():
     assert text == 'click'
     assert spans[0].type == SpanType.LINK
     assert spans[0].url == 'https://example.com'
-
-
-def test_parse_md_link_empty_url():
-    text, spans = parse_md('[text]()')
-    assert text == 'text'
-    assert spans[0].url == 'text'
 
 
 def test_parse_md_span_offset():

@@ -4,9 +4,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from threading import Thread
 from time import sleep
-from typing import overload
+from typing import Callable, Literal, overload
 from uuid import UUID
 
+from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
@@ -17,7 +18,7 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.api.users import get_follow_status
-from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, UserAgent
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
 from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
 from itd.hashtag import Hashtag
 from itd.logger import get_logger
@@ -26,7 +27,45 @@ from itd.request import decode_jwt_payload, fetch, fetch_stream
 from itd.user import Me, User
 from itd.utils import get_sdk_user_agent, to_uuid
 
-l = get_logger('client')
+l = get_logger('client')  # noqa: E741
+
+
+@dataclass
+class BatchSizes:
+    preset: Literal['decreased', 'default', 'increased', 'max'] = 'default'
+    comments: int | None = None
+    replies: int | None = None
+    hashtags: int | None = None
+    notifications: int | None = None
+    posts: int | None = None
+    user_posts: int | None = None
+    liked_posts: int | None = None
+    hashtag_posts: int | None = None
+    followers: int | None = None
+    following: int | None = None
+    blocked: int | None = None
+
+    def __post_init__(self):
+        presets = {
+            'comments': [50, 100, 200, 500],
+            'replies': [20, 100, 100, 100],
+            'hashtags': [5, 10, 20, 50],
+            'notifications': [10, 20, 50, 1000],
+            'posts': [10, 20, 30, 50],
+            'user_posts': [10, 20, 30, 50],
+            'liked_posts': [10, 20, 30, 50],
+            'hashtag_posts': [10, 20, 30, 50],
+            'followers': [10, 20, 50, 100],
+            'following': [10, 20, 50, 100],
+            'blocked': [10, 20, 50, 100]
+        }
+        presets_map = ['decreased', 'default', 'increased', 'max']
+        self._values: dict[str, int] = {}
+        for k, v in presets.items():
+            if getattr(self, k) is None:
+                self._values[k.replace('_', '')] = v[presets_map.index(self.preset)]
+            else:
+                self._values[k.replace('_', '')] = getattr(self, k)
 
 
 @dataclass
@@ -60,7 +99,7 @@ class Config:
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
-    load_comments_from_post: bool = False
+    load_comments_from_post: bool | None = None
 
     parse_mode: ParseMode = ParseMode.NO
 
@@ -85,6 +124,9 @@ class Config:
 
     view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
     view_images_speed: int = 130  # https://news.mit.edu/2014/in-the-blink-of-an-eye-0116
+
+    on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
+    batch_sizes: BatchSizes = field(default_factory=BatchSizes)
 
     def __post_init__(self):
         if self.rate_limit_default:
@@ -113,12 +155,30 @@ class Config:
 
         if self.dwell_wait_durations:
             l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
+        if self.load_comments_from_post is not None:
+            l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
 
         self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
             RateLimitError,
             InternalError,
             RequestException
         )
+
+
+class AccessToken(BaseModel):
+    roles: list[Role]
+    session_id: UUID = Field(alias='sid')
+    is_active: bool = Field(alias='isActive')
+    subject_id: UUID = Field(alias='sub')
+    issued_at: datetime = Field(alias='iat')
+    issuer: str = Field(alias='iss')  # "auth-service"
+    expired_at: datetime = Field(alias='exp')
+    jwt_id: UUID = Field(alias='jti')
+
+    @field_validator('issued_at', 'expired_at', mode='plain')
+    @classmethod
+    def validate_datetimes(cls, v):
+        return datetime.fromtimestamp(v)
 
 
 class Client:
@@ -128,6 +188,7 @@ class Client:
         self.last_actions: dict[str, datetime] = {}
         self.auth_level: AuthLevel = AuthLevel.NO
         self.access_token: str | None = None
+        self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
         self._user: Me | None = None
         self.visible_posts: list[Post] = []
@@ -223,6 +284,27 @@ class Client:
         for post in self.visible_posts:
             post._set_stats(next((stat for stat in stats if stat['id'] == str(post.id))))
 
+    @property
+    def token(self) -> str:
+        assert self.access_token, 'Access token not refreshed yet'
+        return self.access_token
+
+    @property
+    def user_id(self) -> UUID:
+        assert self.access_token_data
+        return self.access_token_data.subject_id
+
+    @property
+    def user(self):
+        if not self._user:
+            self._user = Me(self)
+        return self._user
+
+    def _process_exc_callbacks(self, exception: Exception):
+        l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
+        for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
+            callback(exception)
+
     def refresh_auth(self) -> str:
         """Обновить access token
 
@@ -235,24 +317,10 @@ class Client:
         res.raise_for_status()
 
         self.access_token = res.json()['accessToken']
+        self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
 
         assert self.access_token
         return self.access_token
-
-    @property
-    def token(self) -> str:
-        assert self.access_token, 'Access token not refreshed yet'
-        return self.access_token
-
-    @property
-    def user_id(self) -> UUID:
-        return UUID(decode_jwt_payload(self.token)['sub'])
-
-    @property
-    def user(self):
-        if not self._user:
-            self._user = Me(self)
-        return self._user
 
     def logout(self):
         """Выход из аккаунта"""
@@ -301,7 +369,7 @@ class Client:
         Returns:
             list[User]: Список пользователей
         """
-        return self.search(query, 1, limit)[0]  # cant hashtags_limit=9 because it gives validation, ну это вам только хуже будет так что сервера страдайте
+        return self.search(query, 1, limit)[0]  # cant hashtags_limit=0 because it gives validationerr, ну это вам только хуже будет так что сервера страдайте
 
     def search_hashtags(self, query: str, limit: int = 20) -> list[Hashtag]:
         """Поиск хэштэгов
@@ -362,7 +430,7 @@ class Client:
                 if isinstance(user, User):
                     user_ids.append(user.id)
                 else:
-                    user_ids.append(to_uuid(user))
+                    user_ids.append(to_uuid(user))  # ty: ignore[invalid-argument-type]
         elif isinstance(users, User):
             user_ids = [users.id]
         else:
@@ -370,5 +438,5 @@ class Client:
 
         res = {UUID(k): v for k, v in get_follow_status(self, user_ids).json()['data'].items()}
         if not isinstance(users, list):
-            return list(res.values())[0]
+            return next(iter(res.values()))
         return res

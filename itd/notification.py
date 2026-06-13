@@ -1,25 +1,26 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Literal, cast, Iterator
-from uuid import UUID
+
 from datetime import datetime
 from json import loads
 from threading import Thread
+from typing import TYPE_CHECKING, Iterator, Literal, cast
+from uuid import UUID
 
-from pydantic import Field, BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sseclient import SSEClient
 
+from itd.api.notifications import get_notifications, get_unread_notifications_count, mark_all_as_read, mark_as_read, stream_notifications
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
 from itd.enums import NotificationTargetType, NotificationType
-from itd.user import User
-from itd.api.notifications import mark_as_read, mark_all_as_read, get_notifications, get_unread_notifications_count, stream_notifications
 from itd.logger import get_logger
+from itd.user import User
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-l = get_logger('notifications')
+l = get_logger('notifications')  # noqa: E741
 
 
 class Notification(ITDBaseModel):
@@ -112,11 +113,14 @@ class _NotificationValidate(BaseModel, Notification):
 
 
 class Notifications(ITDList[Notification]):
-    _limit = 1000
     _unread: int | None = None
+    cursor: int = 0
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()
+
+    def _get_cursor(self, data: dict) -> int:
+        return len(self)
 
     @staticmethod
     def _get_objects(data: dict) -> list[dict]:
@@ -128,12 +132,6 @@ class Notifications(ITDList[Notification]):
 
     def _to_models(self, objects: list, client: Client):
         return [Notification(notification, self, client) for notification in objects]
-
-    def __setattr__(self, name: str, value) -> None:
-        if name == '_client':
-            for notification in self.copy():
-                notification._client = value
-        super().__setattr__(name, value)
 
     def read_all(self):
         mark_all_as_read(self.client)

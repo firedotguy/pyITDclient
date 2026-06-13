@@ -1,22 +1,23 @@
 from __future__ import annotations
-from datetime import datetime
-from uuid import UUID
-from typing import TYPE_CHECKING
 
+from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from itd.base import catch_errors, rate_limit
 from itd.enums import PostsTab, UserPostSorting
-from itd.poll import NewPoll
 from itd.exceptions import (
-    NotFoundError,
-    ForbiddenError,
-    RequiresSubscriptionError,
-    ValidationError,
     AlreadyRepostedError,
+    BannedWordError,
     CantRepostYourselfError,
-    NotPinnedError,
     EditExpiredError,
-    BannedWordError
+    ForbiddenError,
+    NotFoundError,
+    NotPinnedError,
+    RequiresSubscriptionError,
+    ValidationError
 )
-from itd.base import rate_limit, catch_errors
+from itd.poll import NewPoll
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -54,7 +55,7 @@ def create_post(
 @rate_limit()
 @catch_errors(ValidationError())
 def get_posts(client: Client, cursor: str | datetime | None = None, limit: int = 20, tab: PostsTab = PostsTab.POPULAR):
-    data = {'limit': limit, 'tab': tab.value}
+    data: dict = {'limit': limit, 'tab': tab.value}
     if cursor is not None:
         data['cursor'] = cursor
     return client.request('get', 'posts', data)

@@ -1,16 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from uuid import UUID
-from os.path import basename
+
 from _io import BufferedReader
 from pathlib import Path
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 from requests import get
 
+from itd.api.files import delete_file, upload_file
 from itd.base import ITDBaseModel
 from itd.enums import AttachType
-from itd.api.files import upload_file, delete_file
 
 if TYPE_CHECKING:
     from itd.client import Client

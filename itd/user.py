@@ -25,7 +25,7 @@ from itd.api.users import (
     update_privacy,
     update_profile
 )
-from itd.base import ITDBaseModel, ITDList
+from itd.base import ITDBaseModel, ITDList, anti_refresh
 from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, PinNotOwnedError
 from itd.pin import Pin
@@ -196,13 +196,13 @@ class _UserBase(ITDBaseModel):
     bio: str | None = None
 
     def __init__(self, username_or_id: str | UUID, client: Client | None = None) -> None:
+        super().__init__(client)
+
         self._identifier = username_or_id
         if isinstance(username_or_id, str) and username_or_id != 'me':
             self.username = username_or_id
         elif isinstance(username_or_id, UUID):
             self.id = username_or_id
-
-        super().__init__(client)
 
     def __str__(self) -> str:
         return self.display_name
@@ -266,6 +266,12 @@ class User(_UserBase):
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
 
     created_at: datetime | None = Field(None, alias='createdAt')  # none if blocked
+
+    def _post_refresh(self):
+        if 'id' in self.__dict__:
+            self._identifier = self.id
+        else:
+            self._identifier = self.username
 
     @classmethod
     def by_id(cls, id: UUID | str) -> 'User':
@@ -347,27 +353,29 @@ class User(_UserBase):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.USER, reason, description, client or self.client)
 
+    @anti_refresh
     def follow(self, client: Client | None = None) -> int:
         self.followers_count = follow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
             self.is_following = True
 
-        assert self.followers_count is not None
         return self.followers_count
 
+    @anti_refresh
     def unfollow(self, client: Client | None = None) -> int:
         self.followers_count = unfollow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
-            self.is_following = False
+            self.is_following = True
 
-        assert self.followers_count is not None
         return self.followers_count
 
+    @anti_refresh
     def block(self, client: Client | None = None) -> None:
         block(client or self.client, self._identifier)
         if (client or self.client) == self.client:
             self.is_blocking = True
 
+    @anti_refresh
     def unblock(self, client: Client | None = None) -> None:
         unblock(client or self.client, self._identifier)
         if (client or self.client) == self.client:
@@ -419,13 +427,14 @@ class Me(_UserBase):
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)
 
-        self._blocked = Blocked()
-        self._followers = Followers()
-        self._following = Following()
+        self.blocked: Blocked = Blocked()
+        self._followers: Followers | None = None
+        self._following: Following | None = None
         self._pins: list[Pin] = []
         self.privacy: Privacy = Privacy._from_user(self, self.client)
         self.profile: Profile = Profile(self.client)
-        self.client._user = self
+        if not self.client._user:
+            self.client._user = self
 
     def to_user(self) -> User:
         instance = User.__new__(User)
@@ -452,23 +461,25 @@ class Me(_UserBase):
     ):
         self.privacy.update(is_private, wall_access, likes_visibility, show_last_seen)
 
+    @anti_refresh
     def update(self, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | str | Unset | None = None):
         if isinstance(banner_id, str):
             banner_id = to_uuid(banner_id)
         update_profile(self.client, bio, display_name, username, banner_id)
-        if bio:
+        if bio is not None:
             self.bio = bio
-        if display_name:
+        if display_name is not None:
             self.display_name = display_name
-        if username:
+        if username is not None:
             self.username = username
 
     def update_from_fields(self):
         update_profile(self.client, self.bio, self.display_name, self.username)
 
+    @anti_refresh
     def remove_pin(self) -> None:
-        if object.__getattribute__(self, 'pin'):
-            self.pin.remove()  # pyright: ignore[reportOptionalMemberAccess]
+        if self.pin:
+            self.pin.remove()
         else:
             remove_pin(self.client)  # if pins not loaded just use straight call
 
@@ -491,26 +502,15 @@ class Me(_UserBase):
                 raise PinNotOwnedError(pin.slug)
 
     @property
-    def blocked(self) -> 'Blocked':
-        if not self._blocked:
-            self._blocked._client = self.client
-            self._blocked.load()
-        return self._blocked
-
-    @property
     def followers(self) -> 'Followers':
         if not self._followers:
-            self._followers._user_id = self.id
-            self._followers._client = self._client
-            self._followers.load()
+            self._followers = Followers(self.id)
         return self._followers
 
     @property
     def following(self) -> 'Following':
         if not self._following:
-            self._following._user_id = self.id
-            self._following._client = self._client
-            self._following.load()
+            self._following = Following(self.id)
         return self._following
 
     @property
@@ -548,11 +548,13 @@ class _MeValidate(BaseModel, Me):
 
 class Followers(ITDList[User]):
     _load_with_parent = False
-    _user_id: UUID
     cursor: int = 1
 
+    def __init__(self, id: UUID):
+        self.user_id = id
+
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_followers(client, self._user_id, self.cursor).json()['data']
+        return get_followers(client, self.user_id, self.cursor, limit).json()['data']
 
     @staticmethod
     def _get_has_more(data: dict) -> bool:
@@ -573,20 +575,15 @@ class Followers(ITDList[User]):
     def _to_models(self, objects: list, client: Client):
         return [User.from_dict(user, client=client) for user in objects]
 
-    def __setattr__(self, name: str, value) -> None:
-        if name == '_client':
-            for user in self.copy():
-                user._client = value
-        super().__setattr__(name, value)
-
 
 class Following(Followers):
     def _fetch(self, client: Client, limit: int) -> dict:
-        return get_following(client, self._user_id, self.cursor).json()['data']
+        return get_following(client, self.user_id, self.cursor, limit).json()['data']
 
 
 class Blocked(Followers):
-    limit = 100
+    def __init__(self):
+        super(Followers, self).__init__()
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_blocked(client, self.cursor, limit).json()['data']
