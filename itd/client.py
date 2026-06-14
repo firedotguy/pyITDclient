@@ -436,3 +436,7 @@ class Client:
         if not isinstance(users, list):
             return next(iter(res.values()))
         return res
+
+
+def init_client(refresh: str | None = None, access: str | None = None, config: Config = Config()):
+    return Client(refresh, access, config)
