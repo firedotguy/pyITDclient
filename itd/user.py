@@ -121,19 +121,6 @@ class Privacy(ITDBaseModel):
     def update_from_fields(self):  # you can update fields (like privacy.is_private = True), then exec this func to update
         self.update(self.is_private, self.wall_access, self.likes_visibility, self.show_last_seen)
 
-    @classmethod
-    def _from_user(cls, user: 'Me', client: Client | None = None):
-        instance = cls(client)
-        instance._user = user
-        return instance
-
-    if not TYPE_CHECKING:
-
-        def __getattribute__(self, name: str):
-            if name in ('is_private', 'wall_access', 'likes_visibility') and object.__getattribute__(self, '_user'):
-                setattr(self, name, getattr(object.__getattribute__(self, '_user'), name))
-            return super().__getattribute__(name)
-
 
 class _PrivacyValidate(BaseModel, Privacy):
     pass
@@ -444,10 +431,17 @@ class Me(_UserBase):
         self._followers: Followers | None = None
         self._following: Following | None = None
         self._pins: list[Pin] = []
-        self.privacy: Privacy = Privacy._from_user(self, self.client)
+        self.privacy: Privacy = Privacy(self.client)
         self.profile: Profile = Profile(self.client)
         if not self.client._user:
             self.client._user = self
+
+    def _post_refresh(self):
+        if self.pin:
+            self.pin._user = self
+        for name in ('is_private', 'wall_access', 'likes_visibility'):
+            setattr(self.privacy, name, getattr(self, name))
+        self.privacy.load_status = LoadStatus.PARTIALLY
 
     def to_user(self) -> User:
         instance = User.__new__(User)
@@ -474,7 +468,6 @@ class Me(_UserBase):
     ):
         self.privacy.update(is_private, wall_access, likes_visibility, show_last_seen)
 
-    @anti_refresh
     def update(self, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | str | Unset | None = None):
         if isinstance(banner_id, str):
             banner_id = to_uuid(banner_id)
@@ -489,9 +482,9 @@ class Me(_UserBase):
     def update_from_fields(self):
         update_profile(self.client, self.bio, self.display_name, self.username)
 
-    @anti_refresh
     def remove_pin(self) -> None:
-        if self.pin:
+        if object.__getattribute__(self, 'pin'):
+            assert self.pin
             self.pin.remove()
         else:
             remove_pin(self.client)  # if pins not loaded just use straight call
@@ -540,10 +533,6 @@ class Me(_UserBase):
             exc.restore_deadline = parse_datetime(user['restoreDeadline']) if 'restoreDeadline' in user else None
             raise exc
         return user
-
-    def _post_refresh(self):
-        if self.pin:
-            self.pin._user = self
 
 
 class _MeValidate(BaseModel, Me):

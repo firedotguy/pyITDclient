@@ -80,7 +80,7 @@ class ITDBaseModel:
     def _fill_from_data(self, data: dict):
         assert self._validator, 'Unable to use fill_from_data without a validator'
         validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
-        self._loaded_attrs = validated.model_fields_set  # значения автоматически добавляются через __setattr__
+        self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             setattr(self, name, value)
 
@@ -431,10 +431,6 @@ def rate_limit(delay_min: float | None = None, delay_mid: float | None = None, d
 
 def anti_refresh(func):
     def wrapper(self: ITDBaseModel, *args, **kwargs):
-        previous = self.load_status
-        self.load_status = LoadStatus.LOADING
-        res = func(self, *args, **kwargs)
-        self.load_status = previous
-        return res
+        return func(self, *args, **kwargs)
 
     return wrapper

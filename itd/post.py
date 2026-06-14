@@ -268,6 +268,7 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
+        self.comments = Comments()
         self.comments._post = self
 
     def for_client(self, client: Client):
