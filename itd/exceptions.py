@@ -38,7 +38,9 @@ class RateLimitError(ITDException):
         self.retry_after = retry_after
 
     def __str__(self) -> str:
-        return f'Rate limit exceeded - too much requests. Retry after {self.retry_after} seconds'
+        if self.retry_after:
+            return f'Rate limit exceeded - too much requests. Retry after {self.retry_after} seconds'
+        return 'Rate limit exceeded - too much requests'
 
 
 class NotFoundError(ITDException):

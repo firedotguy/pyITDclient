@@ -78,8 +78,9 @@ class Config:
     rate_limit_default: int | None = None  # deprecated
     rate_limit_actions: dict[str, float | int] | None = None  # deprecated
     anti_rate_limit: bool | None = None
-    burst_requests: bool = False
+    burst_requests: bool | None = None
     anti_ip_ban: bool = True
+    limit_coefficient: float | None = None
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
@@ -113,7 +114,7 @@ class Config:
     retry_enabled: bool | None = None
     retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception]] | list[type[Exception]] = field(default_factory=lambda: [RateLimitError])
+    retry_exceptions: tuple[type[Exception]] = field(default_factory=lambda: (RateLimitError,))
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -186,6 +187,21 @@ class Config:
             self._anti_rate_limit = self.client_type == 'bot'
         else:
             self._anti_rate_limit = self.anti_rate_limit
+
+        if self.burst_requests is None:
+            self._burst_requests = self.client_type != 'bot'
+        else:
+            self._burst_requests = self.burst_requests
+
+        if self.limit_coefficient is None:
+            if self.client_type == 'bot':
+                self._limit_coefficient = 0.75
+            elif self.client_type == 'client':
+                self._limit_coefficient = 0.9
+            else:
+                self._limit_coefficient = 1
+        else:
+            self._limit_coefficient = self.limit_coefficient
 
 
 class AccessToken(BaseModel):

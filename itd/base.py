@@ -337,7 +337,7 @@ def api_wrapper(*exceptions: ITDException):
             limit = int(res.headers.get('x-ratelimit-limit', 0))
 
             if client.config._anti_rate_limit:
-                if client.config.burst_requests:
+                if client.config._burst_requests:
                     if func.__name__ not in limiters:
                         l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
                         limiters[func.__name__] = RateLimiter(limit)
@@ -346,11 +346,11 @@ def api_wrapper(*exceptions: ITDException):
                     limiters[func.__name__].sync(remaining)
 
                 else:
-                    if limit and client.last_actions.get(func.__name__):
-                        delay = 60 / limit - (monotonic() - client.last_actions[func.__name__])
+                    if client.last_actions.get(func.__name__):
+                        delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[func.__name__])
                         if delay > 0:
-                            l.debug('sleep %s limit=%s (max %s req/s)', round(1 / delay, 3), limit, round(delay, 3))
-                            sleep(1 / delay)
+                            l.debug('sleep %s limit=%s remaining=%s (max %s req/s)', round(delay, 2), limit, remaining, round(1 / delay, 2))
+                            sleep(delay)
                     client.last_actions[func.__name__] = monotonic()
 
             if client.config.debug_response == DebugResponseMode.BEFORE:
@@ -434,13 +434,13 @@ def rate_limit():
             #     l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
             #     sleep(max(delay, 0))
 
-            if not client.config.retry_enabled:
+            if not client.config._retry_enabled:
                 return func(client, *args, **kwargs)
 
             while True:
                 try:
                     return func(client, *args, **kwargs)
-                except tuple(client.config.retry_exceptions) as e:
+                except client.config.retry_exceptions as e:
                     if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
                         l.error('too large rate limit')
                         raise
