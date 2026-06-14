@@ -5,8 +5,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from itd.api.hashtags import get_hashtags, get_posts_by_hashtag
+from itd.api.hashtags import get_hashtags, get_posts_by_hashtag, search_hashtags
 from itd.base import ITDBaseModel
+from itd.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -27,16 +28,6 @@ class Hashtag(ITDBaseModel):
     def _refresh(self, *, client: Client):
         return get_posts_by_hashtag(client, self.name, limit=1).json()['data']['hashtag']
 
-    @classmethod
-    def _from_dict(cls, data: dict, client: Client | None = None):
-        instance = cls(data['name'], client)
-        validated = _HashtagValidate.model_validate(data)
-        instance._fields_from_data = validated.model_fields_set
-        for name, value in validated.__dict__.items():
-            setattr(instance, name, value)
-
-        return instance
-
     def __str__(self) -> str:
         return '#' + self.name
 
@@ -51,6 +42,13 @@ class Hashtag(ITDBaseModel):
             self._posts = HashtagPosts(self, client=self.client)
         return self._posts
 
+    @classmethod
+    def search(cls, query: str):
+        result = Hashtags.search(query, limit=1)
+        if result:
+            return result[0]
+        raise NotFoundError('Hashtag')
+
 
 class _HashtagValidate(BaseModel, Hashtag):
     pass
@@ -59,13 +57,17 @@ class _HashtagValidate(BaseModel, Hashtag):
 class Hashtags(ITDBaseModel, list[Hashtag]):
     _refreshable = False
 
-    def __init__(self, client: Client | None = None):
+    def __init__(self, query: str | None = None, limit: int = 10, client: Client | None = None):
         super().__init__(client)
-        self.load()
+        self.query = query
+        self.load(limit)
 
-    def load(self, count: int = 10):
+    def load(self, limit: int = 10):
         self.clear()
-        self.extend([Hashtag._from_dict(hashtag) for hashtag in get_hashtags(self.client, count).json()['data']['hashtags']])
+        if self.query:
+            self.extend([Hashtag.from_dict(hashtag) for hashtag in search_hashtags(self.client, self.query, limit).json()['data']['hashtags']])
+        else:
+            self.extend([Hashtag.from_dict(hashtag) for hashtag in get_hashtags(self.client, limit).json()['data']['hashtags']])
         return self
 
     @classmethod
@@ -73,3 +75,7 @@ class Hashtags(ITDBaseModel, list[Hashtag]):
         instance = cls.__new__(cls)
         super(Hashtags, instance).__init__()
         return instance
+
+    @classmethod
+    def search(cls, query: str, limit: int = 10):
+        return cls(query, limit)

@@ -353,6 +353,9 @@ class Post(ITDBaseModel):
     def __int__(self) -> int:
         return self.likes_count
 
+    # def __hash__(self):
+    #     return int(self.id)
+
     def __eq__(self, other) -> bool:
         if isinstance(other, Post):
             return self.id == other.id
