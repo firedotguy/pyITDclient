@@ -344,18 +344,6 @@ def api_wrapper(*exceptions: ITDException):
                     elif name not in limiters:
                         limiters[name] = SafeRateLimiter(name, limit)
                     limiters[name].sync(remaining)
-                    # if client.last_actions.get(name):
-                    #     delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[name])
-                    #     if delay > 0:
-                    #         l.debug(
-                    #             'sleep %s limit=%s remaining=%s (max %s req/s)',
-                    #             4.7,
-                    #             limit,
-                    #             remaining,
-                    #             round((limit * client.config._limit_coefficient) / 60, 2)
-                    #         )
-                    #         sleep(4.7)  # delay)
-                    # client.last_actions[name] = monotonic()
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
                     l.debug('response (raw): %s', res.text)

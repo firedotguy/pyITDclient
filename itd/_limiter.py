@@ -30,7 +30,7 @@ class SafeRateLimiter(RateLimiter):
         self.requests += 1
 
     def sync(self, remaining: int):
-        l.info(r'\[%s] sync limiter remaining=%s', self.name, remaining)
+        l.debug(r'\[%s] sync limiter remaining=%s', self.name, remaining)
         if self.requests > 50:
             return
         if self.requests == 50:
