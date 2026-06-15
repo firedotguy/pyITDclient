@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import api_wrapper, rate_limit
+from itd.base import api_wrapper
 from itd.exceptions import AlreadyDeletedError, BannedWordError, ForbiddenError, NotFoundError, RequiresSubscriptionError, ValidationError
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit()
 @api_wrapper(
     ValidationError(),
     NotFoundError('Post'),
@@ -22,7 +21,6 @@ def add_comment(client: Client, post_id: UUID, content: str | None = None, attac
     return client.request('post', f'posts/{post_id}/comments', {'content': content or '', "attachmentIds": list(map(str, attachment_ids))})
 
 
-@rate_limit()
 @api_wrapper(
     ValidationError(),
     NotFoundError('Comment'),
@@ -37,31 +35,26 @@ def add_reply_comment(client: Client, comment_id: UUID, author_id: UUID, content
     )
 
 
-@rate_limit()
 @api_wrapper(ValidationError(), NotFoundError('Post'))
 def get_comments(client: Client, post_id: UUID, cursor: int = 0, limit: int = 20, sort: str = 'popular'):
     return client.request('get', f'posts/{post_id}/comments', {'limit': limit, 'sort': sort, 'cursor': cursor})
 
 
-@rate_limit()
 @api_wrapper(NotFoundError('Comment'))
 def like_comment(client: Client, comment_id: UUID):
     return client.request('post', f'comments/{comment_id}/like')
 
 
-@rate_limit()
 @api_wrapper(NotFoundError('Comment'))
 def unlike_comment(client: Client, comment_id: UUID):
     return client.request('delete', f'comments/{comment_id}/like')
 
 
-@rate_limit()
 @api_wrapper(NotFoundError('Comment'), AlreadyDeletedError('Comment'))
 def delete_comment(client: Client, comment_id: UUID):
     return client.request('delete', f'comments/{comment_id}')
 
 
-@rate_limit()
 @api_wrapper(ValidationError(), NotFoundError('Comment'))
 def get_replies(client: Client, comment_id: UUID, page: int = 1, limit: int = 50):
     return client.request('get', f'comments/{comment_id}/replies', {'page': page, 'limit': limit})

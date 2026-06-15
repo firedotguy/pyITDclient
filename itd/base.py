@@ -317,126 +317,96 @@ def api_wrapper(*exceptions: ITDException):
     def decorator(func):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-            if func.__name__ in limiters:
-                limiters[func.__name__].acquire()
-            ip_limiter.acquire()
+            def exec():
+                l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
+                if func.__name__ in limiters:
+                    limiters[func.__name__].acquire()
+                ip_limiter.acquire()
 
-            res: Response = func(client, *args, **kwargs)
+                res: Response = func(client, *args, **kwargs)
 
-            assert isinstance(res, Response)
-            if res.status_code == 204:
-                if client.config.debug_response != DebugResponseMode.NO:
-                    l.debug('no response')
+                assert isinstance(res, Response)
+                if res.status_code == 204:
+                    if client.config.debug_response != DebugResponseMode.NO:
+                        l.debug('no response')
+                    return res
+
+                remaining = int(res.headers.get('x-ratelimit-remaining', 0))
+                limit = int(res.headers.get('x-ratelimit-limit', 0))
+
+                if client.config._anti_rate_limit:
+                    if client.config._burst_requests:
+                        if func.__name__ not in limiters:
+                            l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
+                            limiters[func.__name__] = RateLimiter(limit)
+                        else:
+                            l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
+                        limiters[func.__name__].sync(remaining)
+
+                    else:
+                        if client.last_actions.get(func.__name__):
+                            delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[func.__name__])
+                            if delay > 0:
+                                l.debug('sleep %s limit=%s remaining=%s (max %s req/s)', round(delay, 2), limit, remaining, round(1 / delay, 2))
+                                sleep(delay)
+                        client.last_actions[func.__name__] = monotonic()
+
+                if client.config.debug_response == DebugResponseMode.BEFORE:
+                    l.debug('response (raw): %s', res.text)
+
+                try:
+                    json = res.json()
+                except JSONDecodeError:
+                    json = {}
+                    l.warning('failed to parse json: %s', res.text[:1000])
+
+                for exception in DEFAULT_ERRORS + exceptions:
+                    if (
+                        (exception.res_check and exception.res_check(res))
+                        or (exception.text_check and exception.text_check(res.text))
+                        or (exception.json_check and exception.json_check(json))
+                        or exception.status_code is not None
+                        and res.status_code == exception.status_code
+                        or isinstance(json.get('error'), dict)
+                        and (
+                            exception.code is not None
+                            and json['error'].get('code') == exception.code
+                            or exception.message is not None
+                            and json['error'].get('message') == exception.message
+                        )
+                    ):
+                        if isinstance(exception, ValidationError):
+                            exception.text = json.get('error', {}).get('message', 'Failed validation')
+
+                        if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
+                            exception.retry_after = json.get('error', {}).get('retryAfter', 0)
+
+                        if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
+                            client.refresh_auth()
+                            return wrapper(client, *args, **kwargs)
+
+                        if isinstance(exception, AccountDeletedError):
+                            exception.can_restore = json.get('error', {}).get('canRestore', True)
+
+                        client._process_exc_callbacks(exception)
+                        raise exception
+
+                if client.config.debug_response == DebugResponseMode.AFTER:
+                    l.debug('response: %s', json)
+                if client.config.debug_response == DebugResponseMode.KEYS:
+                    if 'data' in json:
+                        l.debug('response keys: data - %s', list(json['data'].keys()))
+                    else:
+                        l.debug('response keys: %s', list(json.keys()))
+                res.raise_for_status()
                 return res
 
-            remaining = int(res.headers.get('x-ratelimit-remaining', 0))
-            limit = int(res.headers.get('x-ratelimit-limit', 0))
-
-            if client.config._anti_rate_limit:
-                if client.config._burst_requests:
-                    if func.__name__ not in limiters:
-                        l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
-                        limiters[func.__name__] = RateLimiter(limit)
-                    else:
-                        l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
-                    limiters[func.__name__].sync(remaining)
-
-                else:
-                    if client.last_actions.get(func.__name__):
-                        delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[func.__name__])
-                        if delay > 0:
-                            l.debug('sleep %s limit=%s remaining=%s (max %s req/s)', round(delay, 2), limit, remaining, round(1 / delay, 2))
-                            sleep(delay)
-                    client.last_actions[func.__name__] = monotonic()
-
-            if client.config.debug_response == DebugResponseMode.BEFORE:
-                l.debug('response (raw): %s', res.text)
-
-            try:
-                json = res.json()
-            except JSONDecodeError:
-                json = {}
-                l.warning('failed to parse json: %s', res.text[:1000])
-
-            for exception in DEFAULT_ERRORS + exceptions:
-                if (
-                    (exception.res_check and exception.res_check(res))
-                    or (exception.text_check and exception.text_check(res.text))
-                    or (exception.json_check and exception.json_check(json))
-                    or exception.status_code is not None
-                    and res.status_code == exception.status_code
-                    or isinstance(json.get('error'), dict)
-                    and (
-                        exception.code is not None
-                        and json['error'].get('code') == exception.code
-                        or exception.message is not None
-                        and json['error'].get('message') == exception.message
-                    )
-                ):
-                    if isinstance(exception, ValidationError):
-                        exception.text = json.get('error', {}).get('message', 'Failed validation')
-
-                    if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
-                        exception.retry_after = json.get('error', {}).get('retryAfter', 0)
-
-                    if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
-                        client.refresh_auth()
-                        return wrapper(client, *args, **kwargs)
-
-                    if isinstance(exception, AccountDeletedError):
-                        exception.can_restore = json.get('error', {}).get('canRestore', True)
-
-                    client._process_exc_callbacks(exception)
-                    raise exception
-
-            if client.config.debug_response == DebugResponseMode.AFTER:
-                l.debug('response: %s', json)
-            if client.config.debug_response == DebugResponseMode.KEYS:
-                if 'data' in json:
-                    l.debug('response keys: data - %s', list(json['data'].keys()))
-                else:
-                    l.debug('response keys: %s', list(json.keys()))
-            res.raise_for_status()
-            return res
-
-        return wrapper
-
-    return decorator
-
-
-def rate_limit():
-    """Декоратор для рейт лимита
-
-    Args:
-        delay_min (float | None, optional): Задержка для RateLimitMode.MIN. Defaults to None.
-        delay_mid (float | None, optional): Задержка для RateLimitMode.MID. Defaults to None.
-        delay_max (float | None, optional): Задержка для RateLimitMode.MAX. Defaults to None.
-    """
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            # if func.__name__ in client.config.rate_limit_actions:
-            #     delay = client.config.rate_limit_actions[func.__name__]
-            # elif client.config.rate_limit == RateLimitMode.NO:
-            #     delay = 0
-            # elif any((delay_min, delay_mid, delay_max)):
-            #     delay = eval(f'delay_{client.config.rate_limit.value}') or next((i for i in (delay_min, delay_mid, delay_max) if i is not None))
-            # else:
-            #     delay = client.config._rate_limit_default
-
-            # if datetime.now() - timedelta(seconds=delay) < client.last_actions.get(func.__name__, datetime(1990, 1, 1)):
-            #     delay -= (datetime.now() - client.last_actions[func.__name__]).seconds
-            #     l.debug('anti rate limit on %s; wait %ss', func.__name__, delay)
-            #     sleep(max(delay, 0))
-
             if not client.config._retry_enabled:
-                return func(client, *args, **kwargs)
+                return exec()
 
             while True:
                 try:
-                    return func(client, *args, **kwargs)
+                    return exec()
                 except client.config.retry_exceptions as e:
                     if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
                         l.error('too large rate limit')
@@ -451,8 +421,17 @@ def rate_limit():
     return decorator
 
 
-def anti_refresh(func):
-    def wrapper(self: ITDBaseModel, *args, **kwargs):
-        return func(self, *args, **kwargs)
+catch_errors = api_wrapper
 
-    return wrapper
+
+def rate_limit():
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(client: Client, *args, **kwargs) -> Response | None:
+            l.warning('base.rate_limit is deprecated and will be removed in 2.7.0.')
+            return func(client, *args, **kwargs)
+
+        return wrapper
+
+    return decorator

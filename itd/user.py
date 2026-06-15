@@ -28,7 +28,7 @@ from itd.api.users import (
     update_profile
 )
 from itd.api.users import get_follow_status as _get_follow_status
-from itd.base import ITDBaseModel, ITDList, anti_refresh
+from itd.base import ITDBaseModel, ITDList
 from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
 from itd.pin import Pin
@@ -346,7 +346,6 @@ class User(_UserBase):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.USER, reason, description, client or self.client)
 
-    @anti_refresh
     def follow(self, client: Client | None = None) -> int:
         self.followers_count = follow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
@@ -354,7 +353,6 @@ class User(_UserBase):
 
         return self.followers_count
 
-    @anti_refresh
     def unfollow(self, client: Client | None = None) -> int:
         self.followers_count = unfollow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
@@ -362,13 +360,11 @@ class User(_UserBase):
 
         return self.followers_count
 
-    @anti_refresh
     def block(self, client: Client | None = None) -> None:
         block(client or self.client, self._identifier)
         if (client or self.client) == self.client:
             self.is_blocking = True
 
-    @anti_refresh
     def unblock(self, client: Client | None = None) -> None:
         unblock(client or self.client, self._identifier)
         if (client or self.client) == self.client:

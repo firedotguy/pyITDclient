@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import api_wrapper, rate_limit
+from itd.base import api_wrapper
 from itd.enums import ReportReason, ReportTargetType
 from itd.exceptions import AlreadyReportedError, NotFoundError, ValidationError
 
@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit()  # это стоило мне одного ака виталия
 @api_wrapper(
     AlreadyReportedError(), NotFoundError('Report target', json_check=lambda json: 'не найден' in json.get('error', {}).get('message', '')), ValidationError()
 )
