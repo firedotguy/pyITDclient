@@ -41,18 +41,20 @@ class Comment(ITDBaseModel):
     _base_comment: Comment | None = None
 
     @classmethod
-    def from_dict(cls, data: dict, post: Post, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
+    def from_dict(cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
         instance = super().from_dict(data, client=client)
-        instance._post = post
+        if post:
+            instance._post = post
         instance._base_comment = base_comment
         instance.replies._post = post
         instance.replies._post_refresh()
         return instance
 
+    def __hash__(self):
+        return int(self.id)
+
     def _post_refresh(self):
         self.replies._base_comment = self
-        # self.replies._post = self._post
-        # self.replies._post_refresh()
 
     def __str__(self) -> str:
         return self.content
@@ -139,7 +141,7 @@ class _CommentValidate(BaseModel, Comment):
     @field_validator('replies', mode='plain')
     @classmethod
     def validate_replies(cls, replies: list[dict]):
-        return Replies()._init_raw(replies)
+        return Replies(replies)
 
     @field_validator('created_at', mode='plain')
     @classmethod
@@ -161,21 +163,11 @@ class _CommentValidate(BaseModel, Comment):
 class Comments(ITDList[Comment]):
     """Список комментариев с функцией дозагрузки"""
 
+    _load_with_parent = False
     _post: Post
     total: int
     cursor: int = 0
     _sorting: CommentSorting = CommentSorting.POPULAR
-    _raw: list[dict] = []
-
-    def _init_raw(self, data: list[dict] = []):
-        self._raw = data
-        if data:
-            self.cursor = len(data) + 1
-        return self
-
-    def _post_refresh(self):
-        self.extend(self._to_models(self._raw, self.client))
-        # self._raw.clear()
 
     def _fetch(self, client: Client, limit: int):
         return get_comments(client, self._post.id, self.cursor, limit).json()['data']
@@ -225,9 +217,9 @@ class Replies(ITDList[Comment]):
     cursor: int = 1
     _raw: list[dict] = []
 
-    def _init_raw(self, data: list[dict] = []):
+    def __init__(self, data: list[dict] = []):
+        super().__init__()
         self._raw = data
-        return self
 
     def _fetch(self, client: Client, limit: int):
         if self._raw:

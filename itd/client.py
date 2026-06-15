@@ -16,15 +16,14 @@ from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
-from itd.api.users import get_follow_status
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
-from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError
-from itd.hashtag import Hashtag
+from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
+from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
 from itd.request import decode_jwt_payload, fetch, fetch_stream
-from itd.user import Me, User
-from itd.utils import get_sdk_user_agent, to_uuid
+from itd.user import Me, User, Users, get_follow_status
+from itd.utils import get_sdk_user_agent
 
 l = get_logger('client')  # noqa: E741
 
@@ -107,7 +106,7 @@ class Config:
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
-    load_comments_from_post: bool = False
+    load_comments_from_post: bool | None = None
 
     parse_mode: ParseMode = ParseMode.NO
 
@@ -187,6 +186,8 @@ class Config:
             self._anti_rate_limit = self.client_type == 'bot'
         else:
             self._anti_rate_limit = self.anti_rate_limit
+        if self.load_comments_from_post is not None:
+            l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
 
         if self.burst_requests is None:
             self._burst_requests = self.client_type != 'bot'
@@ -330,7 +331,7 @@ class Client:
         return self.access_token_data.subject_id
 
     @property
-    def user(self):
+    def user(self) -> Me:
         if not self._user:
             self._user = Me(self)
         return self._user
@@ -392,31 +393,33 @@ class Client:
             tuple[list[User], list[Hashtag]]: Результат поиска
         """
         res = search(self, query, users_limit, hashtags_limit).json()['data']
-        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag._from_dict(hashtag, self) for hashtag in res['hashtags']]
+        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag.from_dict(hashtag, client=self) for hashtag in res['hashtags']]
 
-    def search_users(self, query: str, limit: int = 20) -> list[User]:
+    def search_users(self, query: str, limit: int = 10) -> list[User]:
         """Поиск пользователей
 
         Args:
             query (str): Запрос
-            limit (int, optional): Лимит. Defaults to 20.
+            limit (int, optional): Лимит. Defaults to 10.
 
         Returns:
             list[User]: Список пользователей
         """
-        return self.search(query, 1, limit)[0]  # cant hashtags_limit=0 because it gives validationerr, ну это вам только хуже будет так что сервера страдайте
+        l.warning('Client.search_users is deprecated. Please use Users.search.')
+        return Users.search(query, limit)
 
-    def search_hashtags(self, query: str, limit: int = 20) -> list[Hashtag]:
+    def search_hashtags(self, query: str, limit: int = 10) -> list[Hashtag]:
         """Поиск хэштэгов
 
         Args:
             query (str): Запрос
-            limit (int, optional): Лимит. Defaults to 20.
+            limit (int, optional): Лимит. Defaults to 10.
 
         Returns:
             list[Hashtag]: Список хэштэгов
         """
-        return self.search(query, limit, 1)[1]
+        l.warning('Client.search_hashtags is deprecated. Please use Hashtags.search.')
+        return Hashtags.search(query, limit)
 
     def search_user(self, query: str) -> User | None:
         """Поиск пользователя
@@ -427,9 +430,11 @@ class Client:
         Returns:
             User | None: Пользователь
         """
-        user = self.search_users(query, 1)
-        if user:
-            return user[0]
+        l.warning('Client.search_user is deprecated. Please use User.search.')
+        try:
+            return User.search(query)
+        except NotFoundError:
+            return None
 
     def search_hashtag(self, query: str) -> Hashtag | None:
         """Поиск хэштэга
@@ -440,9 +445,11 @@ class Client:
         Returns:
             Hashtag | None: Хэштэг
         """
-        hashtag = self.search_hashtags(query, 1)
-        if hashtag:
-            return hashtag[0]
+        l.warning('Client.search_hashtag is deprecated. Please use Hashtag.search.')
+        try:
+            return Hashtag.search(query)
+        except NotFoundError:
+            return None
 
     @overload
     def get_follow_status(self, users: list[User | UUID | str]) -> dict[UUID, bool]: ...
@@ -459,19 +466,9 @@ class Client:
         Returns:
             dict[UUID, bool] | bool: Результат
         """
-        user_ids: list[UUID] = []
-        if isinstance(users, list):
-            for user in users:
-                if isinstance(user, User):
-                    user_ids.append(user.id)
-                else:
-                    user_ids.append(to_uuid(user))  # ty: ignore[invalid-argument-type]
-        elif isinstance(users, User):
-            user_ids = [users.id]
-        else:
-            user_ids = [to_uuid(users)]
+        l.warning('Client.get_follow_status is deprecated. Please use get_follow_status.')
+        return get_follow_status(users)
 
-        res = {UUID(k): v for k, v in get_follow_status(self, user_ids).json()['data'].items()}
-        if not isinstance(users, list):
-            return next(iter(res.values()))
-        return res
+
+def init_client(refresh: str | None = None, access: str | None = None, config: Config = Config()):
+    return Client(refresh, access, config)

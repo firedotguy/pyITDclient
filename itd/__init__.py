@@ -1,3 +1,17 @@
+#                      ######################              ####
+####               ##   ######################           ########
+####             ####            ####                   ####  ####
+####           ######            ####                  ####    ####
+####          #######            ####                 ####      ####
+####        #########            ####                ####        ####
+####      #####  ####            ####               ####          ####
+####    #####    ####            ####              ####            ####
+####  #####      ####            ####             ####              ####
+#########        ####            ####            ####                ####            +----  +----\   |  /
+#######          ####            ####       ##################################       |      |     |  | /
+#####            ####            ####      ####################################  -   +---+  |     |  ++
+###              ####            ####      ####                            ####          |  |     |  | \
+#                ####            ###       ####                            ####      ----+  +----/   |  \
 """
 iii     iii tttttttttt   ddddddddd       |
 iii   iiiii     ttt      ddd   ddd
@@ -30,7 +44,7 @@ from itd.notification import Notifications
 from itd.poll import NewPoll
 from itd.post import HashtagPosts, LikedPosts, Post, Posts, UserPosts
 from itd.session import Sessions
-from itd.user import Me, User
+from itd.user import Me, User, Users, get_follow_status
 from itd.version import Apps, Changelog
 
 __all__ = [
@@ -52,5 +66,7 @@ __all__ = [
     'NewPoll',
     'Sessions',
     'User',
-    'Me'
+    'Me',
+    'Users',
+    'get_follow_status'
 ]

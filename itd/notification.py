@@ -49,6 +49,9 @@ class Notification(ITDBaseModel):
         for name, value in _NotificationValidate.model_validate(notification).__dict__.items():
             setattr(self, name, value)
 
+    def __hash__(self):
+        return int(self.id)
+
     def read(self, client: Client | None = None) -> None:
         mark_as_read(client or self.client, self.id)
 
@@ -114,9 +117,13 @@ class _NotificationValidate(BaseModel, Notification):
 
 class Notifications(ITDList[Notification]):
     _unread: int | None = None
+    cursor: int = 0
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()
+
+    def _get_cursor(self, data: dict) -> int:
+        return len(self)
 
     @staticmethod
     def _get_objects(data: dict) -> list[dict]:
@@ -128,12 +135,6 @@ class Notifications(ITDList[Notification]):
 
     def _to_models(self, objects: list, client: Client):
         return [Notification(notification, self, client) for notification in objects]
-
-    def __setattr__(self, name: str, value) -> None:
-        if name == '_client':
-            for notification in self.copy():
-                notification._client = value
-        super().__setattr__(name, value)
 
     def read_all(self):
         mark_all_as_read(self.client)

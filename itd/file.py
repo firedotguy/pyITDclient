@@ -55,6 +55,9 @@ class File(ITDBaseModel):
 
         return cls(name, data, client)
 
+    def __hash__(self):
+        return int(self.id)
+
     def delete(self, *, client: Client | None = None) -> None:
         delete_file(client or self.client, self.id)
 

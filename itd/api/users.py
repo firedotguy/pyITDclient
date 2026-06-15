@@ -138,3 +138,9 @@ def get_blocked(client: Client, page: int = 1, limit: int = 20):
 @api_wrapper()
 def get_follow_status(client: Client, user_ids: list[UUID]):
     return client.request('post', 'users/follow-status', {'userIds': list(map(str, user_ids))})
+
+
+@rate_limit()
+@catch_errors()
+def search_users(client: Client, query: str, limit: int = 10):
+    return client.request('get', 'users/search', {'q': query, 'limit': limit})

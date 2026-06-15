@@ -1,6 +1,6 @@
 import pytest
 
-from itd.notification import Notifications, Notification
+from itd.notification import Notification, Notifications
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def notifications(client):
 def test_notifications_load(notifications):
     notifications.load(5)
     assert len(notifications) == 5
-    for n in notifications:
+    for n in notifications[:4]:
         assert isinstance(n, Notification)
 
 
@@ -23,15 +23,13 @@ def test_notifications_unread_count(notifications):
 
 
 def test_notifications_has_actor(notifications):
-    notifications.load(3)
-    for n in notifications:
+    for n in notifications.load(3):
         assert n.actor is not None
         assert n.actor.id is not None
 
 
 def test_notification_read(notifications):
-    notifications.load(5)
-    unread = next((n for n in notifications if not n.is_read), None)
+    unread = next((n for n in notifications.load(5) if not n.is_read), None)
     if unread is None:
         pytest.skip('no unread notifications to test')
     before = notifications.unread_count

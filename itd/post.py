@@ -238,7 +238,8 @@ class Post(ITDBaseModel):
     attachments: list[PostAttach]
     poll: Poll | None = None
 
-    comments: Comments = Field(default_factory=lambda: Comments())
+    comments: Comments = Field(default_factory=lambda: Comments(), alias='definitely_not_comments')
+    first_comments: list[Comment] = Field([], alias='comments')
 
     likes_count: int = Field(0, alias='likesCount')
     comments_count: int = Field(0, alias='commentsCount')  # ! Comments + replies, so len(comments) != comments_count
@@ -267,9 +268,8 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
-        if not self.client.config.load_comments_from_post:
-            self.comments = Comments()
-            self.comments._post = self
+        self.comments = Comments()
+        self.comments._post = self
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
@@ -277,7 +277,9 @@ class Post(ITDBaseModel):
     def _post_refresh(self):
         self.visible = False
         self.comments._post = self
-        self.comments._post_refresh()
+        if 'first_comments' in self._loaded_attrs:
+            for comment in self.first_comments:
+                comment._post = self
         for attachment in self.attachments:
             attachment._post = self
 
@@ -351,6 +353,9 @@ class Post(ITDBaseModel):
 
     def __int__(self) -> int:
         return self.likes_count
+
+    def __hash__(self):
+        return int(self.id)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Post):
@@ -611,10 +616,15 @@ class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have 
             return
         return Poll(poll)
 
+    @field_validator('first_comments', mode='plain')
+    @classmethod
+    def validate_first_comments(cls, comments: list[dict]):
+        return [Comment.from_dict(comment) for comment in comments]
+
     @field_validator('comments', mode='plain')
     @classmethod
-    def validate_comments(cls, comments: list[dict]):
-        return Comments()._init_raw(comments)
+    def validate_comments(cls, _):
+        return Comments()
 
     @field_validator('author', mode='plain')
     @classmethod
@@ -714,7 +724,10 @@ class UserPosts(_BasePosts):
             raise ValueError('User must be instance of User or Me class')
 
         self.sorting = sorting  # sort is busy
-        self.source_context = str(self.user.id)
+
+    @property
+    def source_context(self):
+        return str(self.user.id)
 
     def _fetch(self, client: Client, limit: int) -> dict:
         if self.sorting == UserPostSorting.NEW and client.config.userposts_add_pinned_post and not self._force_remove_pinned_post:

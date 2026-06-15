@@ -55,7 +55,7 @@ def create_post(
 @rate_limit()
 @api_wrapper(ValidationError())
 def get_posts(client: Client, cursor: str | datetime | None = None, limit: int = 20, tab: PostsTab = PostsTab.POPULAR):
-    data = {'limit': limit, 'tab': tab.value}
+    data: dict = {'limit': limit, 'tab': tab.value}
     if cursor is not None:
         data['cursor'] = cursor
     return client.request('get', 'posts', data)
