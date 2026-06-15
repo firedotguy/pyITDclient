@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import wraps
-from time import monotonic, sleep
+from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ from requests import Response
 from requests.exceptions import JSONDecodeError
 
 from itd._default import get_default_client, ip_limiter, limiters
-from itd._limiter import RateLimiter
+from itd._limiter import BurstRateLimiter, SafeRateLimiter
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
 from itd.logger import get_logger
@@ -318,9 +318,12 @@ def api_wrapper(*exceptions: ITDException):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
             def exec():
+                name = func.__name__
+                if name in ('get_followers', 'get_following'):
+                    name = 'get_follow'
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-                if func.__name__ in limiters:
-                    limiters[func.__name__].acquire()
+                if name in limiters:
+                    limiters[name].acquire()
                 ip_limiter.acquire()
 
                 res: Response = func(client, *args, **kwargs)
@@ -335,21 +338,24 @@ def api_wrapper(*exceptions: ITDException):
                 limit = int(res.headers.get('x-ratelimit-limit', 0))
 
                 if client.config._anti_rate_limit:
-                    if client.config._burst_requests:
-                        if func.__name__ not in limiters:
-                            l.debug('create rate limiter for %s limit=%s remaining=%s', func.__name__, limit, remaining)
-                            limiters[func.__name__] = RateLimiter(limit)
-                        else:
-                            l.debug('sync rate limiter for %s remaining=%s', func.__name__, remaining)
-                        limiters[func.__name__].sync(remaining)
+                    if client.config._burst_requests and name not in limiters:
+                        limiters[name] = BurstRateLimiter(name, limit)
 
-                    else:
-                        if client.last_actions.get(func.__name__):
-                            delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[func.__name__])
-                            if delay > 0:
-                                l.debug('sleep %s limit=%s remaining=%s (max %s req/s)', round(delay, 2), limit, remaining, round(1 / delay, 2))
-                                sleep(delay)
-                        client.last_actions[func.__name__] = monotonic()
+                    elif name not in limiters:
+                        limiters[name] = SafeRateLimiter(name, limit)
+                    limiters[name].sync(remaining)
+                    # if client.last_actions.get(name):
+                    #     delay = 60 / (limit * client.config._limit_coefficient) - (monotonic() - client.last_actions[name])
+                    #     if delay > 0:
+                    #         l.debug(
+                    #             'sleep %s limit=%s remaining=%s (max %s req/s)',
+                    #             4.7,
+                    #             limit,
+                    #             remaining,
+                    #             round((limit * client.config._limit_coefficient) / 60, 2)
+                    #         )
+                    #         sleep(4.7)  # delay)
+                    # client.last_actions[name] = monotonic()
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
                     l.debug('response (raw): %s', res.text)
