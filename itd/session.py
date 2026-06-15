@@ -58,6 +58,9 @@ class Session(ITDBaseModel):
         if self.city:
             return self.city
 
+    def __hash__(self):
+        return int(self.id)
+
 
 class _SessionValidate(BaseModel, Session):
     pass

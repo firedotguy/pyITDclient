@@ -224,6 +224,9 @@ class _UserBase(ITDBaseModel):
     def link(self) -> str:
         return self.url
 
+    def __hash__(self):
+        return int(self.id)
+
 
 class User(_UserBase):
     _validator = lambda _: _UserValidate

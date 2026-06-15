@@ -34,6 +34,9 @@ class Hashtag(ITDBaseModel):
     def __int__(self) -> int:
         return self.posts_count
 
+    def __hash__(self):
+        return int(self.id)
+
     @property
     def posts(self) -> 'HashtagPosts':
         if not hasattr(self, '_posts'):

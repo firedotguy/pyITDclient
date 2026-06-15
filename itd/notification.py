@@ -49,6 +49,9 @@ class Notification(ITDBaseModel):
         for name, value in _NotificationValidate.model_validate(notification).__dict__.items():
             setattr(self, name, value)
 
+    def __hash__(self):
+        return int(self.id)
+
     def read(self, client: Client | None = None) -> None:
         mark_as_read(client or self.client, self.id)
 

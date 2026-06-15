@@ -290,7 +290,7 @@ class Client:
         return self.access_token_data.subject_id
 
     @property
-    def user(self):
+    def user(self) -> Me:
         if not self._user:
             self._user = Me(self)
         return self._user

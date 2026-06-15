@@ -50,10 +50,11 @@ class Comment(ITDBaseModel):
         instance.replies._post_refresh()
         return instance
 
+    def __hash__(self):
+        return int(self.id)
+
     def _post_refresh(self):
         self.replies._base_comment = self
-        # self.replies._post = self._post
-        # self.replies._post_refresh()
 
     def __str__(self) -> str:
         return self.content
