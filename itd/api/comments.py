@@ -3,15 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import catch_errors, rate_limit
+from itd.base import api_wrapper, rate_limit
 from itd.exceptions import AlreadyDeletedError, BannedWordError, ForbiddenError, NotFoundError, RequiresSubscriptionError, ValidationError
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit(5, 20, 80)
-@catch_errors(
+@rate_limit()
+@api_wrapper(
     ValidationError(),
     NotFoundError('Post'),
     BannedWordError('Comment'),
@@ -22,8 +22,8 @@ def add_comment(client: Client, post_id: UUID, content: str | None = None, attac
     return client.request('post', f'posts/{post_id}/comments', {'content': content or '', "attachmentIds": list(map(str, attachment_ids))})
 
 
-@rate_limit(1, 10, 30)
-@catch_errors(
+@rate_limit()
+@api_wrapper(
     ValidationError(),
     NotFoundError('Comment'),
     NotFoundError('User', res_check=lambda res: res.status_code == 500 and 'Failed query' in res.text),
@@ -38,30 +38,30 @@ def add_reply_comment(client: Client, comment_id: UUID, author_id: UUID, content
 
 
 @rate_limit()
-@catch_errors(ValidationError(), NotFoundError('Post'))
+@api_wrapper(ValidationError(), NotFoundError('Post'))
 def get_comments(client: Client, post_id: UUID, cursor: int = 0, limit: int = 20, sort: str = 'popular'):
     return client.request('get', f'posts/{post_id}/comments', {'limit': limit, 'sort': sort, 'cursor': cursor})
 
 
-@rate_limit(None, 3, 15)
-@catch_errors(NotFoundError('Comment'))
+@rate_limit()
+@api_wrapper(NotFoundError('Comment'))
 def like_comment(client: Client, comment_id: UUID):
     return client.request('post', f'comments/{comment_id}/like')
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Comment'))
+@api_wrapper(NotFoundError('Comment'))
 def unlike_comment(client: Client, comment_id: UUID):
     return client.request('delete', f'comments/{comment_id}/like')
 
 
 @rate_limit()
-@catch_errors(NotFoundError('Comment'), AlreadyDeletedError('Comment'))
+@api_wrapper(NotFoundError('Comment'), AlreadyDeletedError('Comment'))
 def delete_comment(client: Client, comment_id: UUID):
     return client.request('delete', f'comments/{comment_id}')
 
 
 @rate_limit()
-@catch_errors(ValidationError(), NotFoundError('Comment'))
+@api_wrapper(ValidationError(), NotFoundError('Comment'))
 def get_replies(client: Client, comment_id: UUID, page: int = 1, limit: int = 50):
     return client.request('get', f'comments/{comment_id}/replies', {'page': page, 'limit': limit})

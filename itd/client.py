@@ -10,7 +10,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
-from requests.exceptions import RequestException
 from requests.utils import default_user_agent
 
 from itd._default import _default_client, set_default_client
@@ -69,29 +68,38 @@ class BatchSizes:
 
 @dataclass
 class Config:
-    rate_limit: RateLimitMode = RateLimitMode.MID
-    rate_limit_default: int | None = None  # overrides ratelimit mode  # rate limit for standard actions
-    rate_limit_actions: dict[str, float | int] = field(
-        default_factory=lambda: {}
-    )  # overrides ratelimit mode  # custom rate limits for specific actions (eg. {'add_comment': 10})
+    # для реальных клиентов включен калбэк на ошибки (сами ошибки не выбрасываются) и выключен логгер. Передает ошибки в калбэк, в консоль ничего не пишет, при ошибках сети падает.
+    # для ботов включен отлов всех ошибок, а также калбэк при ошибках сети (шоб отправлять в тг например), включен логгер на инфо. Показывает ошибки в консоли, но не завершшает скрипт.
+    # для одноразовых скриптов стандартное поведение, отловов ошибок нет, включен логгер на дебаг.
+    client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
-    # is_logging_enabled: bool = True # TODO
+    rate_limit: RateLimitMode | None = None  # deprecated
+    rate_limit_default: int | None = None  # deprecated
+    rate_limit_actions: dict[str, float | int] | None = None  # deprecated
+    anti_rate_limit: bool | None = None
+    burst_requests: bool | None = None
+    anti_ip_ban: bool = True
+    limit_coefficient: float | None = None
+
+    # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
 
     is_default: bool = False
 
     userposts_add_pinned_post: bool = True
 
-    auto_load: bool = True
+    # load_on_init: bool = True
+    # load_on_getattr: bool = False
+    auto_load: bool | None = None
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
     force_load_lists: bool = False  # load lists even if has_more is False
 
     debug_response: DebugResponseMode = DebugResponseMode.NO
 
-    timeout: float = 30
-    timeout_file: float = 120
-    timeout_file_download: float = 60
+    timeout: float | None = None
+    timeout_file: float | None = None
+    timeout_file_download: float | None = None
 
     url: str = 'xn--d1ah4a.com'
     url_api: str | None = None
@@ -102,10 +110,10 @@ class Config:
 
     parse_mode: ParseMode = ParseMode.NO
 
-    retry_enabled: bool = True
-    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in request
+    retry_enabled: bool | None = None
+    retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception]] | list[type[Exception]] | None = None
+    retry_exceptions: tuple[type[Exception]] = field(default_factory=lambda: (RateLimitError,))
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -118,7 +126,7 @@ class Config:
     post_view_increment: bool = False
     post_auto_view: bool = True  # view when called post.set_invisible()
 
-    post_update_stats: bool = False
+    post_update_stats: bool | None = None
     post_update_stats_interval: int = 3
 
     view_read_speed: int = 250  # in WPM # https://scholarwithin.com/average-reading-speed
@@ -128,15 +136,6 @@ class Config:
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
 
     def __post_init__(self):
-        if self.rate_limit_default:
-            self._rate_limit_default = self.rate_limit_default
-        elif self.rate_limit == RateLimitMode.MIN:
-            self._rate_limit_default = 0
-        elif self.rate_limit == RateLimitMode.MID:
-            self._rate_limit_default = 0.2
-        else:
-            self._rate_limit_default = 0.4
-
         self._url_api = self.url_api if self.url_api else f'https://{self.url}/api'
         self.url = self.url.split('https://')[0].split('http://')[0]
 
@@ -153,15 +152,57 @@ class Config:
                 self._user_agent = self.user_agent
 
         if self.dwell_wait_durations:
-            l.warning('dwell_wait_durations is deprecated and will be removed in 2.6.0.')
+            l.warning('config.dwell_wait_durations is deprecated and will be removed in 2.6.0.')
+
+        if self.rate_limit is not None:
+            l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
+        if self.rate_limit_default is not None:
+            l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
+        if self.rate_limit_actions is not None:
+            l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
+
+        if self.timeout is None:
+            match self.client_type:
+                case 'onetime':
+                    self._timeout = 5
+                case 'client':
+                    self._timeout = 20
+                case 'bot':
+                    self._timeout = 60
+        else:
+            self._timeout = self.timeout
+
+        if self.retry_enabled is None:
+            self._retry_enabled = self.client_type == 'bot'
+        else:
+            self._retry_enabled = self.retry_enabled
+
+        if self.post_update_stats is None:
+            self._post_update_stats = self.client_type == 'client'
+        else:
+            self._post_update_stats = self.post_update_stats
+
+        if self.anti_rate_limit is None:
+            self._anti_rate_limit = self.client_type == 'bot'
+        else:
+            self._anti_rate_limit = self.anti_rate_limit
         if self.load_comments_from_post is not None:
             l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
 
-        self._retry_exceptions = (tuple(self.retry_exceptions) if isinstance(self.retry_exceptions, list) else self.retry_exceptions) or (
-            RateLimitError,
-            InternalError,
-            RequestException
-        )
+        if self.burst_requests is None:
+            self._burst_requests = self.client_type != 'bot'
+        else:
+            self._burst_requests = self.burst_requests
+
+        if self.limit_coefficient is None:
+            if self.client_type == 'bot':
+                self._limit_coefficient = 0.75
+            elif self.client_type == 'client':
+                self._limit_coefficient = 0.9
+            else:
+                self._limit_coefficient = 1
+        else:
+            self._limit_coefficient = self.limit_coefficient
 
 
 class AccessToken(BaseModel):
@@ -184,7 +225,7 @@ class Client:
     def __init__(self, refresh: str | None = None, access: str | None = None, config: Config = Config()):
         l.info('init client refresh=%s access=%s', refresh is not None, access is not None)
         self.config = config
-        self.last_actions: dict[str, datetime] = {}
+        self.last_actions: dict[str, int | float] = {}
         self.auth_level: AuthLevel = AuthLevel.NO
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
@@ -296,7 +337,7 @@ class Client:
         return self._user
 
     def _process_exc_callbacks(self, exception: Exception):
-        l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
+        # l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
         for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
             callback(exception)
 

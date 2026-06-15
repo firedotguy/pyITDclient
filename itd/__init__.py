@@ -13,15 +13,22 @@
 ###              ####            ####      ####                            ####          |  |     |  | \
 #                ####            ###       ####                            ####      ----+  +----/   |  \
 """
-|]]]]<<<<<]]<<]]]]]]]]]]]]]]<<<<<]]
+iii     iii tttttttttt   ddddddddd       |
+iii   iiiii     ttt      ddd   ddd
+iii iii iii     ttt      ddd   ddd
+iiiii   iii     ttt    ddddddddddddddd
+iiii    iii     ttt    dd           dd
 
-|]]]]<<<]]]]]]<<<<<]]<<<<<<<]]<]]
+    ssssssss  dddddddd    kkk   kkk
+   sss        ddd   ddd   kkk   kkk
+   sss        ddd    ddd  kkk   kkk
+     sssssss  ddd    ddd  kkk  kkk
+         sss  ddd    ddd  kkkkkk
+         sss  ddd   ddd   kkk  kkk
+    ssssss    dddddddd    kkk   kkk
 
-|]]]]<]]]]<]]]]<<<<<]]<<<<<<]]<<<]]
-
-|]]]]]]<<<]]]]<<<<<]]<<<]]]]]]]]]]]]]]]]]]]]]]
-
-|]]<<<<<]]]]<<<<<]]<<<]]<<<<<<<<]]
+                          by fi.res
+                    @fdg | @itd_sdk
 """
 
 from importlib.metadata import version
