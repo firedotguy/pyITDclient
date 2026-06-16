@@ -109,7 +109,7 @@ class SessionRevokedError(AuthError):
 
 class AccessTokenExpiredError(AuthError):
     text = 'Token expired'
-    json_check = staticmethod(lambda json: json.get('error') == 'token expired')
+    json_check = staticmethod(lambda json: json.get('error') == 'token expired' or json.get('message') == 'Invalid or expired token')
 
 
 class LoginError(AuthError):

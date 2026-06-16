@@ -17,7 +17,7 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
-from itd.exceptions import InsufficientAuthLevelError, InternalError, NotFoundError, RateLimitError
+from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
@@ -101,8 +101,8 @@ class Config:
     timeout_file: float | None = None
     timeout_file_download: float | None = None
 
-    url: str = 'xn--d1ah4a.com'
-    url_api: str | None = None
+    url: str = 'https://xn--d1ah4a.com/api'
+    url_api: str | None = None  # deprecated
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
@@ -136,8 +136,9 @@ class Config:
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
 
     def __post_init__(self):
-        self._url_api = self.url_api if self.url_api else f'https://{self.url}/api'
-        self.url = self.url.split('https://')[0].split('http://')[0]
+        if self.url_api is not None:
+            l.warning('config.url_api is deprecated and will be removed in 2.7.0. Please use config.url.')
+            self.url = self.url_api
 
         match self.user_agent:
             case UserAgent.DEFAULT:
@@ -242,9 +243,9 @@ class Client:
             self.access_token = access.replace('Bearer ', '')
 
         if refresh:
+            self.session.cookies.set('refresh_token', refresh, path='/')
             self.auth_level = AuthLevel.REFRESH
             self.refresh_token = refresh
-            self.session.cookies.set('refresh_token', refresh, path='/', domain=self.config.url)
             # if access is None:
             #     self.refresh_auth()
 
