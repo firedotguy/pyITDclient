@@ -208,14 +208,14 @@ class Config:
 
 
 class AccessToken(BaseModel):
-    roles: list[Role]
+    roles: list[Role] = [Role.USER]
     session_id: UUID = Field(alias='sid')
-    is_active: bool = Field(alias='isActive')
+    is_active: bool = Field(True, alias='isActive')
     subject_id: UUID = Field(alias='sub')
     issued_at: datetime = Field(alias='iat')
-    issuer: str = Field(alias='iss')  # "auth-service"
+    issuer: str | None = Field(None, alias='iss')  # "auth-service"
     expired_at: datetime = Field(alias='exp')
-    jwt_id: UUID = Field(alias='jti')
+    jwt_id: UUID | None = Field(None, alias='jti')
 
     @field_validator('issued_at', 'expired_at', mode='plain')
     @classmethod
@@ -354,7 +354,7 @@ class Client:
         res = refresh_token(self)
         res.raise_for_status()
 
-        self.access_token = res.json()['accessToken']
+        self.access_token = res.json().get('accessToken', res.json()['token'])
         self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
 
         assert self.access_token
