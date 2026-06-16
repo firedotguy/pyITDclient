@@ -97,6 +97,11 @@ class InvalidAccessTokenError(AuthError):
     json_check = staticmethod(lambda json: json.get('error') == 'invalid signature')
 
 
+class JWTAlgorithmUnsupportedError(AuthError):
+    json_check = staticmethod(lambda json: json.get('error') == 'Unsupported token algorithm')
+    text = 'Access token JWT algorithm unsupported'
+
+
 class SessionRevokedError(AuthError):
     code = 'SESSION_REVOKED'
     text = 'Session revoked (logged out)'
@@ -345,6 +350,7 @@ DEFAULT_ERRORS = (
     RateLimitError(),
     InvalidAccessTokenError(),
     UnauthorizedError(),
+    JWTAlgorithmUnsupportedError(),
     AccessTokenExpiredError(),
     AccountBannedError(),
     AccountTemporarilyBannedError(),
