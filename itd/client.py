@@ -134,6 +134,7 @@ class Config:
 
     on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
+    refresh_token_cookie_name: str = 'refresh_token'
 
     def __post_init__(self):
         if self.url_api is not None:
@@ -243,7 +244,7 @@ class Client:
             self.access_token = access.replace('Bearer ', '')
 
         if refresh:
-            self.session.cookies.set('refresh_token', refresh, path='/')
+            self.session.cookies.set(config.refresh_token_cookie_name, refresh, path='/')
             self.auth_level = AuthLevel.REFRESH
             self.refresh_token = refresh
             # if access is None:
