@@ -100,10 +100,10 @@ class ITDBaseModel:
 
             try:
                 value = object.__getattribute__(self, name)
-                exists = True
-            except AttributeError:
+                error = None
+            except AttributeError as e:
                 value = None
-                exists = False
+                error = e
 
             if (
                 _getattr(self, '_refreshable')
@@ -119,8 +119,8 @@ class ITDBaseModel:
                 self.refresh()
                 return object.__getattribute__(self, name)
 
-            if not exists:
-                raise AttributeError
+            if error is not None:
+                raise error
             return value
 
 
