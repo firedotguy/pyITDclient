@@ -100,10 +100,10 @@ class ITDBaseModel:
 
             try:
                 value = object.__getattribute__(self, name)
-                exists = True
-            except AttributeError:
+                exc = None
+            except AttributeError as e:
                 value = None
-                exists = False
+                exc = e
 
             if (
                 _getattr(self, '_refreshable')
@@ -119,8 +119,8 @@ class ITDBaseModel:
                 self.refresh()
                 return object.__getattribute__(self, name)
 
-            if not exists:
-                raise AttributeError
+            if exc is not None:
+                raise exc
             return value
 
 
@@ -317,12 +317,13 @@ def api_wrapper(*exceptions: ITDException):
     def decorator(func):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
+            name = func.__name__
+            if name in ('get_followers', 'get_following'):
+                name = 'get_follow'
+
             def exec():
-                name = func.__name__
-                if name in ('get_followers', 'get_following'):
-                    name = 'get_follow'
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-                if name in limiters:
+                if client.config.auto_acquire and name in limiters:
                     limiters[name].acquire()
                 ip_limiter.acquire()
 
@@ -409,6 +410,7 @@ def api_wrapper(*exceptions: ITDException):
                     retry_after = getattr(e, 'retry_after') or client.config.retry_delay
                     l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
+                    limiters[name].on_limit()
 
         return wrapper
 

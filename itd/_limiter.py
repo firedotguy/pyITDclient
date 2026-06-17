@@ -15,56 +15,33 @@ class RateLimiter:
 
     def sync(self, remaining: int): ...
     def acquire(self): ...
+    def on_limit(self): ...
 
 
 class SafeRateLimiter(RateLimiter):
     def __init__(self, name: str, capacity: int):
         super().__init__(name, capacity)
-        self.refill_rate = 1.5
-        self.requests = 0
-        self.remainings = []
+        self.delay = 60 / capacity
+        self.last_request = monotonic()
 
     def acquire(self):
-        l.debug(r'\[%s] acquire limiter delay=%s', self.name, round(self.refill_rate, 2))
-        sleep(self.refill_rate)
-        self.requests += 1
+        l.debug(r'\[%s] acquire limiter delay=%s', self.name, round(self.delay, 2))
+        sleep(max(0.1, self.delay - (monotonic() - self.last_request)))
+        self.last_request = monotonic()
 
     def sync(self, remaining: int):
-        l.debug(r'\[%s] sync limiter remaining=%s', self.name, remaining)
-        if self.requests > 50:
-            return
-        if self.requests == 50:
-            l.info(r'\[%s] stop learning final=%s', self.name, round(self.refill_rate, 2))
-            return
+        l.info(r'\[%s] sync limiter remaining=%s', self.name, remaining)
+        if remaining < self.capacity * 0.1:
+            self.delay *= 1 + 1 / remaining
+            l.info(r'\[%s] increase delay=%s', self.name, round(self.delay, 2))
+        if remaining > self.capacity * 0.9:
+            self.delay *= 0.7
+            l.info(r'\[%s] decrease delay=%s', self.name, round(self.delay, 2))
+        self.delay = max(0.1, min(self.delay, 30))
 
-        self.remainings.append(remaining or -5)
-        if len(self.remainings) > 5:
-            if self.remainings[-5] > remaining + 2:
-                value = self.refill_rate * (1 + (self.remainings[-5] - remaining) / 8)
-                l.info(
-                    r'\[%s] increase refill rate %s -> %s (remaining %s -> %s)',
-                    self.name,
-                    round(self.refill_rate, 2),
-                    round(value, 2),
-                    self.remainings[-5],
-                    remaining
-                )
-                self.refill_rate = value
-                self.remainings.clear()
-            elif self.remainings[-5] < remaining - 2:
-                value = self.refill_rate * (1 - (self.remainings[-5] - remaining) / 8)
-                l.info(
-                    r'\[%s] decrease refill rate %s -> %s (remaining %s -> %s)',
-                    self.name,
-                    round(self.refill_rate, 2),
-                    round(value, 2),
-                    self.remainings[-5],
-                    remaining
-                )
-                self.refill_rate = value
-                self.remainings.clear()
-            else:
-                l.debug(r'\[%s] refill rate is stable', self.name)
+    def on_limit(self):
+        self.delay *= 2
+        self.delay = min(self.delay, 30)
 
 
 class BurstRateLimiter(RateLimiter):
@@ -93,7 +70,7 @@ class BurstRateLimiter(RateLimiter):
 
 class IPRateLimiter:
     window: int = 60
-    max_requests: int = 100
+    max_requests: int = 90
 
     def __init__(self):
         self.requests = []

@@ -35,6 +35,7 @@ from importlib.metadata import version
 
 __version__ = version("itd-sdk")
 
+from itd._default import limiters
 from itd.clan import Clan, TopClans
 from itd.client import Client as ITDClient
 from itd.client import Config as ITDConfig
@@ -46,6 +47,12 @@ from itd.post import HashtagPosts, LikedPosts, Post, Posts, UserPosts
 from itd.session import Sessions
 from itd.user import Me, User, Users, get_follow_status
 from itd.version import Apps, Changelog
+
+
+def acquire_limiters():
+    for limiter in limiters.values():
+        limiter.acquire()
+
 
 __all__ = [
     'Changelog',
@@ -68,5 +75,6 @@ __all__ = [
     'User',
     'Me',
     'Users',
-    'get_follow_status'
+    'get_follow_status',
+    'acquire_limiters'
 ]

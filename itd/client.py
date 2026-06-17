@@ -80,6 +80,7 @@ class Config:
     burst_requests: bool | None = None
     anti_ip_ban: bool = True
     limit_coefficient: float | None = None
+    auto_acquire: bool = True
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
@@ -354,7 +355,7 @@ class Client:
         res = refresh_token(self)
         res.raise_for_status()
 
-        self.access_token = res.json().get('accessToken', res.json()['token'])
+        self.access_token = res.json().get('accessToken') or res.json()['token']
         self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
 
         assert self.access_token
