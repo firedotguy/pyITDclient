@@ -168,12 +168,12 @@ class Notifications(ITDList[Notification]):
 
         l.info('stop stream')
 
-    def stream_bg(self) -> Thread:
+    def stream_bg(self, daemon: bool = False) -> Thread:
         def _stream():
             for _ in self.stream():
                 continue
 
-        thread = Thread(target=_stream)
+        thread = Thread(target=_stream, daemon=daemon)
         thread.start()
         return thread
 
