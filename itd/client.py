@@ -354,7 +354,7 @@ class Client:
         res = refresh_token(self)
         res.raise_for_status()
 
-        self.access_token = res.json().get('accessToken', res.json()['token'])
+        self.access_token = res.json().get('accessToken') or res.json()['token']
         self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
 
         assert self.access_token
