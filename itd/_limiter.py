@@ -16,6 +16,7 @@ class RateLimiter:
     def sync(self, remaining: int): ...
     def acquire(self): ...
     def on_limit(self): ...
+    def get_delay(self): ...
 
 
 class SafeRateLimiter(RateLimiter):
@@ -24,10 +25,13 @@ class SafeRateLimiter(RateLimiter):
         self.delay = 60 / capacity
         self.last_request = monotonic()
 
+    def get_delay(self):
+        self.last_request = monotonic()
+        return max(0.1, self.delay - (monotonic() - self.last_request))
+
     def acquire(self):
         l.debug(r'\[%s] acquire limiter delay=%s', self.name, round(self.delay, 2))
-        sleep(max(0.1, self.delay - (monotonic() - self.last_request)))
-        self.last_request = monotonic()
+        sleep(self.get_delay())
 
     def sync(self, remaining: int):
         l.info(r'\[%s] sync limiter remaining=%s', self.name, remaining)
@@ -83,4 +87,7 @@ class IPRateLimiter:
         while len(self.requests) >= self.max_requests:
             self.requests = [request for request in self.requests if request > monotonic() - self.window]
             if self.requests:
-                sleep(max(self.requests[0] + self.window - monotonic(), 0.1))
+                sleep(self.get_delay())
+
+    def get_delay(self):
+        return max(self.requests[0] + self.window - monotonic(), 0.1)

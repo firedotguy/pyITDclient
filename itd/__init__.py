@@ -32,6 +32,7 @@ iiii    iii     ttt    dd           dd
 """
 
 from importlib.metadata import version
+from time import sleep
 
 __version__ = version("itd-sdk")
 
@@ -50,11 +51,11 @@ from itd.version import Apps, Changelog
 
 
 def acquire_limiters():
-    for limiter in limiters.values():
-        limiter.acquire()
+    sleep(max(limiter.get_delay() for limiter in limiters.values()))
 
 
 __all__ = [
+    '__version__',
     'Changelog',
     'Apps',
     'ITDClient',
