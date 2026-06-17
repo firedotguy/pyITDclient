@@ -32,11 +32,13 @@ class SafeRateLimiter(RateLimiter):
     def sync(self, remaining: int):
         l.info(r'\[%s] sync limiter remaining=%s', self.name, remaining)
         if remaining < self.capacity * 0.1:
-            self.delay *= 1 + 1 / remaining
+            self.delay *= 1.3
             l.info(r'\[%s] increase delay=%s', self.name, round(self.delay, 2))
         if remaining > self.capacity * 0.9:
             self.delay *= 0.7
             l.info(r'\[%s] decrease delay=%s', self.name, round(self.delay, 2))
+        elif remaining > self.capacity * 0.4:
+            self.delay -= 0.1
         self.delay = max(0.1, min(self.delay, 30))
 
     def on_limit(self):
