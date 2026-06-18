@@ -11,6 +11,7 @@ class RateLimiter:
     def __init__(self, capacity: int):
         l.debug(r'\[%s] create rate limiter', capacity)
         self.capacity = capacity
+        self.is_ran = True
 
     def sync(self, remaining: int): ...
     def acquire(self): ...
@@ -24,6 +25,7 @@ class SafeRateLimiter(RateLimiter):
         self.delay = 60 / capacity
         self.last_request = monotonic()
         self.requests = 0
+        self.is_ran = False
 
     def get_delay(self):
         self.requests += 1
@@ -39,12 +41,13 @@ class SafeRateLimiter(RateLimiter):
         if remaining < self.capacity * 0.2:
             self.delay *= 1 + 1 / (remaining or 0.5)
             l.info(r'\[%s] increase delay=%s', self.capacity, round(self.delay, 2))
-        if remaining > self.capacity * 0.95:
+        if remaining > self.capacity * 0.9:
             self.delay *= 0.7
             l.info(r'\[%s] decrease delay=%s', self.capacity, round(self.delay, 2))
         elif 10 < self.requests < 500 and remaining > self.capacity * 0.5:
             self.delay -= 1 / self.requests
         self.delay = max(0.1, min(self.delay, 30))
+        self.is_ran = True
 
     def on_limit(self):
         self.delay *= 2

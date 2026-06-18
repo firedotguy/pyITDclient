@@ -51,7 +51,13 @@ from itd.version import Apps, Changelog
 
 
 def acquire_limiters():
-    sleep(max(limiter.get_delay() for limiter in limiters.values()))
+    try:
+        sleep(max(limiter.get_delay() for limiter in limiters.values() if limiter.is_ran))
+    except ValueError:
+        pass
+
+    for limiter in limiters.values():
+        limiter.is_ran = False
 
 
 __all__ = [
