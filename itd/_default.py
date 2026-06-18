@@ -8,7 +8,8 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 _default_client: Client | None = None
-limiters: dict[str, RateLimiter] = {}
+limiters: dict[int, RateLimiter] = {}
+limits: dict[str, int] = {}
 ip_limiter = IPRateLimiter()
 
 

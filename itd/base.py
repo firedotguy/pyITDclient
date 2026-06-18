@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_default_client, ip_limiter, limiters
+from itd._default import get_default_client, ip_limiter, limiters, limits
 from itd._limiter import BurstRateLimiter, SafeRateLimiter
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
@@ -318,13 +318,11 @@ def api_wrapper(*exceptions: ITDException):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
             name = func.__name__
-            if name in ('get_followers', 'get_following'):
-                name = 'get_follow'
 
             def exec():
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-                if client.config.auto_acquire and name in limiters:
-                    limiters[name].acquire()
+                if client.config.auto_acquire and name in limits:
+                    limiters[limits[name]].acquire()
                 ip_limiter.acquire()
 
                 res: Response = func(client, *args, **kwargs)
@@ -337,14 +335,15 @@ def api_wrapper(*exceptions: ITDException):
 
                 remaining = int(res.headers.get('x-ratelimit-remaining', 0))
                 limit = int(res.headers.get('x-ratelimit-limit', 0))
+                limits[name] = limit
 
                 if client.config._anti_rate_limit:
-                    if client.config._burst_requests and name not in limiters:
-                        limiters[name] = BurstRateLimiter(name, limit)
+                    if client.config._burst_requests and limit not in limiters:
+                        limiters[limit] = BurstRateLimiter(limit)
 
-                    elif name not in limiters:
-                        limiters[name] = SafeRateLimiter(name, limit)
-                    limiters[name].sync(remaining)
+                    elif limit not in limiters:
+                        limiters[limit] = SafeRateLimiter(limit)
+                    limiters[limit].sync(remaining)
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
                     l.debug('response (raw): %s', res.text)
