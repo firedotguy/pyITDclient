@@ -1,6 +1,6 @@
 site_name: itd-sdk
 site_url: https://itdsdk.qzz.io/docs/
-repo_url: https://github.com/firedotguy/itd-sdk
+repo_url: https://github.com/itd-sdk/itd-sdk
 
 theme:
     name: material
@@ -39,7 +39,7 @@ extra_css:
 nav:
     - index.md
     - launch.md
-    - concept.md
+    - features.md
     - config.md
     - limits.md
     - Reference:

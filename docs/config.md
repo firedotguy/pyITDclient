@@ -12,13 +12,29 @@ ITDClient('xxx', config=config)
 
 ## Параметры
 
+#### client_type <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Тип клиента. По умолчанию `onetime`.
+
+ - `onetime`: Одноразовый скрипт
+ - `client`: Реальный клиент
+ - `bot`: Бот
+
+!!! question "Почему не enum?"
+    ~~Лень было.~~ Чтобы было меньше импортов. Я вообще хочу постепенно отказать от enum в пользу `Literal`, как это сделали [textual](https://textualize.io) например.
+
 #### rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[RateLimitMode](ref/enums.md#ratelimitmode)</span></span>
 Устанавливает дефолтные значения задержек.
 <!-- Также планируется режим `SMART`, который будет выставлять динамическую задержку (например при первых трех комментариях не делать задержку). -->
 По умолчанию `RateLimitMode.MID`.
 
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0.
+
 #### rate_limit_default <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка для обычных запросов (overrides rate_limit_mode). Значение по умолчанию зависит от [rate_limit](#rate_limit-ratelimitmode).
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0.
 
 #### rate_limit_actions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: :material-text:: :octicons-number-16:</span><span class="mdx-badge__text">dict[str, float]</span></span>
 Кастомная задержка для каждого вида запроса (например `get_user`). Названия фукнций можно посмотреть в `itd.api`. Можно использовать, если ваш скрипт повторяет одно и тоже действие (например, постоянно комментирует).
@@ -27,6 +43,36 @@ ITDClient('xxx', config=config)
     ```python
     {'get_me': 5, 'get_followers': 6, 'add_comment': 15.4}
     ```
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0.
+
+#### anti_rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Включен ли анти-рейт лимит. По умолчанию `True` для ботов, `False` для остальных.
+
+#### burst_requests <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Можно ли отправлять запросы без задержек (ожидает все 60сек 1 раз, без задержек между запросами). По умолчанию `False` для ботов, `True` для остальных.
+
+#### anti_ip_ban <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Включена ли защита от [бана по IP](limits.md#ip). По умолчанию `True`.
+
+#### limit_coefficient <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-numbers-16:</span><span class="mdx-badge__text">float</span></span>
+Коэффициент лимита (можно уменьшить, чтобы был меньше шанс на рейт лимит). По умолчанию `0.75` для ботов, `0.9` для клиентов и `1` для однозразовых скриптов.
+
+#### auto_acquire <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Нужно ли ждать перед запросом (acquire). Если выключено, нужно вызвать функцию `acquire_limiters` вручную. Полезно для ботов, которые делает запросы по кругу. По умолчанию `False`.
+
+!!! example
+    ```py
+    from itd import acquire_limiters
+    
+    for post in UserPosts('rice_4'):
+        post.refresh()
+        post.like()
+        post.add_comment('test')
+        acquire_limiters()
+    ```
+`acquire_limiters` берет самый большой лимит из вызванных функций и ждет только его (оптимизация).
 
 #### is_default <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Сделать ли клиент дефолтным по умолчанию. По умолчанию дефолтным становится первый инициализированный клиент.
