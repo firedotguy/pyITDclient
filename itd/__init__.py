@@ -32,9 +32,11 @@ iiii    iii     ttt    dd           dd
 """
 
 from importlib.metadata import version
+from time import sleep
 
 __version__ = version("itd-sdk")
 
+from itd._default import limiters
 from itd.clan import Clan, TopClans
 from itd.client import Client as ITDClient
 from itd.client import Config as ITDConfig
@@ -47,7 +49,13 @@ from itd.session import Sessions
 from itd.user import Me, User, Users, get_follow_status
 from itd.version import Apps, Changelog
 
+
+def acquire_limiters():
+    sleep(max(limiter.get_delay() for limiter in limiters.values()))
+
+
 __all__ = [
+    '__version__',
     'Changelog',
     'Apps',
     'ITDClient',
@@ -68,5 +76,6 @@ __all__ = [
     'User',
     'Me',
     'Users',
-    'get_follow_status'
+    'get_follow_status',
+    'acquire_limiters'
 ]

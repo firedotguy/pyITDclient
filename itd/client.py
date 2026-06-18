@@ -80,6 +80,7 @@ class Config:
     burst_requests: bool | None = None
     anti_ip_ban: bool = True
     limit_coefficient: float | None = None
+    auto_acquire: bool = True
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
