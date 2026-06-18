@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import catch_errors, rate_limit
-from itd.enums import UNSET, AccessType, Unset
+from itd.base import api_wrapper
+from itd.enums import UNSET, AccessType, AuthLevel, Unset
 from itd.exceptions import (
     AlreadyBlockedError,
     AlreadyDeletedError,
@@ -26,14 +26,12 @@ if TYPE_CHECKING:
     from itd.client import Client
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), TooLargeError('User'), NotFoundError('Profile'), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), TooLargeError('User'), NotFoundError('Profile'), TargetUserBannedError())
 def get_user(client: Client, username_or_id: str | UUID):
     return client.request('get', f'users/{username_or_id}')
 
 
-@rate_limit(None, 10, 25)
-@catch_errors(ValidationError(), RequiresVerificationError('GIF banner uploading'), UsernameTakenError())
+@api_wrapper(ValidationError(), RequiresVerificationError('GIF banner uploading'), UsernameTakenError())
 def update_profile(client: Client, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | Unset | None = None):
     data = {}
     if bio is not None:
@@ -47,20 +45,17 @@ def update_profile(client: Client, bio: str | None = None, display_name: str | N
     return client.request('put', 'users/me', data)
 
 
-@rate_limit()
-@catch_errors()
+@api_wrapper()
 def get_profile(client: Client):
-    return client.request('get', 'profile')
+    return client.request('get', 'profile', level=AuthLevel.NO)
 
 
-@rate_limit()
-@catch_errors()
+@api_wrapper()
 def get_privacy(client: Client):
     return client.request('get', 'users/me/privacy')
 
 
-@rate_limit()
-@catch_errors(ValidationError())
+@api_wrapper(ValidationError())
 def update_privacy(
     client: Client,
     is_private: bool | None = None,
@@ -80,61 +75,56 @@ def update_privacy(
     return client.request('put', 'users/me/privacy', data)
 
 
-@rate_limit(5, 30, 80)
-@catch_errors(NotFoundError('User'), AlreadyFollowingError(), TooLargeError('Username'), CantFollowYourselfError(), UserBlockedError(), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), AlreadyFollowingError(), TooLargeError('Username'), CantFollowYourselfError(), UserBlockedError(), TargetUserBannedError())
 def follow(client: Client, username_or_id: str | UUID):
     return client.request('post', f'users/{username_or_id}/follow')
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), TooLargeError('Username'), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), TooLargeError('Username'), TargetUserBannedError())
 def unfollow(client: Client, username_or_id: str | UUID):
     return client.request('delete', f'users/{username_or_id}/follow')
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
 def get_followers(client: Client, username_or_id: str | UUID, page: int = 1, limit: int = 20):  # !! page not works if not me
     return client.request('get', f'users/{username_or_id}/followers', {'page': page, 'limit': limit})
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), ValidationError(), TooLargeError('Username'), TargetUserBannedError())
 def get_following(client: Client, username_or_id: str | UUID, page: int = 1, limit: int = 20):  # !! page not works if not me
     return client.request('get', f'users/{username_or_id}/following', {'page': page, 'limit': limit})
 
 
-@rate_limit()
-@catch_errors(AlreadyDeletedError('Account'))
+@api_wrapper(AlreadyDeletedError('Account'))
 def delete_account(client: Client):
     return client.request('delete', 'users/me')
 
 
-@rate_limit()
-@catch_errors(NotDeletedError('Account'))
+@api_wrapper(NotDeletedError('Account'))
 def restore_account(client: Client):
     return client.request('post', 'users/me/restore')
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), TooLargeError('Username'), AlreadyBlockedError(), CantBlockYourselfError(), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), TooLargeError('Username'), AlreadyBlockedError(), CantBlockYourselfError(), TargetUserBannedError())
 def block(client: Client, username_or_id: str | UUID):
     return client.request('post', f'users/{username_or_id}/block')
 
 
-@rate_limit()
-@catch_errors(NotFoundError('User'), TooLargeError('Username'), NotBlockedError(), TargetUserBannedError())
+@api_wrapper(NotFoundError('User'), TooLargeError('Username'), NotBlockedError(), TargetUserBannedError())
 def unblock(client: Client, username_or_id: str | UUID):
     return client.request('delete', f'users/{username_or_id}/block')
 
 
-@rate_limit()
-@catch_errors()
+@api_wrapper()
 def get_blocked(client: Client, page: int = 1, limit: int = 20):
     return client.request('get', 'users/me/blocked', {'limit': limit, 'page': page})
 
 
-@rate_limit()
-@catch_errors()
+@api_wrapper()
 def get_follow_status(client: Client, user_ids: list[UUID]):
     return client.request('post', 'users/follow-status', {'userIds': list(map(str, user_ids))})
+
+
+@api_wrapper()
+def search_users(client: Client, query: str, limit: int = 10):
+    return client.request('get', 'users/search', {'q': query, 'limit': limit})

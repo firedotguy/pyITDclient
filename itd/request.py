@@ -29,7 +29,7 @@ def _get_jhash(b: int) -> int:
     return k
 
 
-def _solve_ddos_guard(session: Session, response: Response, domain: str = 'xn--d1ah4a.com', user_agent: str = '') -> bool:
+def _solve_ddos_guard(session: Session, response: Response, user_agent: str = '') -> bool:
     """Solve DDoS-Guard JS challenge. Returns True if solved (duplicate request required)."""
     if '<html>' not in response.text[:500] or 'get_jhash' not in response.text:
         return False
@@ -45,8 +45,8 @@ def _solve_ddos_guard(session: Session, response: Response, domain: str = 'xn--d
     jhash = _get_jhash(code)
     l.info('solved jhash=%s', jhash)
 
-    session.cookies.set('__jhash_', str(jhash), domain=domain, path='/')
-    session.cookies.set('__jua_', quote(user_agent, safe=''), domain=domain, path='/')
+    session.cookies.set('__jhash_', str(jhash), path='/')
+    session.cookies.set('__jua_', quote(user_agent, safe=''), path='/')
 
     return True
 
@@ -97,11 +97,11 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
     def _do_request():
         m = method.lower()
         if m == "get":
-            return client.session.get(f'{client.config._url_api}/{url}', timeout=client.config.timeout, params=params, headers=headers)
+            return client.session.get(f'{client.config.url}/{url}', timeout=client.config.timeout, params=params, headers=headers)
 
         return client.session.request(
             m.upper(),
-            f'{client.config._url_api}/{url}',
+            f'{client.config.url}/{url}',
             timeout=client.config.timeout_file if files else client.config.timeout,
             json=params,
             headers=headers,
@@ -111,7 +111,7 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
     res = _do_request()
     if client.config.solve_challenge:
         for _ in range(3):
-            if not _solve_ddos_guard(client.session, res, client.config.url, client.config._user_agent):
+            if not _solve_ddos_guard(client.session, res, client.config._user_agent):
                 break
             l.debug('ddos-guard cookies: %s', {c.name: c.value for c in client.session.cookies if c.name.startswith('__')})
             res = _do_request()

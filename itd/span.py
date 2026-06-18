@@ -19,4 +19,5 @@ class Span(BaseModel):
         if type in ('code', 'pre'):
             return 'monospace'
         return type
+
     tag: str | None = None

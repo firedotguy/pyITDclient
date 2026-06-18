@@ -41,19 +41,20 @@ class Comment(ITDBaseModel):
     _base_comment: Comment | None = None
 
     @classmethod
-    def from_dict(cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:  # ty: ignore[invalid-method-override]
+    def from_dict(cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:
         instance = super().from_dict(data, client=client)
-        if post:
+        if post is not None:
             instance._post = post
         instance._base_comment = base_comment
         instance.replies._post = post
         instance.replies._post_refresh()
         return instance
 
+    def __hash__(self):
+        return int(self.id)
+
     def _post_refresh(self):
         self.replies._base_comment = self
-        # self.replies._post = self._post
-        # self.replies._post_refresh()
 
     def __str__(self) -> str:
         return self.content

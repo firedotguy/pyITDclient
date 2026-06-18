@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from itd._default import get_default_client
 from itd.api.etc import get_who_to_follow
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
@@ -20,14 +21,16 @@ from itd.api.users import (
     get_profile,
     get_user,
     restore_account,
+    search_users,
     unblock,
     unfollow,
     update_privacy,
     update_profile
 )
-from itd.base import ITDBaseModel, ITDList, anti_refresh
+from itd.api.users import get_follow_status as _get_follow_status
+from itd.base import ITDBaseModel, ITDList
 from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
-from itd.exceptions import AccountDeletedError, PinNotOwnedError
+from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
 from itd.pin import Pin
 from itd.poll import NewPoll
 from itd.report import Report
@@ -117,19 +120,6 @@ class Privacy(ITDBaseModel):
 
     def update_from_fields(self):  # you can update fields (like privacy.is_private = True), then exec this func to update
         self.update(self.is_private, self.wall_access, self.likes_visibility, self.show_last_seen)
-
-    @classmethod
-    def _from_user(cls, user: 'Me', client: Client | None = None):
-        instance = cls(client)
-        instance._user = user
-        return instance
-
-    if not TYPE_CHECKING:
-
-        def __getattribute__(self, name: str):
-            if name in ('is_private', 'wall_access', 'likes_visibility') and object.__getattribute__(self, '_user'):
-                setattr(self, name, getattr(object.__getattribute__(self, '_user'), name))
-            return super().__getattribute__(name)
 
 
 class _PrivacyValidate(BaseModel, Privacy):
@@ -233,6 +223,9 @@ class _UserBase(ITDBaseModel):
     @property
     def link(self) -> str:
         return self.url
+
+    def __hash__(self):
+        return int(self.id)
 
 
 class User(_UserBase):
@@ -353,7 +346,6 @@ class User(_UserBase):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.USER, reason, description, client or self.client)
 
-    @anti_refresh
     def follow(self, client: Client | None = None) -> int:
         self.followers_count = follow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
@@ -361,7 +353,6 @@ class User(_UserBase):
 
         return self.followers_count
 
-    @anti_refresh
     def unfollow(self, client: Client | None = None) -> int:
         self.followers_count = unfollow(client or self.client, self._identifier).json()['followersCount']
         if (client or self.client) == self.client:
@@ -369,13 +360,11 @@ class User(_UserBase):
 
         return self.followers_count
 
-    @anti_refresh
     def block(self, client: Client | None = None) -> None:
         block(client or self.client, self._identifier)
         if (client or self.client) == self.client:
             self.is_blocking = True
 
-    @anti_refresh
     def unblock(self, client: Client | None = None) -> None:
         unblock(client or self.client, self._identifier)
         if (client or self.client) == self.client:
@@ -399,6 +388,16 @@ class User(_UserBase):
         if not self._followers:
             self._followers = [User.from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
         return self._followers
+
+    def get_follow_status(self) -> bool:
+        return get_follow_status(self)
+
+    @classmethod
+    def search(cls, query: str):
+        result = Users.search(query, limit=1)
+        if result:
+            return result[0]
+        raise NotFoundError('User')
 
 
 class _UserValidate(BaseModel, User):
@@ -431,10 +430,17 @@ class Me(_UserBase):
         self._followers: Followers | None = None
         self._following: Following | None = None
         self._pins: list[Pin] = []
-        self.privacy: Privacy = Privacy._from_user(self, self.client)
+        self.privacy: Privacy = Privacy(self.client)
         self.profile: Profile = Profile(self.client)
         if not self.client._user:
             self.client._user = self
+
+    def _post_refresh(self):
+        if self.pin:
+            self.pin._user = self
+        for name in ('is_private', 'wall_access', 'likes_visibility'):
+            setattr(self.privacy, name, getattr(self, name))
+        self.privacy.load_status = LoadStatus.PARTIALLY
 
     def to_user(self) -> User:
         instance = User.__new__(User)
@@ -461,7 +467,6 @@ class Me(_UserBase):
     ):
         self.privacy.update(is_private, wall_access, likes_visibility, show_last_seen)
 
-    @anti_refresh
     def update(self, bio: str | None = None, display_name: str | None = None, username: str | None = None, banner_id: UUID | str | Unset | None = None):
         if isinstance(banner_id, str):
             banner_id = to_uuid(banner_id)
@@ -476,9 +481,9 @@ class Me(_UserBase):
     def update_from_fields(self):
         update_profile(self.client, self.bio, self.display_name, self.username)
 
-    @anti_refresh
     def remove_pin(self) -> None:
-        if self.pin:
+        if object.__getattribute__(self, 'pin'):
+            assert self.pin
             self.pin.remove()
         else:
             remove_pin(self.client)  # if pins not loaded just use straight call
@@ -527,10 +532,6 @@ class Me(_UserBase):
             exc.restore_deadline = parse_datetime(user['restoreDeadline']) if 'restoreDeadline' in user else None
             raise exc
         return user
-
-    def _post_refresh(self):
-        if self.pin:
-            self.pin._user = self
 
 
 class _MeValidate(BaseModel, Me):
@@ -597,5 +598,61 @@ class WhoToFollow(ITDBaseModel, list[User]):
         self.refresh()
 
     def refresh(self, *, client: Client | None = None):
+        self.load()
+
+    def load(self):
         self.clear()
-        self.extend([User.from_dict(user, client=client or self.client) for user in get_who_to_follow(self.client).json()['users']])
+        self.extend([User.from_dict(user, client=self.client) for user in get_who_to_follow(self.client).json()['users']])
+
+
+class Users(ITDBaseModel, list[User]):
+    _refreshable = False
+
+    def __init__(self, query: str, limit: int = 10, client: Client | None = None):
+        super().__init__(client)
+        self.query = query
+        self.load(limit)
+
+    def load(self, limit: int = 10):
+        self.clear()
+        self.extend([User.from_dict(hashtag) for hashtag in search_users(self.client, self.query, limit).json()['data']['users']])
+        return self
+
+    @classmethod
+    def search(cls, query: str, limit: int = 10):  # чисто для симетрии с хэштэгсами
+        return cls(query, limit)
+
+
+@overload
+def get_follow_status(users: list[User | UUID | str], *, client: Client | None = None) -> dict[UUID, bool]: ...
+
+
+@overload
+def get_follow_status(users: User | UUID | str, *, client: Client | None = None) -> bool: ...
+
+
+def get_follow_status(users: list[User | UUID | str] | User | UUID | str, *, client: Client | None = None) -> dict[UUID, bool] | bool:
+    """Получить статус подписки
+
+    Args:
+        users (list[User | UUID | str] | User | UUID | str): Пользователи для проверки (можно как и списком, так и как одиночным объектом)
+
+    Returns:
+        dict[UUID, bool] | bool: Результат
+    """
+    user_ids: list[UUID] = []
+    if isinstance(users, list):
+        for user in users:
+            if isinstance(user, User):
+                user_ids.append(user.id)
+            else:
+                user_ids.append(to_uuid(user))  # ty: ignore[invalid-argument-type]
+    elif isinstance(users, User):
+        user_ids = [users.id]
+    else:
+        user_ids = [to_uuid(users)]
+
+    res = {UUID(k): v for k, v in _get_follow_status((client or get_default_client()), user_ids).json()['data'].items()}
+    if not isinstance(users, list):
+        return next(iter(res.values()))
+    return res

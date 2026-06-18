@@ -38,7 +38,9 @@ class RateLimitError(ITDException):
         self.retry_after = retry_after
 
     def __str__(self) -> str:
-        return f'Rate limit exceeded - too much requests. Retry after {self.retry_after} seconds'
+        if self.retry_after:
+            return f'Rate limit exceeded - too much requests. Retry after {self.retry_after} seconds'
+        return 'Rate limit exceeded - too much requests'
 
 
 class NotFoundError(ITDException):
@@ -95,6 +97,11 @@ class InvalidAccessTokenError(AuthError):
     json_check = staticmethod(lambda json: json.get('error') == 'invalid signature')
 
 
+class JWTAlgorithmUnsupportedError(AuthError):
+    json_check = staticmethod(lambda json: json.get('error') == 'Unsupported token algorithm')
+    text = 'Access token JWT algorithm unsupported'
+
+
 class SessionRevokedError(AuthError):
     code = 'SESSION_REVOKED'
     text = 'Session revoked (logged out)'
@@ -102,7 +109,7 @@ class SessionRevokedError(AuthError):
 
 class AccessTokenExpiredError(AuthError):
     text = 'Token expired'
-    json_check = staticmethod(lambda json: json.get('error') == 'token expired')
+    json_check = staticmethod(lambda json: json.get('error') == 'token expired' or json.get('message') == 'Invalid or expired token')
 
 
 class LoginError(AuthError):
@@ -343,6 +350,7 @@ DEFAULT_ERRORS = (
     RateLimitError(),
     InvalidAccessTokenError(),
     UnauthorizedError(),
+    JWTAlgorithmUnsupportedError(),
     AccessTokenExpiredError(),
     AccountBannedError(),
     AccountTemporarilyBannedError(),

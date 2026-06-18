@@ -200,9 +200,9 @@ class DwellTracker(ITDBaseModel):
             self.send_interactions()
 
     def _start_timer(self):
-        l.debug('start dwell timer')
         if not self.client.config.dwell_send_interval:
             return
+        l.debug('start dwell timer')
 
         def loop():
             while True:
@@ -268,6 +268,7 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
+        self.comments = Comments()
         self.comments._post = self
 
     def for_client(self, client: Client):
@@ -352,6 +353,9 @@ class Post(ITDBaseModel):
 
     def __int__(self) -> int:
         return self.likes_count
+
+    def __hash__(self):
+        return int(self.id)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Post):

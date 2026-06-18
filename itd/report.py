@@ -31,6 +31,9 @@ class Report(ITDBaseModel):
 
         self._fill_from_data(report(client or self.client, self.target_id, self.target_type, self.reason, self.description).json()['data'])
 
+    def __hash__(self):
+        return int(self.id)
+
 
 class _ReportValidate(BaseModel, Report):
     pass
