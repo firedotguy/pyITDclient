@@ -368,7 +368,7 @@ Username.
 #### profile <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[Profile](#profile)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Профиль пользователя (чем-то похож на сам `Me`, но берется отдельным зарпосом `/api/profile`).
 
-#### privacy <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[Privacy](#privacy)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+#### privacy <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user-lock:</span><span class="mdx-badge__text">[Privacy](#privacy)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Данные приватности пользователя.
 
 ## Конвертировать в User
@@ -627,3 +627,42 @@ Username.
 
 #### roles <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-account-supervisor-outline:</span><span class="mdx-badge__text">list[[Role](enums.md#role)]</span></span>
 Роли пользователя.
+
+---
+
+# :fontawesome-solid-user-lock: Privacy
+
+## Аттрибуты
+!!! info
+    Все аттрибуты кроме `show_last_seen` автоматичесвки подгрузятся из модели пользователя (если она была загружена).
+
+#### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
+Доступ к созданию постов на вашей стене.
+
+#### likes_visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
+Доступ к лайкнутым постам.
+
+#### is_private <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Приватный ли у вас аккаунт.
+
+#### show_last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Нужно ли показывать дату последнего входа другим пользователям.
+
+### Обновить настройки
+```py
+from itd.enums import AccessType
+
+me.privacy.update(
+    wall_access=AccessType.NOBODY,
+    likes_visibility=AccessType.FOLLOWERS,
+    is_private=False,
+    show_last_seen=True
+)
+```
+
+### Обновить настройки из аттрибутов
+```py
+me.privacy.wall_access = AccessType.EVERYONE
+me.privacy.is_private = True
+me.privacy.update_from_fields()
+```
