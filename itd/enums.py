@@ -18,6 +18,16 @@ class ViewSource(Enum):
     SEARCH = 8
 
 
+class LastSeenUnit(Enum):
+    JUST_NOW = 'just_now'
+    RECENTLY = 'recently'
+    MINUTES = 'minutes'
+    HOURS = 'hours'
+    THIS_WEEK = 'this_week'
+    THIS_MONTH = 'this_month'
+    LONG_AGO = 'long_ago'
+
+
 class ViewReason(Enum):
     NORMAL = 0  # стандартное
     BLUR = 1  # страница скрыта (listener blur)
