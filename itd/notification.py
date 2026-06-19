@@ -25,7 +25,8 @@ l = get_logger('notifications')  # noqa: E741
 
 class Notification(ITDBaseModel):
     _refreshable = False
-    _notifications: Notifications | None = None
+    _notifications: Notifications
+    _validator = lambda _: _NotificationValidate
 
     id: UUID
     type: NotificationType
@@ -134,7 +135,7 @@ class Notifications(ITDList[Notification]):
         return data['hasMore']
 
     def _to_models(self, objects: list, client: Client):
-        return [Notification(notification, self, client) for notification in objects]
+        return [Notification.from_dict(notification, self, client=client) for notification in objects]
 
     def read_all(self):
         mark_all_as_read(self.client)
@@ -157,7 +158,7 @@ class Notifications(ITDList[Notification]):
                 l.debug('got init message')
                 continue  # initial message
 
-            notification = Notification(data, self, self.client)
+            notification = Notification.from_dict(data, self, client=self.client)
             self.insert(0, notification)
 
             l.info('new notification type=%s', notification.type.value)
