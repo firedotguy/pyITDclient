@@ -321,7 +321,7 @@ def api_wrapper(*exceptions: ITDException):
 
             def exec():
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-                if client.config.auto_acquire and name in limits:
+                if client.config.auto_acquire and name in limits and limits[name] in limiters:
                     limiters[limits[name]].acquire()
                 ip_limiter.acquire()
 

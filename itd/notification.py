@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from json import loads
 from threading import Thread
-from typing import TYPE_CHECKING, Iterator, Literal, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -108,6 +108,9 @@ class Notification(ITDBaseModel):
             case NotificationType.MENTION | NotificationType.COMMENT_MENTION:
                 return 'purple'
 
+    def __str__(self):
+        return self.get_text()
+
 
 class _NotificationValidate(BaseModel, Notification):
     @field_validator('actor', mode='plain')
@@ -118,6 +121,7 @@ class _NotificationValidate(BaseModel, Notification):
 
 class Notifications(ITDList[Notification]):
     _unread: int | None = None
+    _callbacks: dict[str | None, Callable[[Notification], Any]] = {}
     cursor: int = 0
 
     def _fetch(self, client: Client, limit: int) -> dict:
@@ -155,10 +159,10 @@ class Notifications(ITDList[Notification]):
             data = loads(event.data)
 
             if 'userId' in data and 'timestamp' in data and 'type' not in data:
-                l.debug('got init message')
+                l.debug('got init message %s', data)
                 continue  # initial message
 
-            notification = Notification.from_dict(data, self, client=self.client)
+            notification: Notification = Notification.from_dict(data, self, client=self.client)
             self.insert(0, notification)
             if self._unread is not None:
                 self._unread += 1
@@ -166,6 +170,10 @@ class Notifications(ITDList[Notification]):
             l.info('new notification type=%s', notification.type.value)
             exec(f'self.on_{notification.type.value}(notification)')
             self.on_notification(notification)
+            if None in self._callbacks:
+                self._callbacks[None](notification)
+            if notification.type.value in self._callbacks:
+                self._callbacks[notification.type.value](notification)
 
             yield notification
 
@@ -210,3 +218,20 @@ class Notifications(ITDList[Notification]):
     def on_wall_post(self, notification: Notification, /) -> None: ...
 
     def on_notification(self, notification: Notification, /) -> None: ...
+
+    def on(
+        self,
+        type: Literal[
+            'like', 'comment', 'reply', 'repost', 'mention', 'follow', 'follow_request', 'follow_accepted', 'comment_like', 'comment_mention', 'wall_post'
+        ]
+        | None = None
+    ):
+        def decorator(func: Callable[[Notification], Any]):
+            self._callbacks[type] = func
+
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
