@@ -43,30 +43,30 @@ class Notification(ITDBaseModel):
     actor: User
     sound: bool = False  # for notifications from stream
 
-    def __init__(self, notification: dict, notifications: Notifications | None = None, client: Client | None = None) -> None:
-        super().__init__(client)
-        self._notifications = notifications
-
-        for name, value in _NotificationValidate.model_validate(notification).__dict__.items():
-            setattr(self, name, value)
-
     def __hash__(self):
         return int(self.id)
+
+    @classmethod
+    def from_dict(cls, data: dict, notifications: Notifications, *, client: Client | None = None):  # ty: ignore # who asked
+        instance = super().from_dict(data, client=client)
+        instance._notifications = notifications
+        return instance
 
     def read(self, client: Client | None = None) -> None:
         mark_as_read(client or self.client, self.id)
 
-        if not self.is_read and self._notifications and self._notifications._unread:  # check if already read and has notifications and unread loaded
+        if not self.is_read and self._notifications._unread:  # check if already read and has notifications and unread loaded
             self._notifications._unread -= 1
 
         self.is_read = True
         self.read_at = datetime.now()
 
-    def get_text(self, avatar: bool = False) -> str:
+    def get_text(self, actor: bool = True, avatar: bool = False) -> str:
         text = ''
         if avatar:
             text += self.actor.avatar + ' '
-        text += self.actor.display_name + ' '
+        if actor:
+            text += self.actor.display_name + ' '
 
         match self.type:
             case NotificationType.FOLLOW:
@@ -160,6 +160,8 @@ class Notifications(ITDList[Notification]):
 
             notification = Notification.from_dict(data, self, client=self.client)
             self.insert(0, notification)
+            if self._unread is not None:
+                self._unread += 1
 
             l.info('new notification type=%s', notification.type.value)
             exec(f'self.on_{notification.type.value}(notification)')
