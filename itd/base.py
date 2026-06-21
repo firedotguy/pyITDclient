@@ -9,8 +9,7 @@ from pydantic import BaseModel
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_default_client, ip_limiter, limiters, limits
-from itd._limiter import BurstRateLimiter, SafeRateLimiter
+from itd._default import get_config, get_default_client, limiters, limits
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
 from itd.logger import get_logger
@@ -306,7 +305,7 @@ def _filter_bytes(args: tuple):
     return filtered
 
 
-# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model # hell what the monster i did
+# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model
 def api_wrapper(*exceptions: ITDException):
     """Декоратор для отлавливания ошибок
 
@@ -321,9 +320,17 @@ def api_wrapper(*exceptions: ITDException):
 
             def exec():
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-                if client.config.auto_acquire and name in limits and limits[name] in limiters:
-                    limiters[limits[name]].acquire()
-                ip_limiter.acquire()
+
+                config = get_config()
+                if name in limits and limits[name] in limiters:
+                    limiter = limiters[limits[name]]
+                    if config.auto_acquire:
+                        limiter.acquire()
+                    limiter.request()
+
+                ip_limiter = config.ip_limiter
+                if ip_limiter:
+                    ip_limiter.acquire()
 
                 res: Response = func(client, *args, **kwargs)
 
@@ -337,12 +344,10 @@ def api_wrapper(*exceptions: ITDException):
                 limit = int(res.headers.get('x-ratelimit-limit', 0))
                 limits[name] = limit
 
-                if client.config._anti_rate_limit:
-                    if client.config._burst_requests and limit not in limiters:
-                        limiters[limit] = BurstRateLimiter(limit)
+                if limit not in limiters and config.limiter is not None:
+                    limiters[limit] = config.limiter(limit)
 
-                    elif limit not in limiters:
-                        limiters[limit] = SafeRateLimiter(limit)
+                if config.auto_acquire or (limit in limiters and not limiters[limit].used):
                     limiters[limit].sync(remaining)
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
@@ -409,7 +414,8 @@ def api_wrapper(*exceptions: ITDException):
                     retry_after = getattr(e, 'retry_after') or client.config.retry_delay
                     l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
-                    limiters[name].on_limit()
+                    if name in limits and limits[name] in limiters:
+                        limiters[limits[name]].on_limit()
 
         return wrapper
 
