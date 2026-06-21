@@ -9,10 +9,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from sseclient import SSEClient
 
-from itd.api.notifications import get_notifications, get_unread_notifications_count, mark_all_as_read, mark_as_read, stream_notifications
+from itd.api.notifications import (
+    get_notifications,
+    get_notifications_settings,
+    get_unread_notifications_count,
+    mark_all_as_read,
+    mark_as_read,
+    stream_notifications,
+    update_notifications_settings
+)
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
-from itd.enums import NotificationTargetType, NotificationType
+from itd.enums import LoadStatus, NotificationTargetType, NotificationType
 from itd.logger import get_logger
 from itd.user import User
 
@@ -21,6 +29,92 @@ if TYPE_CHECKING:
 
 
 l = get_logger('notifications')  # noqa: E741
+
+
+class NotificationsSettings(ITDBaseModel):
+    _validator = lambda _: _NotificationsSettingsValidate
+    enabled: bool
+    web_enabled: bool = Field(True, alias='webEnabled')
+    sound: bool = Field(alias='sound')
+    follows: bool
+    wall_posts: bool = Field(alias='wallPosts')
+    likes: bool
+    comments: bool
+    replies: bool = True
+    mentions: bool
+
+    def _refresh(self, *, client: Client):
+        return get_notifications_settings(client).json()
+
+    def update(
+        self,
+        enabled: bool | None = None,
+        web_enabled: bool | None = None,
+        sound: bool | None = None,
+        follows: bool | None = None,
+        wall_posts: bool | None = None,
+        likes: bool | None = None,
+        comments: bool | None = None,
+        replies: bool | None = None,
+        mentions: bool | None = None,
+        client: Client | None = None,
+        old: bool = True,
+        new: bool = True
+    ):
+        if self.load_status != LoadStatus.FULL:
+            self.refresh()
+        if enabled is not None:
+            self.enabled = enabled
+        if web_enabled is not None:
+            self.web_enabled = web_enabled
+        if sound is not None:
+            self.sound = sound
+        if follows is not None:
+            self.follows = follows
+        if wall_posts is not None:
+            self.wall_posts = wall_posts
+        if likes is not None:
+            self.likes = likes
+        if comments is not None:
+            self.comments = comments
+        if replies is not None:
+            self.replies = replies
+        if mentions is not None:
+            self.mentions = mentions
+        self.update_from_fields(client, old=old, new=new)
+
+    def update_from_fields(self, client: Client | None = None, *, old: bool = True, new: bool = True):
+        update_notifications_settings(client or self.client, self, old=old, new=new)
+
+
+class _NotificationsSettingsValidate(BaseModel, NotificationsSettings):
+    pass
+
+
+class _NotificationsSettingsOld(BaseModel):
+    enabled: bool
+    sound: bool
+    follows: bool
+    wall_posts: bool = Field(serialization_alias='wallPosts')
+    likes: bool
+    comments: bool
+    mentions: bool
+
+
+class _NotificationsSettingsNewPreferences(BaseModel):
+    follows: bool
+    reactions: bool = Field(validation_alias='likes')
+    comments: bool
+    replies: bool
+    mentions: bool
+    wall_posts: bool = Field(serialization_alias='wallPosts')
+
+
+class _NotificationsSettingsNew(BaseModel):
+    web_enabled: bool = Field(serialization_alias='webEnabled')
+    sound_enabled: bool = Field(serialization_alias='soundEnabled')
+    preferences: _NotificationsSettingsNewPreferences
+    enabled: bool
 
 
 class Notification(ITDBaseModel):
@@ -120,9 +214,13 @@ class _NotificationValidate(BaseModel, Notification):
 
 
 class Notifications(ITDList[Notification]):
-    _unread: int | None = None
-    _callbacks: dict[str | None, Callable[[Notification], Any]] = {}
     cursor: int = 0
+
+    def __init__(self, client: Client | None = None):
+        super().__init__(client=client)
+        self._unread: int | None = None
+        self._callbacks: dict[str | None, Callable[[Notification], Any]] = {}
+        self.settings = NotificationsSettings(client=client)
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()

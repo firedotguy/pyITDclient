@@ -8,6 +8,7 @@ from itd.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from itd.client import Client
+    from itd.notification import NotificationsSettings
 
 
 @api_wrapper()
@@ -31,9 +32,31 @@ def get_unread_notifications_count(client: Client):
 
 
 def stream_notifications(client: Client):
-    """Получить SSE поток уведомлений
-
-    Returns:
-        Response: Streaming response для SSE
-    """
     return client.request_sse('notifications/stream')
+
+
+def get_notifications_settings(client: Client):
+    return client.request('get', 'notifications/settings')
+
+
+def update_notifications_settings(client: Client, settings: NotificationsSettings, *, old: bool = True, new: bool = True):
+    from itd.notification import _NotificationsSettingsNew, _NotificationsSettingsNewPreferences, _NotificationsSettingsOld  # жду фикс circular import день 67
+
+    data = {}
+    if old:
+        print(settings.follows)
+
+        data.update(_NotificationsSettingsOld.model_validate(settings, from_attributes=True).model_dump(mode='json', by_alias=True))
+        print(settings.follows)
+
+    if new:
+        data.update(
+            _NotificationsSettingsNew(
+                web_enabled=settings.web_enabled,
+                sound_enabled=settings.sound,
+                preferences=_NotificationsSettingsNewPreferences.model_validate(settings, from_attributes=True),
+                enabled=settings.enabled
+            ).model_dump(mode='json', by_alias=True)
+        )
+
+    return client.request('put', 'notifications/settings', data)
