@@ -41,20 +41,25 @@ def get_comments(client: Client, post_id: UUID, cursor: int = 0, limit: int = 20
 
 
 @api_wrapper(NotFoundError('Comment'))
-def like_comment(client: Client, comment_id: UUID):
-    return client.request('post', f'comments/{comment_id}/like')
+def like_comment(client: Client, id: UUID):
+    return client.request('post', f'comments/{id}/like')
 
 
 @api_wrapper(NotFoundError('Comment'))
-def unlike_comment(client: Client, comment_id: UUID):
-    return client.request('delete', f'comments/{comment_id}/like')
+def unlike_comment(client: Client, id: UUID):
+    return client.request('delete', f'comments/{id}/like')
 
 
 @api_wrapper(NotFoundError('Comment'), AlreadyDeletedError('Comment'))
-def delete_comment(client: Client, comment_id: UUID):
-    return client.request('delete', f'comments/{comment_id}')
+def delete_comment(client: Client, id: UUID):
+    return client.request('delete', f'comments/{id}')
 
 
 @api_wrapper(ValidationError(), NotFoundError('Comment'))
-def get_replies(client: Client, comment_id: UUID, page: int = 1, limit: int = 50):
-    return client.request('get', f'comments/{comment_id}/replies', {'page': page, 'limit': limit})
+def get_replies(client: Client, id: UUID, page: int = 1, limit: int = 50):
+    return client.request('get', f'comments/{id}/replies', {'page': page, 'limit': limit})
+
+
+@api_wrapper(ValidationError(), NotFoundError('Comment'), ForbiddenError('edit comment'))
+def edit_comment(client: Client, id: UUID, content: str):
+    return client.request('patch', f'comments/{id}', {'content': content})

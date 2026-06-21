@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from itd.api.comments import add_comment, add_reply_comment, delete_comment, get_comments, get_replies, like_comment, unlike_comment
+from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.base import ITDBaseModel, ITDList
 from itd.enums import CommentSorting, ReportReason, ReportTargetType
 from itd.file import CommentAttach
@@ -114,6 +114,20 @@ class Comment(ITDBaseModel):
             client (Client | None, optional): Клиент. Defaults to None.
         """
         delete_comment(client or self._client, self.id)
+
+    def edit(self, content: str, *, client: Client | None = None) -> datetime:
+        """Изменить комментарий
+
+        Args:
+            content (str): Новое содержимое
+            client (Client | None, optional): Клиент. Defaults to None.
+
+        Returns:
+            datetime: Дата изменения
+        """
+        edited_at = edit_comment(client or self.client, self.id, content).json()['editedAt']
+        self.content = content
+        return parse_datetime(edited_at)
 
     @classmethod
     def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
