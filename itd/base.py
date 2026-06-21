@@ -322,10 +322,12 @@ def api_wrapper(*exceptions: ITDException):
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
 
                 config = get_config()
+                is_first = True
                 if name in limits and limits[name] in limiters:
                     limiter = limiters[limits[name]]
                     if config.auto_acquire:
                         limiter.acquire()
+                    is_first = not limiter.used
                     limiter.request()
 
                 ip_limiter = config.ip_limiter
@@ -347,7 +349,7 @@ def api_wrapper(*exceptions: ITDException):
                 if limit not in limiters and config.limiter is not None:
                     limiters[limit] = config.limiter(limit)
 
-                if config.auto_acquire or (limit in limiters and not limiters[limit].used):
+                if limit in limiters and (config.auto_acquire or is_first):
                     limiters[limit].sync(remaining)
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
