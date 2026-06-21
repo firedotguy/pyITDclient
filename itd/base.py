@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from abc import abstractmethod
 from functools import wraps
 from time import sleep
@@ -49,6 +50,7 @@ class ITDBaseModel:
 
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
+
         self._loaded_attrs: set[str] = set()
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -80,7 +82,7 @@ class ITDBaseModel:
         validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
-            setattr(self, name, value)
+            object.__setattr__(self, name, value)
 
         self._post_refresh()
 
@@ -96,7 +98,6 @@ class ITDBaseModel:
     if not TYPE_CHECKING:
 
         def __getattribute__(self, name: str) -> Any:
-
             try:
                 value = object.__getattribute__(self, name)
                 exc = None
@@ -104,6 +105,8 @@ class ITDBaseModel:
                 value = None
                 exc = e
 
+            if name == 'is_following':
+                l.debug(_getattr(self, '_loaded_attrs'))
             if (
                 _getattr(self, '_refreshable')
                 and not name.startswith('_')
