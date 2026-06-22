@@ -97,11 +97,6 @@ def repost(client: Client, id: UUID, content: str | None = None):
     return client.request('post', f'posts/{id}/repost', data)
 
 
-@api_wrapper(NotFoundError('Post'))
-def view_post(client: Client, id: UUID):
-    return client.request('post', f'posts/{id}/view')
-
-
 @api_wrapper(ValidationError(), NotFoundError('User'))
 def get_liked_posts(client: Client, username_or_id: str | UUID, cursor: datetime | None = None, limit: int = 20):
     return client.request('get', f'posts/user/{username_or_id}/liked', {'limit': limit, 'cursor': cursor})

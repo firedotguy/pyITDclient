@@ -29,7 +29,7 @@ from itd.api.users import (
 )
 from itd.api.users import get_follow_status as _get_follow_status
 from itd.base import ITDBaseModel, ITDList
-from itd.enums import AccessType, LoadStatus, ReportReason, ReportTargetType, Role, Unset
+from itd.enums import AccessType, LastSeenUnit, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
 from itd.pin import Pin
 from itd.poll import NewPoll
@@ -173,6 +173,28 @@ class _SubscriptionValidate(BaseModel, Subscription):
     pass
 
 
+class LastSeen(BaseModel):
+    unit: LastSeenUnit
+    value: int | None = None
+
+    def __str__(self):
+        match self.unit:
+            case LastSeenUnit.JUST_NOW:
+                return 'только что'
+            case LastSeenUnit.RECENTLY:
+                return 'недавно'
+            case LastSeenUnit.MINUTES:
+                return f'{self.value} минут назад'
+            case LastSeenUnit.HOURS:
+                return f'{self.value} часов назад'
+            case LastSeenUnit.THIS_WEEK:
+                return 'на этой неделе'
+            case LastSeenUnit.THIS_MONTH:
+                return 'в этом месяце'
+            case LastSeenUnit.LONG_AGO:
+                return 'давно'  # гавно
+
+
 class _UserBase(ITDBaseModel):
     _identifier: str | UUID
 
@@ -253,7 +275,7 @@ class User(_UserBase):
     is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
-    last_seen: datetime | dict | None = Field(None, alias='lastSeen')  # none if hidden or blocked
+    last_seen: datetime | LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
     online: bool = False
 
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked

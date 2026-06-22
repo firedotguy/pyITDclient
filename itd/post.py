@@ -25,8 +25,7 @@ from itd.api.posts import (
     repost,
     restore_post,
     unlike_post,
-    unpin_post,
-    view_post
+    unpin_post
 )
 from itd.base import ITDBaseModel, ITDList
 from itd.comment import Comment, Comments
@@ -459,7 +458,7 @@ class Post(ITDBaseModel):
 
             c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
         else:
-            view_post(c, self.id)
+            l.error('old post viewing is no more supported. Please enable dwell_tracker in config.')
 
         if c == self.client:
             self.is_viewed = True

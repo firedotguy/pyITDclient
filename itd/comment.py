@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from itd.api.comments import add_comment, add_reply_comment, delete_comment, get_comments, get_replies, like_comment, unlike_comment
+from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.base import ITDBaseModel, ITDList
 from itd.enums import CommentSorting, ReportReason, ReportTargetType
 from itd.file import CommentAttach
@@ -115,6 +115,20 @@ class Comment(ITDBaseModel):
         """
         delete_comment(client or self._client, self.id)
 
+    def edit(self, content: str, *, client: Client | None = None) -> datetime:
+        """Изменить комментарий
+
+        Args:
+            content (str): Новое содержимое
+            client (Client | None, optional): Клиент. Defaults to None.
+
+        Returns:
+            datetime: Дата изменения
+        """
+        edited_at = edit_comment(client or self.client, self.id, content).json()['editedAt']
+        self.content = content
+        return parse_datetime(edited_at)
+
     @classmethod
     def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
         instance = cls.__new__(cls)
@@ -215,14 +229,18 @@ class Replies(ITDList[Comment]):
     _post: Post
     total: int
     cursor: int = 1
-    _raw: list[dict] = []
 
     def __init__(self, data: list[dict] = []):
         super().__init__()
-        self._raw = data
+        self._is_raw = True
+        self.first_replies = data
+
+    def _post_refresh(self):
+        self.extend(self._to_models(self.first_replies, self.client))
 
     def _fetch(self, client: Client, limit: int):
-        if self._raw:
+        if self._is_raw:
+            self._is_raw = False
             self.clear()
         return get_replies(client or self._client, self._base_comment.id, self.cursor, limit).json()['data']
 

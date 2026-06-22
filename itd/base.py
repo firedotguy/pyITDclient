@@ -3,33 +3,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from functools import wraps
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterator,
-    SupportsIndex,
-    TypeVar,
-    cast,
-    overload
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 
 from pydantic import BaseModel
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_default_client, ip_limiter, limiters, limits
-from itd._limiter import BurstRateLimiter, SafeRateLimiter
+from itd._default import get_config, get_default_client, limiters, limits
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
-from itd.exceptions import (
-    DEFAULT_ERRORS,
-    AccessTokenExpiredError,
-    AccountDeletedError,
-    ITDException,
-    RateLimitError,
-    UnauthorizedError,
-    ValidationError
-)
+from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
 from itd.logger import get_logger
 
 if TYPE_CHECKING:
@@ -67,12 +49,11 @@ class ITDBaseModel:
 
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
+
         self._loaded_attrs: set[str] = set()
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if isinstance(value, ITDBaseModel) and (
-            client := _getattr(self, "_client")
-        ):  # ai
+        if isinstance(value, ITDBaseModel) and (client := _getattr(self, "_client")):  # ai
             value._client = client
         if "_loaded_attrs" in self.__dict__:
             self._loaded_attrs.add(name)
@@ -89,9 +70,7 @@ class ITDBaseModel:
 
     def refresh(self, *, client: Client | None = None) -> Any:
         if not self._refreshable:
-            l.warning(
-                f"{self.__class__.__name__} is not refreshable but refresh is called"
-            )
+            l.warning(f"{self.__class__.__name__} is not refreshable but refresh is called")
         self.load_status = LoadStatus.LOADING
         self._fill_from_data(self._refresh(client=client or self.client))
         self.load_status = LoadStatus.FULL
@@ -102,7 +81,7 @@ class ITDBaseModel:
         validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
-            setattr(self, name, value)
+            object.__setattr__(self, name, value)
 
         self._post_refresh()
 
@@ -118,7 +97,6 @@ class ITDBaseModel:
     if not TYPE_CHECKING:
 
         def __getattribute__(self, name: str) -> Any:
-
             try:
                 value = object.__getattribute__(self, name)
                 exc = None
@@ -126,6 +104,8 @@ class ITDBaseModel:
                 value = None
                 exc = e
 
+            if name == 'is_following':
+                l.debug(_getattr(self, '_loaded_attrs'))
             if (
                 _getattr(self, "_refreshable")
                 and not name.startswith("_")
@@ -133,18 +113,10 @@ class ITDBaseModel:
                 and not callable(value)
                 and not isinstance(_getattr(type(self), name), property)
                 and name not in _getattr(self, "_loaded_attrs")
-                and _getattr(self, "load_status")
-                in (LoadStatus.NO, LoadStatus.PARTIALLY)
-                and not (
-                    isinstance(value, ITDBaseModel) and not value._load_with_parent
-                )
+                and _getattr(self, "load_status") in (LoadStatus.NO, LoadStatus.PARTIALLY)
+                and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
-                l.info(
-                    "refresh %s field=%s load_status=%s",
-                    self.__class__.__name__,
-                    name,
-                    _getattr(self, "load_status").value
-                )
+                l.info("refresh %s field=%s load_status=%s", self.__class__.__name__, name, _getattr(self, "load_status").value)
                 self.refresh()
                 return object.__getattribute__(self, name)
 
@@ -169,12 +141,7 @@ class ITDList(ITDBaseModel, list[T]):
 
     # edited by calude, thats so fucking crazy pagination
     # ai begin ---
-    def load(
-        self,
-        count: int | All | Batch = BATCH,
-        limit: int | Batch = BATCH,
-        client: Client | None = None
-    ) -> list[T]:
+    def load(self, count: int | All | Batch = BATCH, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
         """Загрузить объекты
 
         Args:
@@ -189,21 +156,10 @@ class ITDList(ITDBaseModel, list[T]):
             l.warning("skip load because has_more=False")
             return []
 
-        limit = (
-            limit
-            or (client or self.client).config.batch_sizes._values[
-                self.__class__.__name__.lower()
-            ]
-        )
+        limit = limit or (client or self.client).config.batch_sizes._values[self.__class__.__name__.lower()]
         if isinstance(count, int) and count < limit:
             limit = count
-        l.debug(
-            "load %s count=%s limit=%s cursor=%s",
-            self.__class__.__name__.lower(),
-            count,
-            limit,
-            self.cursor
-        )
+        l.debug("load %s count=%s limit=%s cursor=%s", self.__class__.__name__.lower(), count, limit, self.cursor)
 
         # Batch = load one batch (limit), All = load everything, int = load exactly N
         left = None if isinstance(count, All) else (count or limit)
@@ -220,29 +176,16 @@ class ITDList(ITDBaseModel, list[T]):
             if self._get_total:
                 self.total = self._get_total(data)
                 if getattr(self, "_min_total", None) and self._min_total > self.total:
-                    raise IndexError(
-                        f"Given index ({self._min_total - 1}) is too high. Total items is {self.total}"
-                    )
+                    raise IndexError(f"Given index ({self._min_total - 1}) is too high. Total items is {self.total}")
 
             length = len(objects)
-            if (
-                objects
-                and (client or self.client).config.userposts_add_pinned_post
-                and length == batch + 1
-            ):  # skip pinned post
+            if objects and (client or self.client).config.userposts_add_pinned_post and length == batch + 1:  # skip pinned post
                 length -= 1
 
             if left is not None:
                 left -= length
 
-            l.info(
-                "fetched %s %s (was %s) cursor=%s has_more=%s",
-                length,
-                self.__class__.__name__.lower(),
-                len(self),
-                self.cursor,
-                self.has_more
-            )
+            l.info("fetched %s %s (was %s) cursor=%s has_more=%s", length, self.__class__.__name__.lower(), len(self), self.cursor, self.has_more)
             models = self._to_models(objects, client or self.client)
             self.extend(models)
             added.extend(models)
@@ -269,13 +212,7 @@ class ITDList(ITDBaseModel, list[T]):
     def _get_objects(data: dict) -> list[dict]:
         return []
 
-    def refresh(
-        self,
-        count: int | All | Batch | None = None,
-        limit: int | Batch = BATCH,
-        *,
-        client: Client | None = None
-    ) -> list[T]:
+    def refresh(self, count: int | All | Batch | None = None, limit: int | Batch = BATCH, *, client: Client | None = None) -> list[T]:
         """Обновить список (удалить все элементы и загрузить заново)
 
         Args:
@@ -293,17 +230,10 @@ class ITDList(ITDBaseModel, list[T]):
         self.clear()
         self.cursor = None
         self.has_more = True  # also refresh has_more
-        l.debug(
-            "refresh %s count=%s limit=%s",
-            self.__class__.__name__.lower(),
-            str(count),
-            limit
-        )
+        l.debug("refresh %s count=%s limit=%s", self.__class__.__name__.lower(), str(count), limit)
         return self.load(count, limit, client)
 
-    def load_all(
-        self, limit: int | Batch = BATCH, client: Client | None = None
-    ) -> list[T]:
+    def load_all(self, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
         """Загрузить все объекты (эквивалент self.load(ALL))
 
         Args:
@@ -327,9 +257,7 @@ class ITDList(ITDBaseModel, list[T]):
         else:
             value = cast(int, index)
 
-        if (
-            (value is not None and value > len(self) - 1) or value is None
-        ) and self.client.config.load_on_getitem is not None:
+        if ((value is not None and value > len(self) - 1) or value is None) and self.client.config.load_on_getitem is not None:
             if value:
                 self._min_total = value + 1
 
@@ -340,10 +268,7 @@ class ITDList(ITDBaseModel, list[T]):
                 l.debug("getitem load batch")
                 self.load(BATCH)
             else:
-                l.debug(
-                    "getitem load %s",
-                    value - len(self) + self.client.config.load_on_getitem
-                )
+                l.debug("getitem load %s", value - len(self) + self.client.config.load_on_getitem)
                 self.load(value - len(self) + self.client.config.load_on_getitem)
 
         return super().__getitem__(index)
@@ -352,9 +277,7 @@ class ITDList(ITDBaseModel, list[T]):
         assert self.client.config.load_on_iter is not None
         if getattr(self, "total", None) and self.idx >= self.total:
             raise StopIteration()
-        if self.idx >= len(self) and (
-            self.has_more or self.client.config.force_load_lists
-        ):
+        if self.idx >= len(self) and (self.has_more or self.client.config.force_load_lists):
             l.debug("not enough items to call next - load")
             self.load(self.client.config.load_on_iter)
         if self.idx >= len(self):
@@ -372,6 +295,11 @@ class ITDList(ITDBaseModel, list[T]):
     @property
     def all(self) -> list[T]:
         return self.load_all()
+
+    def clear(self):
+        super().clear()
+        self.cursor = None
+        self.has_more = True
 
 
 def _filter_bytes(args: tuple):
@@ -398,10 +326,20 @@ def api_wrapper(*exceptions: ITDException):
             name = func.__name__
 
             def exec():
-                l.info("exec %s %s %s", func.__name__, _filter_bytes(args), kwargs)
-                if client.config.auto_acquire and name in limits:
-                    limiters[limits[name]].acquire()
-                ip_limiter.acquire()
+                l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
+
+                config = get_config()
+                is_first = True
+                if name in limits and limits[name] in limiters:
+                    limiter = limiters[limits[name]]
+                    if config.auto_acquire:
+                        limiter.acquire()
+                    is_first = not limiter.used
+                    limiter.request()
+
+                ip_limiter = config.ip_limiter
+                if ip_limiter:
+                    ip_limiter.acquire()
 
                 res: Response = func(client, *args, **kwargs)
 
@@ -415,12 +353,10 @@ def api_wrapper(*exceptions: ITDException):
                 limit = int(res.headers.get("x-ratelimit-limit", 0))
                 limits[name] = limit
 
-                if client.config._anti_rate_limit:
-                    if client.config._burst_requests and limit not in limiters:
-                        limiters[limit] = BurstRateLimiter(limit)
+                if limit not in limiters and config.limiter is not None:
+                    limiters[limit] = config.limiter(limit)
 
-                    elif limit not in limiters:
-                        limiters[limit] = SafeRateLimiter(limit)
+                if limit in limiters and (config.auto_acquire or is_first):
                     limiters[limit].sync(remaining)
 
                 if client.config.debug_response == DebugResponseMode.BEFORE:
@@ -448,30 +384,17 @@ def api_wrapper(*exceptions: ITDException):
                         )
                     ):
                         if isinstance(exception, ValidationError):
-                            exception.text = json.get("error", {}).get(
-                                "message", "Failed validation"
-                            )
+                            exception.text = json.get("error", {}).get("message", "Failed validation")
 
-                        if isinstance(exception, RateLimitError) and isinstance(
-                            json.get("error"), dict
-                        ):
-                            exception.retry_after = json.get("error", {}).get(
-                                "retryAfter", 0
-                            )
+                        if isinstance(exception, RateLimitError) and isinstance(json.get("error"), dict):
+                            exception.retry_after = json.get("error", {}).get("retryAfter", 0)
 
-                        if (
-                            isinstance(
-                                exception, (UnauthorizedError, AccessTokenExpiredError)
-                            )
-                            and client.refresh_token
-                        ):
+                        if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
                             client.refresh_auth()
                             return wrapper(client, *args, **kwargs)
 
                         if isinstance(exception, AccountDeletedError):
-                            exception.can_restore = json.get("error", {}).get(
-                                "canRestore", True
-                            )
+                            exception.can_restore = json.get("error", {}).get("canRestore", True)
 
                         client._process_exc_callbacks(exception)
                         raise exception
@@ -493,22 +416,15 @@ def api_wrapper(*exceptions: ITDException):
                 try:
                     return exec()
                 except client.config.retry_exceptions as e:
-                    if (
-                        getattr(e, "retry_after", 0)
-                        > client.config.retry_max_retry_after
-                    ):
+                    if getattr(e, "retry_after", 0) > client.config.retry_max_retry_after:
                         l.error("too large rate limit")
                         raise
 
                     retry_after = getattr(e, "retry_after") or client.config.retry_delay
-                    l.warning(
-                        "%s on %s: wait %ss",
-                        e.__class__.__name__,
-                        func.__name__,
-                        retry_after
-                    )
+                    l.warning("%s on %s: wait %ss", e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
-                    limiters[name].on_limit()
+                    if name in limits and limits[name] in limiters:
+                        limiters[limits[name]].on_limit()
 
         return wrapper
 

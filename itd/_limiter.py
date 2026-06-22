@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from time import monotonic, sleep
 
 from itd.logger import get_logger
@@ -5,93 +6,91 @@ from itd.logger import get_logger
 l = get_logger('limiter')
 
 
-class RateLimiter:
-    window: int = 65
-
+class RateLimiter(ABC):
     def __init__(self, capacity: int):
         l.debug(r'\[%s] create rate limiter', capacity)
         self.capacity = capacity
-        self.is_ran = True
+        self._delay = 0
+        self.used = False
 
-    def sync(self, remaining: int): ...
-    def acquire(self): ...
-    def on_limit(self): ...
-    def get_delay(self): ...
+    @abstractmethod
+    def sync(self, remaining: int): ...  # sync remaining, calls after request
+
+    def acquire(self):  # wait, calls before request
+        sleep(self.delay)
+
+    @abstractmethod
+    def on_limit(self): ...  # calls when RateLimitError raised
+
+    def request(self):  # call before request
+        self.used = True
+
+    @property
+    def delay(self):
+        return self._delay
 
 
-class SafeRateLimiter(RateLimiter):
+class HalfRateLimiter(RateLimiter):
     def __init__(self, capacity: int):
         super().__init__(capacity)
-        self.delay = 60 / capacity
-        self.last_request = monotonic()
+        self._delay = 60 / capacity
+        self.last_request = 0
         self.requests = 0
-        self.is_ran = False
 
-    def get_delay(self):
-        self.requests += 1
+    @property
+    def delay(self):
+        return max(0.1, self._delay - (monotonic() - self.last_request))
+
+    def request(self):
+        super().request()
         self.last_request = monotonic()
-        return max(0.1, self.delay - (monotonic() - self.last_request))
-
-    def acquire(self):
-        l.debug(r'\[%s] acquire limiter delay=%s', self.capacity, round(self.delay, 2))
-        sleep(self.get_delay())
+        self.requests += 1
 
     def sync(self, remaining: int):
-        l.info(r'\[%s] sync limiter remaining=%s', self.capacity, remaining)
-        if remaining < self.capacity * 0.2:
-            self.delay *= 1 + 1 / (remaining or 0.5)
-            l.info(r'\[%s] increase delay=%s', self.capacity, round(self.delay, 2))
-        if remaining > self.capacity * 0.9:
-            self.delay *= 0.7
-            l.info(r'\[%s] decrease delay=%s', self.capacity, round(self.delay, 2))
-        elif 10 < self.requests < 500 and remaining > self.capacity * 0.5:
-            self.delay -= 1 / self.requests
-        self.delay = max(0.1, min(self.delay, 30))
-        self.is_ran = True
+        # короче тут такая задумка что лимитер оставляет половину ременинга, то есть чем ты дальше от центра тем сильнее тебя пиздит лимитер
+        best = self.capacity / 2
+
+        def diff(a, b):
+            return max(a, b) - min(a, b)
+
+        l.info(r'\[%s] sync limiter total=%s remaining=%s diff=%s', self.capacity, self.requests, remaining, diff(best, remaining))
+        if remaining < best - 3 and self.requests > best:
+            self._delay = min(self._delay * (1 + (diff(best, remaining) / 20)), 30)
+            l.info(r'\[%s] slowdown delay=%.2f', self.capacity, self._delay)
+
+        elif remaining > best + 3 and self.requests > best:
+            self._delay = max(self._delay * (1 - (diff(best, remaining) / 50)), 0.1)
+            l.info(r'\[%s] speedup delay=%.2f', self.capacity, self._delay)
 
     def on_limit(self):
-        self.delay *= 2
-        self.delay = min(self.delay, 30)
+        self._delay *= 2
+        self._delay = min(self._delay, 30)
 
 
 class BurstRateLimiter(RateLimiter):
     def __init__(self, capacity: int):
         super().__init__(capacity)
-        self.requests = []
+        self.remaining = capacity
 
     def sync(self, remaining: int):
         l.debug(r'\[%s] sync limiter remaining=%s', self.capacity, remaining)
+        self.remaining = remaining
 
-        used = self.capacity - remaining
-        if used > 0:
-            self.requests = self.requests[-used:]  # ai
-        while len(self.requests) < used:
-            self.requests.append(monotonic())
+    @property
+    def delay(self):
+        if self.remaining < 3:
+            return 60
+        return 0
 
-    def acquire(self):
-        l.debug(r'\[%s] acquire limiter', self.capacity)
-
-        self.requests = [request for request in self.requests if request > monotonic() - self.window]
-        while len(self.requests) >= self.capacity:
-            self.requests = [request for request in self.requests if request > monotonic() - self.window]
-            if self.requests:
-                sleep(max(self.requests[0] + self.window - monotonic(), 0.1))
+    def on_limit(self): ...
 
 
 class IPRateLimiter:
-    window: int = 60
-    max_requests: int = 90
-
     def __init__(self):
         self.requests = []
 
     def acquire(self):
         self.requests.append(monotonic())
-        self.requests = [request for request in self.requests if request > monotonic() - self.window]
-        while len(self.requests) >= self.max_requests:
-            self.requests = [request for request in self.requests if request > monotonic() - self.window]
-            if self.requests:
-                sleep(self.get_delay())
-
-    def get_delay(self):
-        return max(self.requests[0] + self.window - monotonic(), 0.1)
+        self.requests = [request for request in self.requests if request > monotonic() - 60]
+        if len(self.requests) >= 90:
+            sleep(max(self.requests[0] + 60 - monotonic(), 0))

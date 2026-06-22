@@ -12,6 +12,7 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.utils import default_user_agent
 
+from itd import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, LimiterConfig, set_limiter_config
 from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
@@ -71,16 +72,17 @@ class Config:
     # для реальных клиентов включен калбэк на ошибки (сами ошибки не выбрасываются) и выключен логгер. Передает ошибки в калбэк, в консоль ничего не пишет, при ошибках сети падает.
     # для ботов включен отлов всех ошибок, а также калбэк при ошибках сети (шоб отправлять в тг например), включен логгер на инфо. Показывает ошибки в консоли, но не завершшает скрипт.
     # для одноразовых скриптов стандартное поведение, отловов ошибок нет, включен логгер на дебаг.
+    # ^ это если что просто мысли, не обращайте внимания
     client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
     rate_limit: RateLimitMode | None = None  # deprecated
     rate_limit_default: int | None = None  # deprecated
     rate_limit_actions: dict[str, float | int] | None = None  # deprecated
-    anti_rate_limit: bool | None = None
-    burst_requests: bool | None = None
-    anti_ip_ban: bool = True
-    limit_coefficient: float | None = None
-    auto_acquire: bool = True
+    anti_rate_limit: bool | None = None  # deprecated
+    burst_requests: bool | None = None  # deprecated
+    anti_ip_ban: bool | None = None  # deprecated
+    limit_coefficient: float | None = None  # deprecated
+    auto_acquire: bool | None = None
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'
@@ -163,6 +165,29 @@ class Config:
             l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
         if self.rate_limit_actions is not None:
             l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
+        if self.anti_ip_ban is not None:
+            l.warning(
+                f'config.anti_ip_ban is deprecated and will be removed in 2.7.0. '
+                f'Please use set_limiter_config(LimiterConfig(ip_limiter={"IPRateLimiter" if self.anti_ip_ban else None})).'
+            )
+            set_limiter_config(LimiterConfig(ip_limiter=IPRateLimiter() if self.anti_ip_ban else None))
+        if self.anti_rate_limit is not None:
+            l.warning(
+                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
+                f'Please use set_limiter_config(limiter={"HalfRateLimiter" if self.anti_rate_limit else None}).'
+            )
+            set_limiter_config(LimiterConfig(limiter=HalfRateLimiter if self.anti_rate_limit else None))
+        if self.burst_requests is not None:
+            l.warning(
+                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
+                f'Please use set_limiter_config(limiter={"BurstRateLimiter" if self.burst_requests else None}).'
+            )
+            set_limiter_config(LimiterConfig(limiter=BurstRateLimiter if self.burst_requests else None))
+        if self.limit_coefficient is not None:
+            l.warning(
+                'config.limit_coefficient is deprecated and will be removed in 2.7.0. '
+                'Please define your own rate limiter that will override sync function of RateLimiter class and apply coefficient to remaining.'
+            )
 
         if self.timeout is None:
             match self.client_type:
@@ -185,27 +210,8 @@ class Config:
         else:
             self._post_update_stats = self.post_update_stats
 
-        if self.anti_rate_limit is None:
-            self._anti_rate_limit = self.client_type == 'bot'
-        else:
-            self._anti_rate_limit = self.anti_rate_limit
         if self.load_comments_from_post is not None:
             l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
-
-        if self.burst_requests is None:
-            self._burst_requests = self.client_type != 'bot'
-        else:
-            self._burst_requests = self.burst_requests
-
-        if self.limit_coefficient is None:
-            if self.client_type == 'bot':
-                self._limit_coefficient = 0.75
-            elif self.client_type == 'client':
-                self._limit_coefficient = 0.9
-            else:
-                self._limit_coefficient = 1
-        else:
-            self._limit_coefficient = self.limit_coefficient
 
 
 class AccessToken(BaseModel):

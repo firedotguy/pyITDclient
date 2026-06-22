@@ -36,7 +36,9 @@ from time import sleep
 
 __version__ = version("itd-sdk")
 
-from itd._default import limiters
+from itd._default import LimiterConfig, limiters
+from itd._default import set_config as set_limiter_config
+from itd._limiter import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, RateLimiter
 from itd.clan import Clan, TopClans
 from itd.client import Client as ITDClient
 from itd.client import Config as ITDConfig
@@ -50,14 +52,12 @@ from itd.user import Me, User, Users, get_follow_status
 from itd.version import Apps, Changelog
 
 
+# call if you set auto_acquire=False in the end of cycle
 def acquire_limiters():
-    try:
-        sleep(max(limiter.get_delay() for limiter in limiters.values() if limiter.is_ran))
-    except ValueError:
-        pass
+    sleep(max((limiter.delay for limiter in limiters.values() if limiter.used), default=0))
 
     for limiter in limiters.values():
-        limiter.is_ran = False
+        limiter.used = False
 
 
 __all__ = [
@@ -83,5 +83,11 @@ __all__ = [
     'Me',
     'Users',
     'get_follow_status',
+    'set_limiter_config',
+    'LimiterConfig',
+    'BurstRateLimiter',
+    'RateLimiter',
+    'HalfRateLimiter',
+    'IPRateLimiter',
     'acquire_limiters'
 ]
