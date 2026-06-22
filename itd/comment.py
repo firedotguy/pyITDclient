@@ -229,14 +229,18 @@ class Replies(ITDList[Comment]):
     _post: Post
     total: int
     cursor: int = 1
-    _raw: list[dict] = []
 
     def __init__(self, data: list[dict] = []):
         super().__init__()
-        self._raw = data
+        self._is_raw = True
+        self.first_replies = data
+
+    def _post_refresh(self):
+        self.extend(self._to_models(self.first_replies, self.client))
 
     def _fetch(self, client: Client, limit: int):
-        if self._raw:
+        if self._is_raw:
+            self._is_raw = False
             self.clear()
         return get_replies(client or self._client, self._base_comment.id, self.cursor, limit).json()['data']
 

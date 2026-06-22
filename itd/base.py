@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from abc import abstractmethod
 from functools import wraps
 from time import sleep
