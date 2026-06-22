@@ -25,13 +25,13 @@ ID цели. `None`, если цель - пользователь (наприм�
  - У подписок и заявок `None`.
 
 #### is_read <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Прочитано ли уведолмение.
+Прочитано ли уведомление.
 
 #### read_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
-Дата прочетния уведолмения. `None`, если `is_read` == `False`.
+Дата прочетния уведомления. `None`, если `is_read` == `False`.
 
 #### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
-Дата создания уведолмения.
+Дата создания уведомления.
 
 #### actor <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[User](users.md#user)</span></span>
 Актор.
@@ -40,7 +40,7 @@ ID цели. `None`, если цель - пользователь (наприм�
     Актор (англ. actor) - "создатель" уведомления - комментатор, репостер, подписчик и тд.
 
 #### sound <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли воспроизвести уведолмение со звуком. Работает только при стриме уведомлений. Вычисляется на основе настроек уведолмений пользователя.
+Нужно ли воспроизвести уведомление со звуком. Работает только при стриме уведомлений. Вычисляется на основе настроек уведомлений пользователя.
 
 
 ## :material-eye: Прочитать
@@ -61,7 +61,7 @@ notification.get_text(
 
 ### Параметры
 #### avatar <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли добавлять аватар актора. По умолчанию False.
+Нужно ли добавлять аватар актора. По умолчанию `False`.
 
 ## Получить цвет
 ```py
@@ -95,10 +95,10 @@ thread = notifications.stream_bg(
 ```
 
 ### Параметры
-#### daуmon <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+#### daemon <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Влючен ли `daemon` для thread'а.
 
-Чтобы получать уведомления из фона, утсановите каллбэки.
+Чтобы получать уведомления из фона, установите каллбэки.
 
 ## Остановка фонового стрима
 ```py
@@ -108,61 +108,144 @@ notifications.stop_stream()
 ## Каллбэки
 
 ### Общий
-```py
-notifications.on_notification = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on()
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_notification = lambda notification: notification.read()
+    ```
 
 ### Лайки (на постах)
-```py
-notifications.on_like = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("like")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_like = lambda notification: notification.read()
+    ```
 
 ### Комментарии
-```py
-notifications.on_comment = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("comment")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_comment = lambda notification: notification.read()
+    ```
 
 ### Ответы
-```py
-notifications.on_reply = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("reply")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_reply = lambda notification: notification.read()
+    ```
 
 ### Репосты
-```py
-notifications.on_repost = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("repost")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_repost = lambda notification: notification.read()
+    ```
 
 ### Упоминания (в постах)
-```py
-notifications.on_mention = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("mention")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_mention = lambda notification: notification.read()
+    ```
 
 ### Подписчики
-```py
-notifications.on_follow = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("follow")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_follow = lambda notification: notification.read()
+    ```
 
 ### Запросы на подписку
-```py
-notifications.on_follow_request = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("follow_request")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_follow_request = lambda notification: notification.read()
+    ```
 
 ### Принятие запросов на подписку
-```py
-notifications.on_follow_accepted = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("follow_accepted")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_follow_accepted = lambda notification: notification.read()
+    ```
 
 ### Лайки комментариев
-```py
-notifications.on_comment_like = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("comment_like")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_comment_like = lambda notification: notification.read()
+    ```
 
 ### Упоминания (в комментариях)
-```py
-notifications.comment_mention = lambda notification: notification.read()
-```
-
+=== "Через декоратор"
+    ```py
+    @notifications.on("comment_mention")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_comment_mention = lambda notification: notification.read()
+    ```
 ### Посты на стене
-```py
-notifications.on_wall_post = lambda notification: notification.read()
-```
+=== "Через декоратор"
+    ```py
+    @notifications.on("wall_post")
+    def callback(notification: Notification):
+        notification.read()
+    ```
+=== "Через переопределение"
+    ```py
+    notifications.on_wall_post = lambda notification: notification.read()
+    ```

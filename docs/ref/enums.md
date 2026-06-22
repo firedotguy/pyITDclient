@@ -77,8 +77,49 @@
  - `SpanType.UNDERLINE`: <u>Подчеркнутый</u>.
  - `SpanType.HASHTAG`: Хэштэг. Заполняется самим ИТД при создании поста.
  - `SpanType.LINK`: Ссылка. При создании надо указать `url`.
- - `SpanType.QUOTE`: <q>Цитата</q>.
- - `SpanType.MENTION`: Упоминание. ~~Заполняется~~ Должно заполняться самим ИТД при создании поста.
+ - ~~`SpanType.QUOTE`: <q>Цитата</q>.~~
+ - `SpanType.MENTION`: Упоминание. ~~Заполняется~~ Должно заполняться самим ИТД при создании поста. <!-- так вроде же заполняется -->
 
 !!! warning
     Цитаты (`SpanType.QUOTE`) не добавлены на бэкенд (есть только на клиенте).
+
+### LastSeenUnit
+Юнит времени.
+
+ - `LastSeenUnit.JUST_NOW`: Только что.
+ - `LastSeenUnit.RECENTLY`: Недавно.
+ - `LastSeenUnit.MINUTES`: {} минут назад.
+ - `LastSeenUnit.HOURS`: {} часов назад.
+ - `LastSeenUnit.THIS_WEEK`: На этой неделе.
+ - `LastSeenUnit.THIS_MONTH`: В этом месяце.
+ - `LastSeenUnit.LONG_AGO`: Давно.
+
+
+### NotificationType
+Тип уведолмения.
+
+ - `NotifcationType.LIKE`: Лайк поста.
+ - `NotifcationType.COMMENT`: Комментарий под постом.
+ - `NotifcationType.REPLY`: Ответ на комментарий.
+ - `NotifcationType.REPOST`: Репост поста.
+ - ~~`NotifcationType.MENTION`: Упоминание в посте.~~
+ - `NotifcationType.FOLLOW`: Подписка.
+ - ~~`NotifcationType.FOLLOW_REQUEST`: Запроса на подписку.~~
+ - ~~`NotifcationType.FOLLOW_ACCEPTED`: Одобрение запроса на подписку.~~
+ - ~~`NotifcationType.COMMENT_LIKE`: Лайк комментария.~~
+ - ~~`NotifcationType.COMMENT_MENTION`: Упоминание в комментарии.~~
+ - `NotifcationType.WALL_POST`: Пост на стене.
+
+!!! warning
+    Упоминания, лайки комментариев и запросы на подписку (`NotifcationType.MENTION`, `NotifcationType.FOLLOW_REQUEST`, `NotifcationType.FOLLOW_ACCEPTED`, `NotifcationType.COMMENT_LIKE`, `NotifcationType.COMMENT_MENTION`) не добавлены на бэкенд (есть только на клиенте).
+
+### NotificationTargetType
+Тип цели уведомления.
+
+ - `NotificationTargetType.POST`: Пост.
+
+!!! question "Предположение"
+    Возможно в будущем появится и `COMMENT` (для лайков и упоминаний в комментариях).
+
+!!! note
+    Если цель - пользователь (например при подписке), значение будет `None`.

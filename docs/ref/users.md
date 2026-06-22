@@ -76,28 +76,11 @@ Username.
 #### is_subscribed <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Есть ли у пользователя подписка ИТД НУСКТА.
 
-#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: | :material-calendar:</span><span class="mdx-badge__text">dict | datetime</span></span>
-Дата последней активности. Может быть как и точным временем `datetime`, так и относительным `dict` (`недавно`, `несколько минут назад` и тд). Пока точно неизвестны все возможные значения. `None`, если пользователь заблокирован, приватный аккаунт или показ скрыт в настройках приватности пользователя.  
-Примерная структура словаря:
-```json
-{
-    "unit":
-        "recently" | /*(1)*/
-        "minutes" | /*(2)*/
-        "hours" | /*(3)*/
-        "this_week" | /*(4)*/
-        "this_month" | /*(5)*/
-        "long_ago" | /*(6)*/,
-    "value": null | int
-}
-```
+#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-clock-time-two-outline: | :material-calendar:</span><span class="mdx-badge__text">[LastSeen](#lastseen) | datetime</span></span>
+Дата последней активности. Может быть как и точным временем `datetime`, так и относительным объектом `LastSeen` (`недавно`, `несколько минут назад` и тд). `None`, если пользователь заблокирован, приватный аккаунт или показ скрыт в настройках приватности пользователя.
 
-1. Недавно
-2. {value} минут назад
-3. {value} часов назад
-4. На этой неделе
-5. В этом месяце
-6. Давно (примерно 3+ месяцев)
+!!! info
+    Тип `datetime` уже больше не встречается, но был в некоторых версиях ИТД. Оставлен для совместимости (может, еще попадется?).
 
 #### online <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Находится ли пользователь в онлайне.
@@ -666,3 +649,23 @@ me.privacy.wall_access = AccessType.EVERYONE
 me.privacy.is_private = True
 me.privacy.update_from_fields()
 ```
+
+---
+
+# LastSeen
+
+## Аттрибуты
+
+#### unit <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[LastSeenUnit](enums.md#lastseenunit)</span></span>
+Юнит (минута, час, день и тд).
+
+#### value <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество юнитов. `None`, если юнит неисчисляемый (`long_ago`, `this_week`, `just_now`, `recently`, `this_month`).
+
+!!! tip
+    Для получения человеко читаемого формата используйте `str(last_seen)`:
+    ```py
+    last_seen = LastSeen(unit=LastSeenUnit.MINUTES, value=2) # пример как может выглядеть user.last_seen
+
+    str(last_seen) # 2 минуты назад
+    ```

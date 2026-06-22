@@ -1,12 +1,19 @@
-site_name: itd-sdk
+site_name: ИТД SDK
 site_url: https://itdsdk.qzz.io/docs/
 repo_url: https://github.com/itd-sdk/itd-sdk
 
 theme:
     name: material
+    custom_dir: docs/overrides
+    # logo: assets/logo.png
+    favicon: assets/favicon.ico
+    language: ru
+
     features:
         - navigation.footer
+        - navigation.instant
         - content.code.annotate
+        - navigation.expand
 
     palette:
         scheme: slate
@@ -34,7 +41,9 @@ markdown_extensions:
         toc_depth: 0
 
 extra_css:
-    - stylesheets/extra.css
+    - stylesheets/badge.css
+    - stylesheets/margin.css
+    - stylesheets/icon.css
 
 nav:
     - index.md
@@ -70,8 +79,21 @@ nav:
         - api/utils.md
     - migration.md
 
+extra:
+    homepage: https://itdsdk.qzz.io
+    social:
+        - icon: itd
+          link: https://xn--d1ah4a.com/@itd-sdk
+        - icon: fontawesome/brands/github
+          link: https://github.com/itd-sdk
+        - icon: fontawesome/brands/telegram
+          link: https://t.me/nwokez
+        - icon: fontawesome/brands/youtube
+          link: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
 # часть кофига взята из aioitd
 plugins:
+    - search
     - mkdocstrings:
         handlers:
             python:

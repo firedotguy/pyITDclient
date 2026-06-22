@@ -22,8 +22,11 @@ ID поста.
 #### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span>
 Опросник.
 
-#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comments](comment.md#comments)]</span></span>
+#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">[Comments](comment.md#comments)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Комментарии.
+
+#### first_comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comment](comment.md#comment)]</span></span>
+Статичный список комментариев (при запросе на `GET api/posts/` отдается список максимум из трех комментариев).
 
 #### likes_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Количество лайков.
@@ -112,7 +115,7 @@ post = Post.new(
 #### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения. Может быть списком, объектом файла или UUID.
 
-#### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">NewPoll</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[NewPoll](#newpoll)</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Опросник.
 
 !!! example
@@ -164,7 +167,7 @@ post = Post.new(
 
 ### Параметры
 
-#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-poll: || :material-identifier: | :material-poll:</span><span class="mdx-badge__text">list[UUID | PollOption] | UUID | PollOption</span></span> <span class="mdx-badge mdx-badge_required"> <span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-poll: || :material-identifier: | :material-poll:</span><span class="mdx-badge__text">list[UUID | [PollOption](#polloption)] | UUID | [PollOption](#polloption)</span></span> <span class="mdx-badge mdx-badge_required"> <span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Опции для голосования. Может быть списком, объектом опции (можно взять из `poll.options`) или UUID.
 
 !!! example
@@ -186,6 +189,9 @@ post = Post.new(
             ]
         )
         ```
+
+!!! tip
+    Если вам надо переголосвать, просто отправьте запрос еще раз. Новый вариант перезапишет предыдущий. 
 
 ### Ошибки
  - `NotFoundError` (`Post`) - пост не найден.
@@ -373,7 +379,7 @@ link = post.link
 
 # :material-text-short: Span
 
-### Аттрибуты
+## Аттрибуты
 #### length <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Длина спана.
 
@@ -388,6 +394,112 @@ link = post.link
 
 #### tag <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Хэштэг. `None`, если `type` != `SpanType.HASHTAG`.
+
+---
+
+# :material-poll: Poll
+Опрос.
+
+## Аттрибуты
+#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID опроса.
+
+#### post_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID поста, к которому прикреплен опросник.
+
+#### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
+Дата создания поста.
+
+#### question <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Вопрос опроса.
+
+#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-poll:</span><span class="mdx-badge__text">list[[PollOption](#polloption)]</span></span>
+Варианты ответов.
+
+#### multiple <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Можно ли выбирать несколько вариантов ответа.
+
+#### is_voted <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Проголосовал ли пользователь в опросе.
+
+#### voted_option_ids <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier:</span><span class="mdx-badge__text">list[UUID]</span></span>
+ID вариантов, за которые проголсовал пользователь. `[]`, если [пользователь не голосовал в опросе](#is_voted-bool).
+
+#### total_votes <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Общее количество голосов. `0`, если [пользователь не голосовал в опросе](#is_voted-bool).
+
+
+## :material-vote: Проголосовать
+```py
+poll.vote(
+    options=UUID('f12c70c7-141e-4dff-9e5b-87f039c7ba58')
+)
+```
+
+### Параметры
+
+#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-poll: || :material-identifier: | :material-poll:</span><span class="mdx-badge__text">list[UUID | [PollOption](#polloption)] | UUID | [PollOption](#polloption)</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+Опции для голосования. Может быть списком, объектом опции (можно взять из `poll.options`) или UUID.
+
+
+### Ошибки
+ - `NotFoundError` (`Post`) - пост не найден.
+ - `NotFoundError` (`Poll`) - опрос не найден (в посте нету опроса).
+ - `OptionsNotBelongError` - опции не принадлежат к этом опросу.
+ - `NotMultipleChoiceError` - в опросе можно проголосовать только за одну опцию.
+
+---
+
+# :material-poll: PollOption
+Вариант ответа в опросе.
+
+## Аттрибуты
+#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID варианта.
+
+#### text <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Содержание варианта.
+
+#### votes <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Общее количество голосов за вариант. `0`, если [пользователь не голосовал в опросе](#is_voted-bool).
+
+#### position <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Позиция варианта в опросе (индекс).
+
+
+## :material-vote: Проголосовать
+```py
+option.vote()
+```
+
+---
+
+# :fontawesome-solid-add: :material-poll: NewPoll
+Модель для создания нового опроса.
+
+```py
+poll = NewPoll(
+    question='чипс лейз без краба иле 10 детей',
+    options=[
+        'вкуссненькие чипсеки',
+        '10 детей',
+        'нет'
+    ],
+    multiple=False
+)
+```
+#### question <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+Вопрос опроса.
+
+#### options <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text:</span><span class="mdx-badge__text">list[str]</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
+Варианты ответов.
+
+#### multiple <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Можно ли выбирать несколько вариантов ответа. По умолчанию `False`.
+
+!!! question
+    Изначально планировалось объединить модель с [`Poll`](#poll), однако из-за разницы в полях (в объекте нужно указать `post_id`, который еще не создан) этого сделать не получилось.
+    Кстати если у вас есть идея как этом ожно реализовать лучше, открывайте issue.
 
 ---
 
