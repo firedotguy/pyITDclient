@@ -296,6 +296,11 @@ class ITDList(ITDBaseModel, list[T]):
     def all(self) -> list[T]:
         return self.load_all()
 
+    def clear(self):
+        super().clear()
+        self.cursor = None
+        self.has_more = True
+
 
 def _filter_bytes(args: tuple):
     filtered = []
