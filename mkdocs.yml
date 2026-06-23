@@ -55,6 +55,7 @@ nav:
         - Клиент: ref/client.md
         - Базовые модели: ref/base.md
         - Посты: ref/posts.md
+        - Комментарии: ref/comments.md
         - Пользователи: ref/users.md
         - Уведомления: ref/notifications.md
         - ref/enums.md
@@ -83,7 +84,7 @@ extra:
     homepage: https://itdsdk.qzz.io
     social:
         - icon: itd
-          link: https://xn--d1ah4a.com/@itd-sdk
+          link: https://xn--d1ah4a.com/@itd_sdk
         - icon: fontawesome/brands/github
           link: https://github.com/itd-sdk
         - icon: fontawesome/brands/telegram

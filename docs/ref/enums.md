@@ -123,3 +123,16 @@
 
 !!! note
     Если цель - пользователь (например при подписке), значение будет `None`.
+
+### CommentSorting
+Сортировка комментариев.
+
+ - `CommentSorting.NEW`: Сперва новые.
+ - `CommentSorting.POPULAR`: Сперва популярные (по колву лайков и ответов).
+ - `CommentSorting.OLD`: Сперва сатрые.
+
+!!! warning
+    Сортировка по дате создания (`CommentSorting.NEW` и `CommentSorting.OLD`) плохо работает на стороне ИТД.
+
+### UserAgent
+User-Agent заголовок.

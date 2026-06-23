@@ -97,6 +97,12 @@ ID закрепленного поста. `None`, если у пользоват
 #### liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">[LikedPosts](posts.md#likedposts)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Список лайкнутых постов.
 
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Ссылка на пользователя.
+
+#### link <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Тоже самое, что и [url](#url-str-property).
+
 ## Получить пользователя
 ```python
 user = User('itd_sdk')
@@ -354,6 +360,12 @@ Username.
 #### privacy <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user-lock:</span><span class="mdx-badge__text">[Privacy](#privacy)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Данные приватности пользователя.
 
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Ссылка на пользователя.
+
+#### link <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Тоже самое, что и [url](#url-str-property_1).
+
 ## Конвертировать в User
 ```py
 user = me.to_user()
@@ -391,7 +403,7 @@ me.update_from_fields()
 Биография (о себе).
 
 #### banner_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier: | UNSET</span><span class="mdx-badge__text">UUID | Unset</span></span>
-ID баннера (должен быть загружен через `upload_file`).
+ID файла баннера.
 
 !!! tip
 
@@ -617,7 +629,7 @@ Username.
 
 ## Аттрибуты
 !!! info
-    Все аттрибуты кроме `show_last_seen` автоматичесвки подгрузятся из модели пользователя (если она была загружена).
+    Все аттрибуты кроме `show_last_seen` автоматически подгрузятся из модели пользователя (если она была загружена).
 
 #### wall_access <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AccessType](enums.md#accesstype)</span></span>
 Доступ к созданию постов на вашей стене.

@@ -50,14 +50,26 @@ ITDClient('xxx', config=config)
 #### anti_rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Включен ли анти-рейт лимит. По умолчанию `True` для ботов, `False` для остальных.
 
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(limiter=HalfRateLimiter)`.
+
 #### burst_requests <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Можно ли отправлять запросы без задержек (ожидает все 60сек 1 раз, без задержек между запросами). По умолчанию `False` для ботов, `True` для остальных.
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(limiter=BurstRateLimiter)`.
 
 #### anti_ip_ban <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Включена ли защита от [бана по IP](limits.md#ip). По умолчанию `True`.
 
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(ip_limiter=IPRateLimiter())`.
+
 #### limit_coefficient <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-numbers-16:</span><span class="mdx-badge__text">float</span></span>
 Коэффициент лимита (можно уменьшить, чтобы был меньше шанс на рейт лимит). По умолчанию `0.75` для ботов, `0.9` для клиентов и `1` для однозразовых скриптов.
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0.
 
 #### auto_acquire <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли ждать перед запросом (acquire). Если выключено, нужно вызвать функцию `acquire_limiters` вручную. Полезно для ботов, которые делает запросы по кругу. По умолчанию `False`.
@@ -73,6 +85,10 @@ ITDClient('xxx', config=config)
         acquire_limiters()
     ```
 `acquire_limiters` берет самый большой лимит из вызванных функций и ждет только его (оптимизация).
+
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(auto_acquire=True)`.
 
 #### is_default <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Сделать ли клиент дефолтным по умолчанию. По умолчанию дефолтным становится первый инициализированный клиент.
@@ -130,7 +146,7 @@ ITDClient('xxx', config=config)
 #### url_api <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 URL к API ИТД (`https://xn--d1ah4a.com/api`). Если не указан, берется из [url](#url-str).
 
-#### user_agent <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+#### user_agent <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str | [UserAgent](ref/enums.md#useragent)</span></span>
 User-Agent, под которым обращатся к API ИТД. Если вы делаете свой клиент, можете поставить агент как его имя. По умолчанию стоит дефолтный браузерный user-agent.
 
 #### solve_challenge <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
@@ -138,6 +154,9 @@ User-Agent, под которым обращатся к API ИТД. Если в�
 
 #### load_comments_from_post <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли брать комментарии из уже полученного поста (ИТД дает 3-4 комментария при получении поста). При загрузке следующего батча комментарии могут дублироваться. По умолчанию `False`.
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.7.0. Используйте `post.first_comments` для получения комменатриев сразу с поста и  `post.comments` для отдельной загрузки.
 
 #### parse_mode <span class="mdx-badge"><span class="mdx-badge__icon">:simple-markdown:</span><span class="mdx-badge__text">[ParseMode](ref/enums.md#parsemode)</span></span>
 Режим парсинга (автоматически генерирует `spans` при создании или редактировании постов). По умолчанию `ParseMode.NO`.

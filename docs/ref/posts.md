@@ -5,7 +5,7 @@
 ID поста.
 
 #### author <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[User](users.md#user)</span></span>
-Автора поста.
+Автор поста.
 
 #### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата создания поста.
@@ -22,10 +22,10 @@ ID поста.
 #### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span>
 Опросник.
 
-#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">[Comments](comment.md#comments)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+#### comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">[Comments](comments.md#comments)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Комментарии.
 
-#### first_comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comment](comment.md#comment)]</span></span>
+#### first_comments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">list[[Comment](comments.md#comment)]</span></span>
 Статичный список комментариев (при запросе на `GET api/posts/` отдается список максимум из трех комментариев).
 
 #### likes_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
@@ -70,6 +70,11 @@ ID получателя поста. `None`, если пост создан не 
 #### vs <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Уникальный токен поста, для каждого пользователя он свой. Обновляется при получении поста. Испольуется при [просмотре поста](#view).
 
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Ссылка на пост.
+
+#### link <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Тоже самое, что и [url](#url-str).
 
 ## Получить
 ```python
@@ -289,7 +294,7 @@ edited_at = post.edit(
 ### Параметры
 
 #### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
-Содержание поста.
+Новое содержание поста.
 
 #### spans <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text-short:</span><span class="mdx-badge__text">list[Span]</span></span>
 Стилизация. Автоматически заполняется, если установлен [parse_mode](../config.md#parse_mode-parsemode).
@@ -499,7 +504,7 @@ poll = NewPoll(
 
 !!! question
     Изначально планировалось объединить модель с [`Poll`](#poll), однако из-за разницы в полях (в объекте нужно указать `post_id`, который еще не создан) этого сделать не получилось.
-    Кстати если у вас есть идея как этом ожно реализовать лучше, открывайте issue.
+    Кстати если у вас есть идея как это можно реализовать лучше, открывайте issue.
 
 ---
 
@@ -539,10 +544,8 @@ posts = Posts.following()
 posts = Posts.clan()
 ```
 
-### Ошибки
-Ошибки появляются только при загрузке постов (`posts.load()` / `for post in posts` / `posts[0]`).
-
- - `ValidationError`: ошибка валидации (из-за слишком большого лимита батча).
+## Ошибки при получении
+ - `ValidationError` - ошибка валидации (из-за слишком большого лимита батча).
 
 ## :fontawesome-solid-user: UserPosts
 Посты пользователя.
@@ -588,11 +591,9 @@ posts = UserPosts.new('fdg')
 posts = UserPosts.popular('fdg')
 ```
 
-### Ошибки
-Ошибки появляются только при загрузке постов (`posts.load()` / `for post in posts` / `posts[0]`).
-
- - `NotFoundError`: пользователь не найден.
- - `ValidationError`: ошибка валидации (может быть из-за слишком большого лимита батча).
+## Ошибки при получении
+ - `NotFoundError` - пользователь не найден.
+ - `ValidationError` - ошибка валидации (может быть из-за слишком большого лимита батча).
 
 ### :octicons-clock-16: Ожидание поста
 ```py
@@ -621,11 +622,9 @@ post = posts.wait_for_post(
     posts = User('fdg').liked_posts
     ```
 
-### Ошибки
-Ошибки появляются только при загрузке постов (`posts.load()` / `for post in posts` / `posts[0]`).
-
- - `NotFoundError`: пользователь не найден.
- - `ValidationError`: ошибка валидации (может быть из-за слишком большого лимита батча).
+## Ошибки при получении
+ - `NotFoundError` - пользователь не найден.
+ - `ValidationError` - ошибка валидации (может быть из-за слишком большого лимита батча).
 
 ### :octicons-clock-16: Ожидание поста
 ```py
@@ -660,11 +659,10 @@ post = posts.wait_for_post(
 #### hashtag <span class="mdx-badge"><span class="mdx-badge__icon">:material-text: | :fontawesome-solid-hashtag:</span><span class="mdx-badge__text">str | Hashtag</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
 Хэштэг. Может быть объектом хэштэга или строкой (без "#").
 
-### Ошибки
-Ошибки появляются только при загрузке постов (posts.load() / for post in posts / posts[0]).
-
- - `TooLargeError`: слишком длинный хэштэг.
- - `NotFoundError`: хэштэг не найден.
+## Ошибки при получении
+ - `TooLargeError` - слишком длинный хэштэг.
+ - `NotFoundError` - хэштэг не найден.
+ - `ValidationError` - ошибка валидации (слишком большой лимит).
 
 ### :octicons-clock-16: Ожидание поста
 ```py
