@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import cached_property
 from typing import TYPE_CHECKING, overload
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from itd._default import get_default_client
 from itd.api.etc import get_who_to_follow
@@ -156,11 +157,9 @@ class Subscription(ITDBaseModel):
     def toggle_auto_renewal(self) -> bool:
         return self.set_auto_renewal(not self.auto_renewal)
 
-    @property
+    @cached_property
     def payment_methods(self):
-        if getattr(self, '_payment_methods', None) is None:
-            self._payment_methods = get_payment_methods(self.client).json()['data']
-        return self._payment_methods
+        return get_payment_methods(self.client).json()['data']
 
     def __bool__(self):
         return self.active
@@ -222,21 +221,17 @@ class _UserBase(ITDBaseModel):
     def _refresh(self, *, client: Client):
         return get_user(client, self._identifier).json()
 
-    @property
+    @cached_property
     def posts(self) -> UserPosts:
-        if not hasattr(self, '_posts'):
-            from itd.post import UserPosts
+        from itd.post import UserPosts
 
-            self._posts = UserPosts(self, client=self.client)
-        return self._posts
+        return UserPosts(self, client=self.client)
 
-    @property
+    @cached_property
     def liked_posts(self) -> LikedPosts:
-        if not hasattr(self, '_liked_posts'):
-            from itd.post import LikedPosts
+        from itd.post import LikedPosts
 
-            self._liked_posts = LikedPosts(self, client=self.client)
-        return self._liked_posts
+        return LikedPosts(self, client=self.client)
 
     @property
     def url(self) -> str:
@@ -252,10 +247,6 @@ class _UserBase(ITDBaseModel):
 
 class User(_UserBase):
     _validator = lambda _: _UserValidate
-    _fields_from_data: set[str] = set()
-
-    _followers: list[User] = []
-    _following: list[User] = []
 
     is_following: bool = Field(False, alias='isFollowing')
     is_followed_by: bool = Field(False, alias='isFollowedBy')
@@ -399,17 +390,13 @@ class User(_UserBase):
 
         return Post.new(content, spans, attachments, poll, self, client or self.client)
 
-    @property
+    @cached_property
     def following(self) -> list[User]:
-        if not self._following:
-            self._following = [User.from_dict(user, client=self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
-        return self._following
+        return [User.from_dict(user, client=self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
 
     @property
     def followers(self) -> list[User]:
-        if not self._followers:
-            self._followers = [User.from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
-        return self._followers
+        return [User.from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
 
     def get_follow_status(self) -> bool:
         return get_follow_status(self)
@@ -425,9 +412,10 @@ class User(_UserBase):
 class _UserValidate(BaseModel, User):
     @field_validator('pin', mode='plain')
     @classmethod
-    def validate_pin(cls, pin: dict | None):
+    def validate_pin(cls, pin: dict | None, info: ValidationInfo):
+        assert info.context
         if pin:
-            return Pin(pin)
+            return Pin(pin, client=info.context.get('client'))
 
 
 class Me(_UserBase):
@@ -449,9 +437,6 @@ class Me(_UserBase):
         super().__init__('me', client)
 
         self.blocked: Blocked = Blocked()
-        self._followers: Followers | None = None
-        self._following: Following | None = None
-        self._pins: list[Pin] = []
         self.privacy: Privacy = Privacy(self.client)
         self.profile: Profile = Profile(self.client)
         if not self.client._user:
@@ -528,23 +513,17 @@ class Me(_UserBase):
             else:
                 raise PinNotOwnedError(pin.slug)
 
-    @property
+    @cached_property
     def followers(self) -> 'Followers':
-        if not self._followers:
-            self._followers = Followers(self.id)
-        return self._followers
+        return Followers(self.id)
 
-    @property
+    @cached_property
     def following(self) -> 'Following':
-        if not self._following:
-            self._following = Following(self.id)
-        return self._following
+        return Following(self.id)
 
-    @property
+    @cached_property
     def pins(self) -> list[Pin]:
-        if not self._pins:
-            self._pins = [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
-        return self._pins
+        return [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
 
     def _refresh(self, *, client: Client):
         user = get_user(client, self._identifier).json()
@@ -559,14 +538,16 @@ class Me(_UserBase):
 class _MeValidate(BaseModel, Me):
     @field_validator('pin', mode='plain')
     @classmethod
-    def validate_pin(cls, pin: dict | None) -> Pin | None:
+    def validate_pin(cls, pin: dict | None, info: ValidationInfo) -> Pin | None:
+        assert info.context
         if pin:
-            return Pin(pin)
+            return Pin(pin, client=info.context.get('client'))
 
     @field_validator('subscription', mode='plain')
     @classmethod
-    def validate_subscription(cls, subscription: dict) -> Subscription:
-        return Subscription(subscription)
+    def validate_subscription(cls, subscription: dict, info: ValidationInfo) -> Subscription:
+        assert info.context
+        return Subscription(subscription, client=info.context.get('client'))
 
 
 class Followers(ITDList[User]):

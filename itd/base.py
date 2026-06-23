@@ -72,13 +72,13 @@ class ITDBaseModel:
         if not self._refreshable:
             l.warning(f'{self.__class__.__name__} is not refreshable but refresh is called')
         self.load_status = LoadStatus.LOADING
-        self._fill_from_data(self._refresh(client=client or self.client))
+        self._fill_from_data(self._refresh(client=client or self.client), context={'client': client or self.client})
         self.load_status = LoadStatus.FULL
         return self
 
-    def _fill_from_data(self, data: dict):
+    def _fill_from_data(self, data: dict, *, context: dict = {}):
         assert self._validator, 'Unable to use fill_from_data without a validator'
-        validated = self._validator().model_validate(data)  # ty: ignore[missing-argument]
+        validated = self._validator().model_validate(data, context=context)  # ty: ignore[missing-argument]
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             object.__setattr__(self, name, value)
@@ -86,11 +86,12 @@ class ITDBaseModel:
         self._post_refresh()
 
     @classmethod
-    def from_dict(cls, data: dict, *, client: Client | None = None):
+    def from_dict(cls, data: dict, *, context: dict = {}, client: Client | None = None):
         instance = cls.__new__(cls)
         ITDBaseModel.__init__(instance, client)
 
-        instance._fill_from_data(data)
+        context.setdefault('client', client or instance.client)
+        instance._fill_from_data(data, context=context)
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
@@ -104,16 +105,14 @@ class ITDBaseModel:
                 value = None
                 exc = e
 
-            if name == 'is_following':
-                l.debug(_getattr(self, '_loaded_attrs'))
             if (
                 _getattr(self, '_refreshable')
                 and not name.startswith('_')
                 and name not in ('client', 'model_fields_set', 'load_status')
                 and not callable(value)
                 and not isinstance(_getattr(type(self), name), property)
-                and name not in _getattr(self, '_loaded_attrs')
                 and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
+                and name not in (_getattr(self, '_loaded_attrs') or {name})
                 and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)

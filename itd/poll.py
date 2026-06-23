@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from itd.api.polls import vote
 from itd.base import ITDBaseModel
@@ -16,18 +16,13 @@ if TYPE_CHECKING:
 
 class PollOption(ITDBaseModel):
     _refreshable = False
+    _validator = lambda _: _PollOptionValidate
 
     id: UUID
     text: str
     votes: int = Field(0, alias='votesCount')
     position: int
     _post_id: UUID
-
-    def __init__(self, data: dict, client: Client | None = None):
-        super().__init__(client)
-
-        for name, value in _PollOptionValidate.model_validate(data).__dict__.items():
-            setattr(self, name, value)
 
     def __str__(self) -> str:
         return self.text
@@ -45,6 +40,7 @@ class _PollOptionValidate(BaseModel, PollOption):
 
 class Poll(ITDBaseModel):
     _refreshable = False
+    _validator = lambda _: _PollValidate
 
     id: UUID
     post_id: UUID = Field(alias='postId')
@@ -57,14 +53,6 @@ class Poll(ITDBaseModel):
     is_voted: bool = Field(False, alias='hasVoted')
     voted_option_ids: list[UUID] = Field([], alias='votedOptionIds')
     total_votes: int = Field(0, alias='totalVotes')
-
-    def __init__(self, poll: dict, client: Client | None = None):
-        super().__init__(client)
-        for name, value in _PollValidate.model_validate(poll).__dict__.items():
-            setattr(self, name, value)
-
-        for option in self.options:
-            option._client = self.client
 
     def __str__(self) -> str:
         return self.question
@@ -110,15 +98,14 @@ class Poll(ITDBaseModel):
 
 
 class _PollValidate(BaseModel, Poll):
-    pass
-
     @field_validator('options', mode='plain')
     @classmethod
-    def validate_options(cls, options: list[dict]):
-        return [PollOption(option) for option in options]
+    def validate_options(cls, options: list[dict], info: ValidationInfo):
+        assert info.context
+        return [PollOption.from_dict(option, client=info.context.get('client')) for option in options]
 
     @model_validator(mode='after')
-    def set_post_id(self) -> '_PollValidate':
+    def validate_model(self) -> '_PollValidate':
         for option in self.options:
             option._post_id = self.post_id
         return self

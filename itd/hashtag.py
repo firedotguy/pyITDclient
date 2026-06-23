@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -37,13 +38,11 @@ class Hashtag(ITDBaseModel):
     def __hash__(self):
         return int(self.id)
 
-    @property
+    @cached_property
     def posts(self) -> 'HashtagPosts':
-        if not hasattr(self, '_posts'):
-            from itd.post import HashtagPosts
+        from itd.post import HashtagPosts
 
-            self._posts = HashtagPosts(self, client=self.client)
-        return self._posts
+        return HashtagPosts(self, client=self.client)
 
     @classmethod
     def search(cls, query: str):
