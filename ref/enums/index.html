@@ -501,6 +501,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../comments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Комментарии
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../users/" class="md-nav__link">
         
   
@@ -1312,7 +1340,7 @@
 <li><code>LastSeenUnit.THIS_MONTH</code>: В этом месяце.</li>
 <li><code>LastSeenUnit.LONG_AGO</code>: Давно.</li>
 </ul>
-<h3 id="notifcationtype">NotifcationType</h3>
+<h3 id="notificationtype">NotificationType</h3>
 <p>Тип уведолмения.</p>
 <ul>
 <li><code>NotifcationType.LIKE</code>: Лайк поста.</li>
@@ -1344,6 +1372,19 @@
 <p class="admonition-title">Note</p>
 <p>Если цель - пользователь (например при подписке), значение будет <code>None</code>.</p>
 </div>
+<h3 id="commentsorting">CommentSorting</h3>
+<p>Сортировка комментариев.</p>
+<ul>
+<li><code>CommentSorting.NEW</code>: Сперва новые.</li>
+<li><code>CommentSorting.POPULAR</code>: Сперва популярные (по колву лайков и ответов).</li>
+<li><code>CommentSorting.OLD</code>: Сперва сатрые.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Сортировка по дате создания (<code>CommentSorting.NEW</code> и <code>CommentSorting.OLD</code>) плохо работает на стороне ИТД.</p>
+</div>
+<h3 id="useragent">UserAgent</h3>
+<p>User-Agent заголовок.</p>
 
 
 
@@ -1430,7 +1471,7 @@
       
       
     
-    <a href="https://xn--d1ah4a.com/@itd-sdk" target="_blank" rel="noopener" title="xn--d1ah4a.com" class="md-social__link">
+    <a href="https://xn--d1ah4a.com/@itd_sdk" target="_blank" rel="noopener" title="xn--d1ah4a.com" class="md-social__link">
       <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 18">
   <path fill="currentColor" d="M12 3V0h12v3h-4v11h-4V3h-4Z"/>
