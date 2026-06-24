@@ -113,6 +113,7 @@ class ITDBaseModel:
                 and not isinstance(_getattr(type(self), name), property)
                 and _getattr(self, 'load_status') in (LoadStatus.NO, LoadStatus.PARTIALLY)
                 and name not in (_getattr(self, '_loaded_attrs') or {name})
+                and self.client.config.load_on_getattr
                 and not (isinstance(value, ITDBaseModel) and not value._load_with_parent)
             ):
                 l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)

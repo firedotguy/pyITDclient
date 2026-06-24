@@ -91,8 +91,8 @@ class Config:
 
     userposts_add_pinned_post: bool = True
 
-    # load_on_init: bool = True
-    # load_on_getattr: bool = False
+    # load_on_init: bool = False
+    load_on_getattr: bool = True
     auto_load: bool | None = None
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
@@ -211,7 +211,11 @@ class Config:
             self._post_update_stats = self.post_update_stats
 
         if self.load_comments_from_post is not None:
-            l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
+            l.warning('config.load_comments_from_post is deprecated and will be removed in 2.7.0.')
+
+        if self.auto_load is not None:
+            l.warning('config.auto_load is deprecated and will be removed in 2.8.0. Please use load_on_getattr.')
+            self.load_on_getattr = self.auto_load
 
 
 class AccessToken(BaseModel):
