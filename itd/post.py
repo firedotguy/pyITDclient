@@ -324,6 +324,7 @@ class Post(ITDBaseModel):
         instance = super().from_dict(data, context=context, client=client)
         instance.source = source
         instance.source_context = source_context
+        instance.visible = False
 
         return instance
 
