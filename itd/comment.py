@@ -34,7 +34,7 @@ class Comment(ITDBaseModel):
     replies_count: int = Field(0, alias='repliesCount')
     is_liked: bool = Field(False, alias='isLiked')
 
-    attachments: list[CommentAttach]
+    attachments: list[CommentAttach] = Field(default_factory=list)
     first_replies: list[Comment] = Field(default_factory=list, alias='replies')
     reply_to: User | None = None  # author of replied comment, if this comment is reply
 

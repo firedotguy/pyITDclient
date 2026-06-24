@@ -174,7 +174,7 @@ class Config:
         if self.anti_rate_limit is not None:
             l.warning(
                 f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(limiter={"HalfRateLimiter" if self.anti_rate_limit else None}).'
+                f'Please use set_limiter_config(LimiterConfig(limiter={"HalfRateLimiter" if self.anti_rate_limit else None})).'
             )
             set_limiter_config(LimiterConfig(limiter=HalfRateLimiter if self.anti_rate_limit else None))
         if self.burst_requests is not None:

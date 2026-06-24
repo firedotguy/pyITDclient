@@ -3,9 +3,11 @@ from __future__ import annotations
 from abc import abstractmethod
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, get_type_hints, overload
+from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 from requests import Response
 from requests.exceptions import JSONDecodeError
 
@@ -119,6 +121,29 @@ class ITDBaseModel:
                 l.info('refresh %s field=%s load_status=%s', self.__class__.__name__, name, _getattr(self, 'load_status').value)
                 self.refresh()
                 return object.__getattribute__(self, name)
+
+            annotations = {}
+            [annotations.update(_getattr(c, '__annotations__')) for c in _getattr(self, '__class__').__mro__ if _getattr(c, '__annotations__')]
+
+            if isinstance(value, FieldInfo) or (not name.startswith('_') and exc is not None and not _getattr(self, 'client').config.load_on_getattr):
+                value_type = annotations[name]
+                if 'None' in value_type:
+                    l.warning('returned fake value None for %s: please load data (call refresh()) before get attributes', name)
+                    return None
+                elif value_type == 'int':
+                    l.warning('returned fake value 0 for %s: please load data (call refresh()) before get attributes', name)
+                    return 0
+                elif value_type == 'UUID':
+                    l.warning('returned fake value 00000000-0000-0000-0000-000000000010 for %s: please load data (call refresh()) before get attributes', name)
+                    return UUID('00000000-0000-0000-0000-000000000000')
+                elif value_type == 'str':
+                    l.warning('returned fake value "" for %s: please load data (call refresh()) before get attributes', name)
+                    return ''
+                elif value_type == 'bool':
+                    l.warning('returned fake value False for %s: please load data (call refresh()) before get attributes', name)
+                    return False  # дилема
+                l.error('cannot fake data for %s (type %s): please load data (call refresh()) before get attributes', name, value_type)
+                raise RuntimeError(f'cannot fake data for {name} (type {value_type}): please load data (call refresh()) before get attributes')
 
             if exc is not None:
                 raise exc
