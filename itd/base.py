@@ -162,6 +162,7 @@ class ITDList(ITDBaseModel, list[T]):
     _refreshable = False
     has_more = True
     idx = 0
+    _is_page_pagination: bool = False
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return {}
@@ -183,9 +184,15 @@ class ITDList(ITDBaseModel, list[T]):
             l.warning('skip load because has_more=False')
             return []
 
-        limit = limit or (client or self.client).config.batch_sizes._values[self.__class__.__name__.lower()]
+        default_limit = (client or self.client).config.batch_sizes._values[self.__class__.__name__.lower()]
+        limit = limit or default_limit
         if isinstance(count, int) and count < limit:
             limit = count
+
+        if self._is_page_pagination and limit != default_limit:
+            l.warning('unable to change limit in %s (page pagination), using default %s', self.__class__.__name__.lower(), default_limit)
+            count = limit = default_limit
+
         l.debug('load %s count=%s limit=%s cursor=%s', self.__class__.__name__.lower(), count, limit, self.cursor)
 
         # Batch = load one batch (limit), All = load everything, int = load exactly N
@@ -291,7 +298,7 @@ class ITDList(ITDBaseModel, list[T]):
             if value is None or isinstance(self.client.config.load_on_getitem, All):
                 l.debug('getitem load all')
                 self.load_all()
-            elif isinstance(self.client.config.load_on_getitem, Batch):
+            elif self._is_page_pagination or isinstance(self.client.config.load_on_getitem, Batch):
                 l.debug('getitem load batch')
                 self.load(BATCH)
             else:
@@ -305,7 +312,7 @@ class ITDList(ITDBaseModel, list[T]):
         if getattr(self, 'total', None) and self.idx >= self.total:
             raise StopIteration()
         if self.idx >= len(self) and (self.has_more or self.client.config.force_load_lists):
-            l.debug('not enough items to call next - load')
+            l.debug('not enough items to call next, load')
             self.load(self.client.config.load_on_iter)
         if self.idx >= len(self):
             raise StopIteration()

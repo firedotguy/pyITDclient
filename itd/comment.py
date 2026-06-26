@@ -98,7 +98,7 @@ class Comment(ITDBaseModel):
             self.replies.total += 1
             self.replies_count += 1
 
-        if self._post:
+        if self._post is not None:
             self._post.comments_count += 1
         return comment
 
@@ -271,6 +271,7 @@ class Replies(ITDList[Comment]):
     _post: Post
     total: int
     cursor: int = 1
+    _is_page_pagination = True
 
     def _fetch(self, client: Client, limit: int):
         return get_replies(client or self._client, self._base_comment.id, self.cursor, limit).json()['data']

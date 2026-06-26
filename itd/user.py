@@ -553,6 +553,7 @@ class _MeValidate(BaseModel, Me):
 class Followers(ITDList[User]):
     _load_with_parent = False
     cursor: int = 1
+    _is_page_pagination = True
 
     def __init__(self, id: UUID):
         self.user_id = id
