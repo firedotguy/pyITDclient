@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, get_type_hints, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel

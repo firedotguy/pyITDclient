@@ -36,7 +36,7 @@ class Comment(ITDBaseModel):
 
     attachments: list[CommentAttach] = Field(default_factory=list)
     first_replies: list[Comment] = Field(default_factory=list, alias='replies')
-    reply_to: User | None = None  # author of replied comment, if this comment is reply
+    reply_to: User | None = Field(None, alias='replyTo')  # author of replied comment, if this comment is reply
 
     _post: Post | None = None
     _base_comment: Comment | None = None
@@ -147,6 +147,10 @@ class Comment(ITDBaseModel):
     @property
     def link(self):
         return self.url
+
+    @property
+    def is_reply(self):
+        return self.reply_to is not None
 
 
 class _CommentValidate(BaseModel, Comment):

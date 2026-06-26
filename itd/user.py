@@ -200,7 +200,7 @@ class _UserBase(ITDBaseModel):
     id: UUID
     username: str
     display_name: str = Field(alias='displayName')
-    avatar: str
+    avatar: str = ''  # no avatar in reply_to
     verified: bool = False
     pin: Pin | None = None
     banner: str | None = None
