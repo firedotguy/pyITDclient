@@ -270,6 +270,7 @@ class Post(ITDBaseModel):
         self.visible = False
         self.comments = Comments()
         self.comments._post = self
+        self._extra_context = {'source': source, 'source_context': source_context}
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
@@ -427,7 +428,7 @@ class Post(ITDBaseModel):
         Args:
             entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел пост). Если None, заполнится исходя из exited_at. Defaults to None.
             exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, заполнится исходя из duration и entered_at (если есть) или datetime.now. Defaults to None.
-            duration (int | None, optional): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+. если None, вычисляется исхоодя из длины поста и вложений. Defaults to None.
+            duration (int | None, optional): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+. если None, вычисляется исходя из длины поста и вложений. Defaults to None.
             reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
             client (Client | None, optional): Клиент. Defaults to None.
         """
@@ -447,6 +448,7 @@ class Post(ITDBaseModel):
             c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
         else:
             l.error('old post viewing is no more supported. Please enable dwell_tracker in config.')
+            return
 
         if c == self.client:
             self.is_viewed = True
@@ -762,6 +764,7 @@ class UserPosts(_BasePosts):
 class LikedPosts(_BasePosts):  # [] if forbidden
     _load_with_parent = False
     cursor: datetime | None = None  # actually datetime but in runtime its string
+    source = ViewSource.PROFILE
 
     def __init__(self, user: str | UUID | _UserBase, client: Client | None = None) -> None:
         super().__init__(client)

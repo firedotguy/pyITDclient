@@ -53,6 +53,7 @@ class ITDBaseModel:
         self._client = client or get_default_client()
 
         self._loaded_attrs: set[str] = set()
+        self._extra_context = {}
 
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
@@ -80,6 +81,7 @@ class ITDBaseModel:
 
     def _fill_from_data(self, data: dict, *, context: dict = {}):
         assert self._validator, 'Unable to use fill_from_data without a validator'
+        context.update(self._extra_context)
         validated = self._validator().model_validate(data, context=context)  # ty: ignore[missing-argument]
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
