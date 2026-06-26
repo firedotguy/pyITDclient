@@ -76,12 +76,31 @@ class Comment(ITDBaseModel):
         Returns:
             Comment: Комментарий
         """
-        return Comment.from_dict(
-            add_reply_comment(client or self._client, self.id, user_id or self.author.id, content, format_attachments(attachments)).json(),
+        comment = Comment.from_dict(
+            add_reply_comment(
+                client or self._client,
+                self._base_comment.id if self.is_reply and self._base_comment is not None else self.id,
+                user_id or self.author.id,
+                content,
+                format_attachments(attachments)
+            ).json(),
             post=self._post,
             base_comment=self,
             client=client or self.client
         )
+        if self.is_reply:
+            assert self._base_comment is not None
+            self._base_comment.replies.insert(0, comment)
+            self._base_comment.replies.total += 1
+            self._base_comment.replies_count += 1
+        else:
+            self.replies.insert(0, comment)
+            self.replies.total += 1
+            self.replies_count += 1
+
+        if self._post:
+            self._post.comments_count += 1
+        return comment
 
     def like(self, client: Client | None = None) -> int:
         """Лайкнуть комментарий
@@ -135,9 +154,12 @@ class Comment(ITDBaseModel):
     def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
         instance = cls.__new__(cls)
         super(Comment, instance).__init__(client)
-        return cls.from_dict(
+        comment = cls.from_dict(
             add_comment(client or instance.client, post.id, content, format_attachments(attachments)).json(), post, client=client or instance.client
         )
+        post.comments_count += 1
+        post.comments.insert(0, comment)
+        return comment
 
     @property
     def url(self):
@@ -227,7 +249,7 @@ class Comments(ITDList[Comment]):
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None) -> Comment:
         comment = Comment.new(self._post, content, attachments, client=client or self.client)
-        self.insert(0, comment)
+        self.total += 1
         return comment
 
     @property
@@ -273,7 +295,4 @@ class Replies(ITDList[Comment]):
         return [Comment.from_dict(comment, self._post, self._base_comment, client=client) for comment in objects]
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None, *, author_id: str | UUID | None = None) -> 'Comment':
-        assert self._base_comment is not None
-        reply = self._base_comment.reply(content, attachments, to_nullable_uuid(author_id), client)
-        self.insert(0, reply)
-        return reply
+        return self._base_comment.reply(content, attachments, to_nullable_uuid(author_id), client)
