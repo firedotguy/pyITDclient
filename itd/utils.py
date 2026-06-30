@@ -66,7 +66,7 @@ def calc_view_duration(config: 'Config', text: str, attachments: list[PostAttach
     text_reading = round(len(text.split()) / config.view_read_speed * 60_000)
     image_reading = sum([config.view_images_speed for attachment in attachments if attachment.type == AttachType.IMAGE])
     # video_watching = sum([attachment.duration for attachment in attachments if attachment.type == AttachType.VIDEO]) # TODO
-    return text_reading + image_reading
+    return max(config.dwell_min_duration, min(config.dwell_max_duration, text_reading + image_reading))
 
 
 TAG_MAP = {

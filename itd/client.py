@@ -1,7 +1,7 @@
 from _io import BufferedReader
 from atexit import register
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 from typing import Callable, Literal, overload
@@ -17,7 +17,7 @@ from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
-from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent, ViewReason
 from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
@@ -116,7 +116,7 @@ class Config:
     retry_enabled: bool | None = None
     retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception]] = field(default_factory=lambda: (RateLimitError,))
+    retry_exceptions: tuple[type[Exception], ...] = field(default_factory=lambda: (RateLimitError,))
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -126,6 +126,11 @@ class Config:
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
     dwell_wait_durations: bool = False
+    dwell_max_duration: int = 30000
+    dwell_min_duration: int = 250
+    dwell_check_active: bool | None = None
+    dwell_check_active_interval: float = 5
+    dwell_inactive_timeout: int = 30
     post_view_increment: bool = False
     post_auto_view: bool = True  # view when called post.set_invisible()
 
@@ -155,9 +160,6 @@ class Config:
                 self._user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0'
             case _:
                 self._user_agent = self.user_agent
-
-        if self.dwell_wait_durations:
-            l.warning('config.dwell_wait_durations is deprecated and will be removed in 2.6.0.')
 
         if self.rate_limit is not None:
             l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
@@ -210,6 +212,11 @@ class Config:
         else:
             self._post_update_stats = self.post_update_stats
 
+        if self.dwell_check_active is None:
+            self._dwell_check_active = self.client_type == 'client'
+        else:
+            self._dwell_check_active = self.dwell_check_active
+
         if self.load_comments_from_post is not None:
             l.warning('config.load_comments_from_post is deprecated and will be removed in 2.7.0.')
 
@@ -245,6 +252,8 @@ class Client:
         self.refresh_token: str | None = None
         self._user: Me | None = None
         self.visible_posts: list[Post] = []
+        self._visible_posts_buffer: list[Post] = []
+        self.last_active = datetime.now()
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -264,14 +273,44 @@ class Client:
         if _default_client is None or config.is_default:
             set_default_client(self)
 
-        if self.auth_level > AuthLevel.NO and self.config.dwell_enabled:
-            self.dwell_tracker = DwellTracker(self)
-            self.dwell_tracker._start_timer()
-        else:
-            self.dwell_tracker = None
+        self.dwell_tracker = DwellTracker(self)
+        self.dwell_tracker._start_timer()
 
-        if self.config.post_update_stats:
+        if self.config._post_update_stats:
             self._start_update_timer()
+        if self.config._dwell_check_active:
+            self._start_check_active_timer()
+
+    def _start_check_active_timer(self):
+        l.debug('start check active timer')
+        if not self.config.dwell_check_active_interval:
+            return
+
+        def loop():
+            while True:
+                sleep(self.config.dwell_check_active_interval)
+                if self.last_active + timedelta(seconds=self.config.dwell_inactive_timeout) < datetime.now():
+                    self._visible_posts_buffer = self.visible_posts.copy()
+                    for post in self._visible_posts_buffer:
+                        post.set_invisible(reason=ViewReason.INACTIVE)
+                elif self._visible_posts_buffer:
+                    for post in self._visible_posts_buffer:
+                        post.set_visible()
+                    self._visible_posts_buffer.clear()
+
+        self._check_active_thread = Thread(target=loop)
+        self._check_active_thread.daemon = True
+        self._check_active_thread.start()
+
+        def on_exit():
+            l.debug('stop check active timer')
+            if self._check_active_thread:
+                self._check_active_thread.join(timeout=0)
+
+        register(on_exit)
+
+    def set_active(self):  # call when user is active (scroll, move etc)
+        self.last_active = datetime.now()
 
     def _start_update_timer(self):
         l.debug('start update timer')
@@ -283,14 +322,14 @@ class Client:
                 sleep(self.config.post_update_stats_interval)
                 self.update_post_stats()
 
-        self._thread = Thread(target=loop)
-        self._thread.daemon = True
-        self._thread.start()
+        self._update_thread = Thread(target=loop)
+        self._update_thread.daemon = True
+        self._update_thread.start()
 
         def on_exit():
             l.debug('stop update timer')
-            if self._thread:
-                self._thread.join(timeout=0)
+            if self._update_thread:
+                self._update_thread.join(timeout=0)
 
         register(on_exit)
 

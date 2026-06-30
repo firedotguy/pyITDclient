@@ -33,8 +33,8 @@ class ViewReason(Enum):
     BLUR = 1  # страница скрыта (listener blur)
     HIDDEN = 2  # тоже страница скрыта (listener visibilitychange и доп.проверка что document.hidden)
     PAGE_HIDE = 3  # и это тоже страница скрыта (listener pagehiden)
-    UNOBSERVE = 4  # что то заумное на фронтедерском
-    THRESHOLD_MET = 5  # трэшхолд типо плавный просмотр, я не осбо понял для чего это
+    UNOBSERVE = 4  # что то заумное на фронтедерском, пост удалили из дома
+    THRESHOLD_MET = INACTIVE = 5  # юзер перестал активить
 
 
 class AuthLevel(Enum):

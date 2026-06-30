@@ -99,7 +99,16 @@ class DwellTracker(ITDBaseModel):
         if not self.views:
             return False
         l.info('dwell send view batch')
-        send_views(self.client, [event.model_dump(mode='json', by_alias=True) for event in self.views], self.sid)
+        send_views(
+            self.client,
+            [
+                event.model_dump(
+                    mode='json', by_alias=True, exclude_none=True, exclude={'source'} if event.source not in (ViewSource.POST_PAGE, ViewSource.LINK) else {}
+                )  # хз зачем убирать сурс но в оф клиенте так написано
+                for event in self.views
+            ],
+            self.sid
+        )
         self.views.clear()
         return True
 
@@ -146,9 +155,9 @@ class DwellTracker(ITDBaseModel):
             duration,
             entered_at.strftime('%m.%d %H:%M:%S'),
             exited_at.strftime('%m.%d %H:%M:%S'),
-            source.value,
+            source.name.lower(),
             source_context,
-            reason.value
+            reason.name.lower()
         )
 
         self.views.append(
@@ -168,7 +177,7 @@ class DwellTracker(ITDBaseModel):
             self.send_views()
 
     def record_photo_open(self, vs: str, source: ViewSource, attachment_id: UUID, index: int):
-        """Записать событие просомтра фото
+        """Записать событие просмотра фото
 
         Args:
             vs (str): VS
@@ -415,40 +424,32 @@ class Post(ITDBaseModel):
         return Post.from_dict(post, client=client)
 
     def view(
-        self,
-        entered_at: datetime | None = None,
-        exited_at: datetime | None = None,
-        duration: int | None = None,
-        reason: ViewReason = ViewReason.NORMAL,
-        *,
-        client: Client | None = None
+        self, entered_at: datetime | None = None, exited_at: datetime | None = None, reason: ViewReason = ViewReason.NORMAL, *, client: Client | None = None
     ) -> None:
         """Просмотреть пост
 
         Args:
-            entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел пост). Если None, заполнится исходя из exited_at. Defaults to None.
-            exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, заполнится исходя из duration и entered_at (если есть) или datetime.now. Defaults to None.
-            duration (int | None, optional): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+. если None, вычисляется исходя из длины поста и вложений. Defaults to None.
+            entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел верхнюю границу поста). Если None, ставится datetime.now - 5000. Defaults to None.
+            exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, ставится datetime.now. Defaults to None.
             reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
             client (Client | None, optional): Клиент. Defaults to None.
         """
         c = client or self.client
 
-        if c.dwell_tracker is not None:
-            if duration is None:
-                duration = calc_view_duration(c.config, self.content, self.attachments)
-            if exited_at is None:
-                if entered_at is not None:
-                    exited_at = entered_at + timedelta(milliseconds=duration)
-                else:
-                    exited_at = datetime.now()
-            if entered_at is None:
-                entered_at = exited_at - timedelta(milliseconds=duration)
+        if c.config.dwell_wait_durations:
+            sleep(calc_view_duration(c.config, self.content, self.attachments) / 1000)
 
-            c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
-        else:
-            l.error('old post viewing is no more supported. Please enable dwell_tracker in config.')
+        if exited_at is None:
+            exited_at = datetime.now()
+        if entered_at is None:
+            entered_at = exited_at - timedelta(milliseconds=calc_view_duration(c.config, self.content, self.attachments))
+
+        duration = round((exited_at.timestamp() - entered_at.timestamp()) * 1000)
+        if duration < c.config.dwell_min_duration:
+            l.warning('skip post view id=%s duration=%s (min is %s)', self.id, duration, c.config.dwell_min_duration)
             return
+
+        c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
 
         if c == self.client:
             self.is_viewed = True
@@ -541,12 +542,12 @@ class Post(ITDBaseModel):
             self._entered_at = datetime.now()
             (client or self.client).visible_posts.append(self)
 
-    def set_invisible(self, client: Client | None = None):
+    def set_invisible(self, reason: ViewReason = ViewReason.NORMAL, client: Client | None = None):
         if self.visible:
             self.visible = False
             (client or self.client).visible_posts.remove(self)
             if self._entered_at and (client or self.client).config.post_auto_view:
-                self.view(self._entered_at, client=client or self.client)
+                self.view(self._entered_at, reason=reason, client=client or self.client)
 
     def on_stats_update(self):
         pass  # override this
