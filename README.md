@@ -1,6 +1,6 @@
 # itd-sdk
 
-[![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff)
+[![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff) [![EffVer Versioning](https://img.shields.io/badge/version_scheme-EffVer-0097a7)](https://jacobtomlinson.dev/effver)
 
 SDK для работы с [https://xn--d1ah4a.com](итд.com) на python.
 
