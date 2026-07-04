@@ -406,12 +406,8 @@ class Client:
 
         self.access_token = res.json().get('accessToken') or res.json()['token']
         self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
-        if 'set-cookie' in res.headers:
-            for ex in res.headers['set-cookie'].split('; '):
-                if 'refresh_token' in ex:
-                    key, val = ex.split('=')
-                    if len(val) != 0:
-                        self.refresh_token = val
+        self.refresh_token = res.cookies['refresh_token']
+
         assert self.access_token
         return self.access_token
 
