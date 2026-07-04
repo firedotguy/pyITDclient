@@ -75,13 +75,6 @@ class Config:
     # ^ это если что просто мысли, не обращайте внимания
     client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
-    rate_limit: RateLimitMode | None = None  # deprecated
-    rate_limit_default: int | None = None  # deprecated
-    rate_limit_actions: dict[str, float | int] | None = None  # deprecated
-    anti_rate_limit: bool | None = None  # deprecated
-    burst_requests: bool | None = None  # deprecated
-    anti_ip_ban: bool | None = None  # deprecated
-    limit_coefficient: float | None = None  # deprecated
     auto_acquire: bool | None = None
 
     # enable_logging: bool | None = None
@@ -105,7 +98,6 @@ class Config:
     timeout_file_download: float | None = None
 
     url: str = 'https://xn--d1ah4a.com/api'
-    url_api: str | None = None  # deprecated
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
@@ -145,10 +137,6 @@ class Config:
     refresh_token_cookie_name: str = 'refresh_token'
 
     def __post_init__(self):
-        if self.url_api is not None:
-            l.warning('config.url_api is deprecated and will be removed in 2.7.0. Please use config.url.')
-            self.url = self.url_api
-
         match self.user_agent:
             case UserAgent.DEFAULT:
                 self._user_agent = default_user_agent()
@@ -160,36 +148,6 @@ class Config:
                 self._user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0'
             case _:
                 self._user_agent = self.user_agent
-
-        if self.rate_limit is not None:
-            l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
-        if self.rate_limit_default is not None:
-            l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
-        if self.rate_limit_actions is not None:
-            l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
-        if self.anti_ip_ban is not None:
-            l.warning(
-                f'config.anti_ip_ban is deprecated and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(LimiterConfig(ip_limiter={"IPRateLimiter" if self.anti_ip_ban else None})).'
-            )
-            set_limiter_config(LimiterConfig(ip_limiter=IPRateLimiter() if self.anti_ip_ban else None))
-        if self.anti_rate_limit is not None:
-            l.warning(
-                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(LimiterConfig(limiter={"HalfRateLimiter" if self.anti_rate_limit else None})).'
-            )
-            set_limiter_config(LimiterConfig(limiter=HalfRateLimiter if self.anti_rate_limit else None))
-        if self.burst_requests is not None:
-            l.warning(
-                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(limiter={"BurstRateLimiter" if self.burst_requests else None}).'
-            )
-            set_limiter_config(LimiterConfig(limiter=BurstRateLimiter if self.burst_requests else None))
-        if self.limit_coefficient is not None:
-            l.warning(
-                'config.limit_coefficient is deprecated and will be removed in 2.7.0. '
-                'Please define your own rate limiter that will override sync function of RateLimiter class and apply coefficient to remaining.'
-            )
 
         if self.timeout is None:
             match self.client_type:
