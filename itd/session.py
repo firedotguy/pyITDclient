@@ -27,11 +27,11 @@ class Session(ITDBaseModel):
 
     device_type: DeviceType = Field(alias='deviceType')
     device_os: str = Field(alias='osName')  # TODO use enum
-    device_os_version: int = Field(alias='osVersion')
+    device_os_version: int | None = Field(None, alias='osVersion')
     device_model: str | None = Field(None, alias='deviceModel')  # always none
 
-    client_name: str = Field(alias='clientName')  # cant use "client"
-    client_version: str = Field(alias='clientVersion')
+    client_name: str | None = Field(None, alias='clientName')  # cant use "client"
+    client_version: str | None = Field(None, alias='clientVersion')
 
     def revoke(self):
         revoke(self.client, self.id)
@@ -47,7 +47,16 @@ class Session(ITDBaseModel):
             setattr(self, name, value)
 
     def __str__(self):
-        return f'{self.device_os} {self.device_os_version} ({self.device_type.value}) {self.client_name}/{self.client_version}'
+        res = self.device_os
+        if self.device_os_version:
+            res += f' {self.device_os_version}'
+        res += f' ({self.device_type.value})'
+        if self.client_name:
+            res += f' {self.client_name}'
+            if self.client_version:
+                res += f'/{self.client_version}'
+
+        return res
 
     @property
     def location(self) -> str | None:
