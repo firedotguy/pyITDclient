@@ -1,10 +1,13 @@
 from datetime import datetime
+from json import dumps
+from pathlib import Path
 from sys import version
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 import pyromark
 from lxml import html
+from platformdirs import user_data_path
 from telegramify_markdown import convert, converter
 
 from itd.enums import AttachType, SpanType
@@ -21,6 +24,13 @@ def get_sdk_user_agent():
     from itd import __version__  # i fucking hate circular imports this is sooo stupid
 
     return f'itd-sdk/{__version__} (Python/{version})'
+
+
+def get_credentials_file(name: str) -> Path:
+    file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
+    if not file.exists():
+        file.write_text(dumps({'access': None, 'refresh': None, 'valid': True}))
+    return file
 
 
 def to_uuid(value: str | UUID) -> UUID:
