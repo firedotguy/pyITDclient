@@ -2,6 +2,7 @@ from _io import BufferedReader
 from atexit import register
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from functools import cached_property
 from json import dumps, loads
 from pathlib import Path
 from threading import Thread
@@ -14,6 +15,7 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.utils import default_user_agent
 
+from itd._credfile import Credfile
 from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
@@ -25,7 +27,7 @@ from itd.logger import get_logger
 from itd.post import DwellTracker, Post
 from itd.request import decode_jwt_payload, fetch, fetch_stream
 from itd.user import Me, User, Users, get_follow_status
-from itd.utils import get_credentials_file, get_sdk_user_agent
+from itd.utils import get_credfile, get_sdk_user_agent, shorten_token
 
 l = get_logger('client')  # noqa: E741
 
@@ -209,11 +211,10 @@ class Client:
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
-        self._user: Me | None = None
         self.visible_posts: list[Post] = []
         self._visible_posts_buffer: list[Post] = []
         self.last_active = datetime.now()
-        self._credentials_file: Path | None = None
+        self._credfile: Credfile | None = None
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -221,8 +222,7 @@ class Client:
 
         if access:
             self.auth_level = AuthLevel.ACCESS
-            self.access_token = access.replace('Bearer ', '')
-            self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
+            self.token = access.replace('Bearer ', '')
 
         if refresh:
             self.session.cookies.set(config.refresh_token_cookie_name, refresh, path='/')
@@ -244,46 +244,76 @@ class Client:
 
     @classmethod
     def from_file(cls, name: str, config: Config = Config()):
-        file = get_credentials_file(name)
-        credentials = loads(file.read_text())
-        l.debug(
-            'get credentials file refresh=%s access=%s',
-            (credentials['refresh'][:10] + '..') if credentials['refresh'] else 'None',
-            (credentials['access'][:20] + '..') if credentials['access'] else 'None'
-        )
-        if not credentials['valid']:
+        credfile = get_credfile(name)
+        l.debug('get credentials file refresh=%s access=%s', shorten_token(credfile.refresh), shorten_token(credfile.access))
+        if not credfile.valid:
             l.warning('last refresh token was expired or not found. Please enter a new one:')
             update = True
         else:
-            update = credentials['refresh'] is None
+            update = credfile.refresh is None
 
         if update:
             try:
                 from rich.prompt import Prompt
             except ImportError:
-                credentials['refresh'] = input('refresh token: ')
+                credfile.refresh = input('refresh token: ')
             else:
-                credentials['refresh'] = Prompt.ask('[cyan]refresh token[/]')
+                credfile.refresh = Prompt.ask('[cyan]refresh token[/]')
 
-        instance = cls(credentials['refresh'], credentials['access'], config=config)
+        instance = cls(credfile.refresh, credfile.access, config=config)
         if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
             instance.access_token = instance.access_token_data = None
-        instance._credentials_file = file
+        instance._credfile = credfile
         if update:
             instance._update_file()
 
     def _update_file(self, valid: bool = True):
-        if self._credentials_file is None:
+        if self._credfile is None:
             return
 
-        l.debug(
-            'update credentials file refresh=%s access=%s',
-            (self.refresh_token[:10] + '..') if self.refresh_token else 'None',
-            (self.access_token[:20] + '..') if self.access_token else 'None'
-        )
+        l.debug('update credentials file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
         if not valid:
-            l.warning('mark %s as not valid', (self.refresh_token[:10] + '..') if self.refresh_token else 'None')
-        self._credentials_file.write_text(dumps({'access': self.access_token, 'refresh': self.refresh_token, 'valid': valid}))
+            l.warning('mark %s as not valid', shorten_token(self.refresh_token))
+
+        self._credfile.access = self.access_token
+        self._credfile.refresh = self.refresh_token
+        self._credfile.valid = valid
+        self._credfile.flush()
+
+    def refresh_auth(self, force: bool = False) -> str:
+        """Обновить access token
+
+        Returns:
+            str: Токен
+        """
+
+        l.debug('refresh access_token')
+        if not force and self._credfile and self._credfile.update():
+            self.token = self._credfile.access
+            self.refresh_token = self._credfile.refresh
+
+            if self.access_token:
+                assert self.access_token_data
+                if self.access_token_data.expired_at > datetime.now():
+                    l.debug('update access_token from credfile')
+                    return self.access_token
+                else:
+                    l.info('credfile access_token expired')
+            else:
+                l.info('crefile access_token is none')
+
+        try:
+            res = refresh_token(self)
+        except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
+            self._update_file(valid=False)
+            raise
+
+        self.token = res.json().get('accessToken') or res.json()['token']
+        if 'refresh_token' in res.cookies:
+            self.refresh_token = res.cookies['refresh_token']
+        self._update_file()
+
+        return self.token
 
     def _start_check_active_timer(self):
         l.debug('start check active timer')
@@ -351,7 +381,11 @@ class Client:
         if level > self.auth_level and not self.config.bypass_auth_level:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
-        if level >= AuthLevel.ACCESS and self.access_token is None and url != 'v1/auth/refresh':
+        if (
+            level >= AuthLevel.ACCESS
+            and (self.access_token is None or (self.access_token_data and self.access_token_data.expired_at <= datetime.now()))
+            and url != 'v1/auth/refresh'
+        ):
             self.refresh_auth()
 
         return fetch(self, method, url, params, files)
@@ -381,44 +415,27 @@ class Client:
         assert self.access_token, 'Access token not refreshed yet'
         return self.access_token
 
+    @token.setter
+    def token(self, token: str | None):
+        self.access_token = token
+        if token is None:
+            self.access_token_data = None
+        else:
+            self.access_token_data = AccessToken.model_validate(decode_jwt_payload(token))
+
     @property
     def user_id(self) -> UUID:
         assert self.access_token_data
         return self.access_token_data.subject_id
 
-    @property
+    @cached_property
     def user(self) -> Me:
-        if not self._user:
-            self._user = Me(self)
-        return self._user
+        return Me(self)
 
     def _process_exc_callbacks(self, exception: Exception):
         # l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
         for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
             callback(exception)
-
-    def refresh_auth(self) -> str:
-        """Обновить access token
-
-        Returns:
-            str: Токен
-        """
-        l.debug('refresh token')
-
-        try:
-            res = refresh_token(self)
-        except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
-            self._update_file(valid=False)
-            raise
-
-        self.access_token = res.json().get('accessToken') or res.json()['token']
-        self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
-        if 'refresh_token' in res.cookies:
-            self.refresh_token = res.cookies['refresh_token']
-        self._update_file()
-
-        assert self.access_token
-        return self.access_token
 
     def logout(self):
         """Выход из аккаунта"""
@@ -532,5 +549,5 @@ class Client:
         return get_follow_status(users)
 
 
-def init_client(name: str, config: Config = Config()):
-    return Client.from_file(name)
+def init_client(name: str | None = None, config: Config = Config()):
+    return Client.from_file(name or 'default', config=config)

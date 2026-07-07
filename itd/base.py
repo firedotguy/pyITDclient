@@ -423,9 +423,10 @@ def api_wrapper(*exceptions: ITDException):
                         if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                             exception.retry_after = json.get('error', {}).get('retryAfter', 0)
 
-                        if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
-                            client.refresh_auth()
-                            return wrapper(client, *args, **kwargs)
+                        # now checks token before request
+                        # if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
+                        #     client.refresh_auth()
+                        #     return wrapper(client, *args, **kwargs)
 
                         if isinstance(exception, AccountDeletedError):
                             exception.can_restore = json.get('error', {}).get('canRestore', True)

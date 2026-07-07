@@ -1,6 +1,5 @@
 from datetime import datetime
-from json import dumps
-from pathlib import Path
+from json import loads
 from sys import version
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -10,6 +9,7 @@ from lxml import html
 from platformdirs import user_data_path
 from telegramify_markdown import convert, converter
 
+from itd._credfile import Credfile
 from itd.enums import AttachType, SpanType
 from itd.file import File, PostAttach
 from itd.span import Span
@@ -26,11 +26,24 @@ def get_sdk_user_agent():
     return f'itd-sdk/{__version__} (Python/{version})'
 
 
-def get_credentials_file(name: str) -> Path:
+def get_credfile(name: str) -> Credfile:
     file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
     if not file.exists():
-        file.write_text(dumps({'access': None, 'refresh': None, 'valid': True}))
-    return file
+        model = Credfile(_file=file)
+        file.write_text(model.model_dump())
+    else:
+        model = Credfile.model_validate(loads(file.read_text()))
+        model._file = file
+    return model
+
+
+def shorten_token(value: str | None, max_len: int = 20):
+    if value is None:
+        return None
+
+    if len(value) < max_len + 10:
+        return value
+    return value[: max_len // 2] + '...' + value[-(max_len // 2) :]
 
 
 def to_uuid(value: str | UUID) -> UUID:

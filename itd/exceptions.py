@@ -94,7 +94,7 @@ class UnauthorizedError(AuthError):
 class InvalidAccessTokenError(AuthError):
     text = 'Invalid access token'
     text_check = staticmethod(lambda text: text == 'UNAUTHORIZED')
-    json_check = staticmethod(lambda json: json.get('error') == 'invalid signature')
+    json_check = staticmethod(lambda json: json.get('error') in ('invalid signature', 'invalid token'))
 
 
 class JWTAlgorithmUnsupportedError(AuthError):
