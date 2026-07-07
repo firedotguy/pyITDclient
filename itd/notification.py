@@ -20,7 +20,7 @@ from itd.api.notifications import (
 )
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
-from itd.enums import LoadStatus, NotificationTargetType, NotificationType
+from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
 from itd.logger import get_logger
 from itd.user import User
 
@@ -125,10 +125,17 @@ class Notification(ITDBaseModel):
     id: UUID
     type: NotificationType
 
-    target_type: NotificationTargetType | None = Field(None, alias='targetType')  # none - follows, other - NotificationTragetType.POST
+    target_type: NotificationTargetType | None = Field(None, alias='targetType')  # none if follow, NotificationTargetType.POST otherwise
     target_id: UUID | None = Field(None, alias='targetId')  # none - follows
 
-    preview: str | None = None  # follow - none, comment/reply - content, repost - original post content, like - post content, wall_post - wall post content
+    subject_type: NotificationSubjectType | None = Field(
+        None, alias='subjectType'
+    )  # NotificationSubjectType.COMMENT if comment_like or reply follows, other - NotificationTragetType.POST, none otherwise
+    subject_id: UUID | None = Field(None, alias='subjectId')
+
+    preview: str | None = (
+        None  # follow - none, comment/reply - content, repost - original post content, like - post/comment content, wall_post - wall post content
+    )
 
     is_read: bool = Field(False, alias='read')
     read_at: datetime | None = Field(None, alias='readAt')
@@ -255,9 +262,11 @@ class Notifications(ITDList[Notification]):
 
         for event in SSEClient(cast(Iterator[bytes], self._stream)).events():
             data = loads(event.data)
+            if self.client.config.debug_response != DebugResponseMode.NO:
+                l.debug('< %s', data)
 
             if 'userId' in data and 'timestamp' in data and 'type' not in data:
-                l.debug('got init message %s', data)
+                l.info('received init message', data)
                 continue  # initial message
 
             notification: Notification = Notification.from_dict(data, self, client=self.client)

@@ -89,7 +89,7 @@ class NotificationType(Enum):
     FOLLOW = 'follow'
     FOLLOW_REQUEST = 'follow_request'
     FOLLOW_ACCEPTED = 'follow_accepted'
-    COMMENT_LIKE = 'comment_reaction'
+    COMMENT_LIKE = 'comment_like'
     COMMENT_MENTION = 'comment_mention'
     WALL_POST = 'wall_post'
 
@@ -102,6 +102,10 @@ class ParseMode(Enum):
 
 class NotificationTargetType(Enum):
     POST = 'post'
+
+
+class NotificationSubjectType(Enum):
+    COMMENT = 'comment'
 
 
 class ReportTargetType(Enum):
