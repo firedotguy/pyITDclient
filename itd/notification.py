@@ -226,8 +226,12 @@ class Notifications(ITDList[Notification]):
     def __init__(self, client: Client | None = None):
         super().__init__(client=client)
         self._unread: int | None = None
-        self._callbacks: dict[str | None, Callable[[Notification], Any]] = {}
         self.settings = NotificationsSettings(client=client)
+
+        self._callbacks: dict[NotificationType | None, list[Callable[[Notification], Any]]] = {}
+        for type in NotificationType:
+            self._callbacks[type] = []
+        self._callbacks[None] = []
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()
@@ -277,10 +281,8 @@ class Notifications(ITDList[Notification]):
             l.info('new notification type=%s', notification.type.value)
             exec(f'self.on_{notification.type.value}(notification)')
             self.on_notification(notification)
-            if None in self._callbacks:
-                self._callbacks[None](notification)
-            if notification.type.value in self._callbacks:
-                self._callbacks[notification.type.value](notification)
+            for callback in self._callbacks[notification.type] + self._callbacks[None]:
+                callback(notification)
 
             yield notification
 
@@ -326,15 +328,9 @@ class Notifications(ITDList[Notification]):
 
     def on_notification(self, notification: Notification, /) -> None: ...
 
-    def on(
-        self,
-        type: Literal[
-            'like', 'comment', 'reply', 'repost', 'mention', 'follow', 'follow_request', 'follow_accepted', 'comment_like', 'comment_mention', 'wall_post'
-        ]
-        | None = None
-    ):
+    def on(self, type: NotificationType | None = None):
         def decorator(func: Callable[[Notification], Any]):
-            self._callbacks[type] = func
+            self._callbacks[type].append(func)
 
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
@@ -342,3 +338,7 @@ class Notifications(ITDList[Notification]):
             return wrapper
 
         return decorator
+
+
+Ntfs = Notifications  # short alias
+Ntf = Notification
