@@ -64,7 +64,7 @@ class Comment(ITDBaseModel):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.COMMENT, reason, description, client or self.client)
 
-    def reply(self, content: str | None = None, attachments: ATTACHMENTS = [], user_id: UUID | None = None, client: Client | None = None) -> 'Comment':
+    def reply(self, content: str | None = None, attachments: ATTACHMENTS = [], user_id: UUID | None = None, client: Client | None = None) -> Comment:
         """Ответить на комментарий
 
         Args:
@@ -151,7 +151,7 @@ class Comment(ITDBaseModel):
         return parse_datetime(edited_at)
 
     @classmethod
-    def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
+    def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None) -> Comment:
         instance = cls.__new__(cls)
         super(Comment, instance).__init__(client)
         comment = cls.from_dict(
@@ -162,17 +162,34 @@ class Comment(ITDBaseModel):
         return comment
 
     @property
-    def url(self):
+    def url(self) -> str:
         assert self._post, 'post not set'
         return f'https://xn--d1ah4a.com/@{self._post.author.username}/post/{self._post.id}?comment={self.id}'
 
     @property
-    def link(self):
+    def link(self) -> str:
         return self.url
 
     @property
-    def is_reply(self):
+    def is_reply(self) -> bool:
         return self.reply_to is not None
+
+    @property
+    def is_owner(self) -> bool:
+        return self.client.user_id == self.author.id
+
+    @property
+    def can_delete(self) -> bool:
+        assert self._post, 'post not set'
+        return self.is_owner or self._post.is_owner
+
+    @property
+    def can_edit(self) -> bool:
+        return self.is_owner
+
+    @property
+    def can_report(self) -> bool:
+        return not self.is_owner
 
 
 class _CommentValidate(BaseModel, Comment):
