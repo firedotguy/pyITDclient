@@ -3,8 +3,7 @@ from atexit import register
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import cached_property
-from json import dumps, loads
-from pathlib import Path
+from os import getenv
 from threading import Thread
 from time import sleep
 from typing import Callable, Literal, overload
@@ -253,12 +252,15 @@ class Client:
             update = credfile.refresh is None
 
         if update:
-            try:
-                from rich.prompt import Prompt
-            except ImportError:
-                credfile.refresh = input('refresh token: ')
+            if getenv('ITD_REFRESH_TOKEN') is not None:
+                credfile.refresh = getenv('ITD_REFRESH_TOKEN')
             else:
-                credfile.refresh = Prompt.ask('[cyan]refresh token[/]')
+                try:
+                    from rich.prompt import Prompt
+                except ImportError:
+                    credfile.refresh = input('refresh token: ')
+                else:
+                    credfile.refresh = Prompt.ask('[cyan]refresh token[/]')
 
         instance = cls(credfile.refresh, credfile.access, config=config)
         if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
