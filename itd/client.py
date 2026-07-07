@@ -242,7 +242,7 @@ class Client:
             self._start_check_active_timer()
 
     @classmethod
-    def from_file(cls, name: str, config: Config = Config()):
+    def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
         credfile = get_credfile(name)
         l.debug('get credentials file refresh=%s access=%s', shorten_token(credfile.refresh), shorten_token(credfile.access))
         if not credfile.valid:
@@ -252,7 +252,9 @@ class Client:
             update = credfile.refresh is None
 
         if update:
-            if getenv('ITD_REFRESH_TOKEN') is not None:
+            if initial_refresh is not None:
+                credfile.refresh = initial_refresh
+            elif getenv('ITD_REFRESH_TOKEN') is not None:
                 credfile.refresh = getenv('ITD_REFRESH_TOKEN')
             else:
                 try:
@@ -266,7 +268,9 @@ class Client:
         if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
             instance.access_token = instance.access_token_data = None
         instance._credfile = credfile
-        if update:
+        if verify_refresh and initial_refresh is not None:
+            instance.refresh_auth(force=True)
+        elif update:
             instance._update_file()
 
     def _update_file(self, valid: bool = True):
@@ -307,6 +311,8 @@ class Client:
         try:
             res = refresh_token(self)
         except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
+            if force:
+                raise
             self._update_file(valid=False)
             raise
 
@@ -551,5 +557,5 @@ class Client:
         return get_follow_status(users)
 
 
-def init_client(name: str | None = None, config: Config = Config()):
-    return Client.from_file(name or 'default', config=config)
+def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
+    return Client.from_file(name or 'default', initial_refresh=initial_refresh, verify_refresh=verify_refresh, config=config)

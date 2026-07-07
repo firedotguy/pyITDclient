@@ -1,5 +1,5 @@
 from datetime import datetime
-from json import loads
+from json import dumps, loads
 from sys import version
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -30,7 +30,7 @@ def get_credfile(name: str) -> Credfile:
     file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
     if not file.exists():
         model = Credfile(_file=file)
-        file.write_text(model.model_dump())
+        file.write_text(dumps(model.model_dump(mode='json')))
     else:
         model = Credfile.model_validate(loads(file.read_text()))
         model._file = file
