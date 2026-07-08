@@ -102,4 +102,12 @@ stream = notifications.stream_bg() # background SSE
     - ИТД: [@itd_sdk](https://xn--d1ah4a.com/@itd_sdk) или [@fdg](https://xn--d1ah4a.com/@pingbot)
     - ТГ: [@desicars](https://t.me/desicars)
 
-[![Star History Chart](https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left)](https://www.star-history.com/?repos=itd-sdk%2Fitd-sdk&type=date&legend=top-left)
+## Star History
+
+<a href="https://www.star-history.com/?repos=itd-sdk%2Fitd-sdk&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&theme=dark&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+ </picture>
+</a>
