@@ -321,7 +321,7 @@ class Post(ITDBaseModel):
             content, spans = parse_md(content)
 
         post = create_post(
-            instance._client, content, [span.model_dump(mode="json") for span in spans], wall_recipient, format_attachments(attachments), poll
+            instance._client, content, [span.model_dump(mode='json') for span in spans], wall_recipient, format_attachments(attachments), poll
         ).json()
 
         return cls.from_dict(post, source=ViewSource.PROFILE, client=client)
@@ -332,6 +332,7 @@ class Post(ITDBaseModel):
     ) -> 'Post':
         context.update({'source': source, 'source_context': source_context})
         instance = super().from_dict(data, context=context, client=client)
+        instance._extra_context = {'source': source, 'source_context': source_context}
         instance.source = source
         instance.source_context = source_context
         instance.visible = False
@@ -511,7 +512,7 @@ class Post(ITDBaseModel):
         if (client or self.client).config.parse_mode == ParseMode.MARKDOWN and not spans:
             content, spans = parse_md(content)
 
-        updated_at = parse_datetime(edit_post(client or self.client, self.id, content, [span.model_dump(mode="json") for span in spans]).json()['updatedAt'])
+        updated_at = parse_datetime(edit_post(client or self.client, self.id, content, [span.model_dump(mode='json') for span in spans]).json()['updatedAt'])
         self.edited_at = updated_at
         self.content = content
         self.spans = spans

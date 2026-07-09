@@ -75,7 +75,9 @@ class ITDBaseModel:
         if not self._refreshable:
             l.warning(f'{self.__class__.__name__} is not refreshable but refresh is called')
         self.load_status = LoadStatus.LOADING
-        self._fill_from_data(self._refresh(client=client or self.client), context={'client': client or self.client})
+        context = {'client': client or self.client}
+        context.update(self._extra_context)
+        self._fill_from_data(self._refresh(client=client or self.client), context=context)
         self.load_status = LoadStatus.FULL
         return self
 
