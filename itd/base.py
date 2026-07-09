@@ -13,7 +13,7 @@ from requests.exceptions import JSONDecodeError
 
 from itd._default import get_config, get_default_client, limiters, limits
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
-from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, AccountDeletedError, ITDException, RateLimitError, UnauthorizedError, ValidationError
+from itd.exceptions import DEFAULT_ERRORS, AccountDeletedError, ITDException, RateLimitError, ValidationError
 from itd.logger import get_logger
 
 if TYPE_CHECKING:

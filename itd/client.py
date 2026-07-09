@@ -272,6 +272,7 @@ class Client:
             instance.refresh_auth(force=True)
         elif update:
             instance._update_file()
+        return instance
 
     def _update_file(self, valid: bool = True):
         if self._credfile is None:

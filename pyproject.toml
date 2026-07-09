@@ -67,5 +67,5 @@ line-length = 160
 ignore = ["COM", "D300", "E501", 'E741', 'E731']
 
 [tool.ruff.format]
-quote-style = "preserve"
+quote-style = "single"
 skip-magic-trailing-comma = true

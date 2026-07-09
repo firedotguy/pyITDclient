@@ -331,11 +331,7 @@ class Notifications(ITDList[Notification]):
     def on(self, type: NotificationType | None = None):
         def decorator(func: Callable[[Notification], Any]):
             self._callbacks[type].append(func)
-
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            return wrapper
+            return func
 
         return decorator
 
