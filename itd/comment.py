@@ -49,7 +49,7 @@ class Comment(ITDBaseModel):
 
     @cached_property
     def replies(self) -> Replies:
-        assert self._post, 'post not set'
+        assert self._post is not None, 'post not set'
         replies = Replies(client=self.client)
         replies._post = self._post
         replies._base_comment = self
@@ -163,7 +163,7 @@ class Comment(ITDBaseModel):
 
     @property
     def url(self) -> str:
-        assert self._post, 'post not set'
+        assert self._post is not None, 'post not set'
         return f'https://xn--d1ah4a.com/@{self._post.author.username}/post/{self._post.id}?comment={self.id}'
 
     @property
@@ -180,7 +180,7 @@ class Comment(ITDBaseModel):
 
     @property
     def can_delete(self) -> bool:
-        assert self._post, 'post not set'
+        assert self._post is not None, 'post not set'
         return self.is_owner or self._post.is_owner
 
     @property
