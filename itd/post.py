@@ -153,8 +153,8 @@ class DwellTracker(ITDBaseModel):
             id,
             vs,
             duration,
-            entered_at.strftime('%m.%d %H:%M:%S'),
-            exited_at.strftime('%m.%d %H:%M:%S'),
+            entered_at.strftime('%X.%f'),
+            exited_at.strftime('%X.%f'),
             source.name.lower(),
             source_context,
             reason.name.lower()
@@ -223,7 +223,6 @@ class DwellTracker(ITDBaseModel):
         self._thread.start()
 
         def on_exit():
-            l.debug('stop dwell timer')
             if self._thread:
                 self._thread.join(timeout=0)
             self.send_views()
@@ -440,12 +439,23 @@ class Post(ITDBaseModel):
         if c.config.dwell_wait_durations:
             sleep(calc_view_duration(c.config, self.content, self.attachments) / 1000)
 
-        if exited_at is None:
+        entered_at_autofill = entered_at is None
+        exited_at_autofill = exited_at is None
+        if exited_at_autofill:
             exited_at = datetime.now()
-        if entered_at is None:
+        if entered_at_autofill:
             entered_at = exited_at - timedelta(milliseconds=calc_view_duration(c.config, self.content, self.attachments))
 
         duration = round((exited_at.timestamp() - entered_at.timestamp()) * 1000)
+        l.debug(
+            'view post id=%s entered_at=%s%s exited_at=%s%s reason=%s',
+            self.id,
+            entered_at.strftime('%X.%f'),
+            ' (autofill)' if entered_at_autofill else '',
+            exited_at.strftime('%X.%f'),
+            ' (autofill)' if exited_at_autofill else '',
+            reason.name.lower()
+        )
         if duration < c.config.dwell_min_duration:
             l.warning('skip post view id=%s duration=%s (min is %s)', self.id, duration, c.config.dwell_min_duration)
             return
@@ -539,16 +549,24 @@ class Post(ITDBaseModel):
 
     def set_visible(self, client: Client | None = None):
         if not self.visible:
+            l.debug('set visible id=%s', self.id)
             self.visible = True
+
             self._entered_at = datetime.now()
             (client or self.client).visible_posts.append(self)
+        else:
+            l.warning('set_visible called on already visible post')
 
     def set_invisible(self, reason: ViewReason = ViewReason.NORMAL, client: Client | None = None):
         if self.visible:
+            l.debug('set invisible id=%s reason=%s', self.id, reason.name.lower())
             self.visible = False
+
             (client or self.client).visible_posts.remove(self)
             if self._entered_at and (client or self.client).config.post_auto_view:
                 self.view(self._entered_at, reason=reason, client=client or self.client)
+        else:
+            l.warning('set_invisible called on already invisible post')
 
     def on_stats_update(self):
         pass  # override this

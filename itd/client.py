@@ -332,11 +332,15 @@ class Client:
         def loop():
             while True:
                 sleep(self.config.dwell_check_active_interval)
-                if self.last_active + timedelta(seconds=self.config.dwell_inactive_timeout) < datetime.now():
+                is_active = self.last_active + timedelta(seconds=self.config.dwell_inactive_timeout) > datetime.now()
+
+                if not self._visible_posts_buffer and not is_active:
                     self._visible_posts_buffer = self.visible_posts.copy()
                     for post in self._visible_posts_buffer:
+                        post._entered_at = datetime.now() - timedelta(seconds=self.config.dwell_inactive_timeout)
                         post.set_invisible(reason=ViewReason.INACTIVE)
-                elif self._visible_posts_buffer:
+
+                elif self._visible_posts_buffer and is_active:
                     for post in self._visible_posts_buffer:
                         post.set_visible()
                     self._visible_posts_buffer.clear()
@@ -346,7 +350,6 @@ class Client:
         self._check_active_thread.start()
 
         def on_exit():
-            l.debug('stop check active timer')
             if self._check_active_thread:
                 self._check_active_thread.join(timeout=0)
 
@@ -370,7 +373,6 @@ class Client:
         self._update_thread.start()
 
         def on_exit():
-            l.debug('stop update timer')
             if self._update_thread:
                 self._update_thread.join(timeout=0)
 
@@ -558,5 +560,5 @@ class Client:
         return get_follow_status(users)
 
 
-def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
+def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()) -> Client:
     return Client.from_file(name or 'default', initial_refresh=initial_refresh, verify_refresh=verify_refresh, config=config)
