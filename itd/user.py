@@ -295,7 +295,7 @@ class User(_UserBase):
     def me(cls, client: Client | None = None) -> 'Me':
         return Me(client)
 
-    def for_client(self, client: Client) -> "User":
+    def for_client(self, client: Client) -> 'User':
         return User(self._identifier, client=client)
 
     def complete_actions_for_wall_access(self, client: Client | None = None) -> bool:
@@ -439,8 +439,6 @@ class Me(_UserBase):
         self.blocked: Blocked = Blocked()
         self.privacy: Privacy = Privacy(self.client)
         self.profile: Profile = Profile(self.client)
-        if not self.client._user:
-            self.client._user = self
 
     def _post_refresh(self):
         if self.pin:
