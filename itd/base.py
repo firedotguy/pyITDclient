@@ -452,12 +452,12 @@ def api_wrapper(*exceptions: ITDException):
             while True:
                 try:
                     return exec()
-                except client.config.retry_exceptions as e:
+                except client.config._retry_exceptions as e:
                     if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
                         l.error('too large rate limit')
                         raise
 
-                    retry_after = getattr(e, 'retry_after') or client.config.retry_delay
+                    retry_after = getattr(e, 'retry_after', 0) or client.config.retry_delay
                     l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
                     sleep(retry_after)
                     if name in limits and limits[name] in limiters:

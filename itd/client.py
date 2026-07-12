@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
 from requests.utils import default_user_agent
 
 from itd._credfile import Credfile
@@ -110,7 +111,7 @@ class Config:
     retry_enabled: bool | None = None
     retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception], ...] = field(default_factory=lambda: (RateLimitError,))
+    retry_exceptions: tuple[type[Exception], ...] | None = None
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -176,6 +177,14 @@ class Config:
             self._dwell_check_active = self.client_type == 'client'
         else:
             self._dwell_check_active = self.dwell_check_active
+
+        if self.retry_exceptions is None:
+            if self.client_type == 'bot':
+                self._retry_exceptions = (RateLimitError, RequestException)
+            else:
+                self._retry_exceptions = ()
+        else:
+            self._retry_exceptions = self.retry_exceptions
 
         if self.load_comments_from_post is not None:
             l.warning('config.load_comments_from_post is deprecated and will be removed in 2.7.0.')
