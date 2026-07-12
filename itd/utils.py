@@ -33,7 +33,7 @@ def get_credfile(name: str) -> Credfile:
         file.write_text(dumps(model.model_dump(mode='json')))
     else:
         model = Credfile.model_validate(loads(file.read_text()))
-        model._file = file
+    model._file = file
     return model
 
 
