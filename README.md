@@ -50,7 +50,11 @@ pip install itd-sdk
 ## API
 
 ```python
-from itd import Me, User, Post, Posts, File, Hashtag, Notifications
+from itd import ITDClient, init_client, Me, User, Post, Posts, File, Hashtag, Notifications
+
+init_client() # попросит ввести refresh token в консоли
+ITDClient(access='access token') # через access token
+ITDClient('refresh token') # одноразовая инициализация (не рекомендуется)
 
 me = Me() # получить себя
 me.privacy.update(is_private=True)

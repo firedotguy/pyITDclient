@@ -34,7 +34,7 @@ iiii    iii     ttt    dd           dd
 from importlib.metadata import version
 from time import sleep
 
-__version__ = version("itd-sdk")
+__version__ = version('itd-sdk')
 
 from itd._default import LimiterConfig, limiters
 from itd._default import set_config as set_limiter_config
@@ -42,6 +42,7 @@ from itd._limiter import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, RateL
 from itd.clan import Clan, TopClans
 from itd.client import Client as ITDClient
 from itd.client import Config as ITDConfig
+from itd.client import init_client
 from itd.file import File
 from itd.hashtag import Hashtag, Hashtags
 from itd.notification import Notifications
@@ -66,6 +67,7 @@ __all__ = [
     'Apps',
     'ITDClient',
     'ITDConfig',
+    'init_client',
     'Clan',
     'TopClans',
     'File',
