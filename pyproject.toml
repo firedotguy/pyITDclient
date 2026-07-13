@@ -14,7 +14,7 @@ version_provider = "uv"
 
 [project]
 name = "itd-sdk"
-version = "2.6.0"
+version = "2.7.1"
 description = "ITD client for python"
 readme = "README.md"
 authors = [
@@ -35,6 +35,7 @@ dependencies = [
   "sseclient-py~=1.9.0",
   "telegramify-markdown>=0.5.4",
   "lxml>=6.1.1",
+  "platformdirs>=4.10.0",
 ]
 requires-python = ">=3.10"
 
@@ -70,5 +71,5 @@ line-length = 160
 ignore = ["COM", "D300", "E501", 'E741', 'E731']
 
 [tool.ruff.format]
-quote-style = "preserve"
+quote-style = "single"
 skip-magic-trailing-comma = true

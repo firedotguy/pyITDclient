@@ -7,7 +7,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Literal, overload
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_serializer, field_validator, model_validator
 
 from itd.api.dwell import send_interactions, send_views
 from itd.api.hashtags import get_posts_by_hashtag
@@ -29,7 +29,7 @@ from itd.api.posts import (
 )
 from itd.base import ITDBaseModel, ITDList
 from itd.comment import Comment, Comments
-from itd.enums import ALL, InteractionType, LoadStatus, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
+from itd.enums import ALL, InteractionType, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
 from itd.exceptions import NotFoundError
 from itd.file import PostAttach
 from itd.hashtag import Hashtag
@@ -99,7 +99,16 @@ class DwellTracker(ITDBaseModel):
         if not self.views:
             return False
         l.info('dwell send view batch')
-        send_views(self.client, [event.model_dump(mode='json', by_alias=True) for event in self.views], self.sid)
+        send_views(
+            self.client,
+            [
+                event.model_dump(
+                    mode='json', by_alias=True, exclude_none=True, exclude={'source'} if event.source not in (ViewSource.POST_PAGE, ViewSource.LINK) else {}
+                )  # хз зачем убирать сурс но в оф клиенте так написано
+                for event in self.views
+            ],
+            self.sid
+        )
         self.views.clear()
         return True
 
@@ -144,11 +153,11 @@ class DwellTracker(ITDBaseModel):
             id,
             vs,
             duration,
-            entered_at.strftime('%m.%d %H:%M:%S'),
-            exited_at.strftime('%m.%d %H:%M:%S'),
-            source.value,
+            entered_at.strftime('%X.%f'),
+            exited_at.strftime('%X.%f'),
+            source.name.lower(),
             source_context,
-            reason.value
+            reason.name.lower()
         )
 
         self.views.append(
@@ -168,7 +177,7 @@ class DwellTracker(ITDBaseModel):
             self.send_views()
 
     def record_photo_open(self, vs: str, source: ViewSource, attachment_id: UUID, index: int):
-        """Записать событие просомтра фото
+        """Записать событие просмотра фото
 
         Args:
             vs (str): VS
@@ -214,7 +223,6 @@ class DwellTracker(ITDBaseModel):
         self._thread.start()
 
         def on_exit():
-            l.debug('stop dwell timer')
             if self._thread:
                 self._thread.join(timeout=0)
             self.send_views()
@@ -267,20 +275,13 @@ class Post(ITDBaseModel):
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
+        self.visible = False
         self.comments = Comments()
         self.comments._post = self
+        self._extra_context = {'source': source, 'source_context': source_context}
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
-
-    def _post_refresh(self):
-        self.visible = False
-        self.comments._post = self
-        if 'first_comments' in self._loaded_attrs:
-            for comment in self.first_comments:
-                comment._post = self
-        for attachment in self.attachments:
-            attachment._post = self
 
     @classmethod
     def new(
@@ -305,7 +306,6 @@ class Post(ITDBaseModel):
         Returns:
             Post: Пост
         """
-        # TODO rewrite with from_dict
         instance = cls.__new__(cls)
         super(Post, instance).__init__(client)
 
@@ -320,24 +320,22 @@ class Post(ITDBaseModel):
             content, spans = parse_md(content)
 
         post = create_post(
-            instance._client, content, [span.model_dump(mode="json") for span in spans], wall_recipient, format_attachments(attachments), poll
+            instance._client, content, [span.model_dump(mode='json') for span in spans], wall_recipient, format_attachments(attachments), poll
         ).json()
 
-        validated = _PostValidate.model_validate(post)
-        instance._loaded_attrs = validated.model_fields_set
-        for name, value in validated.__dict__.items():
-            setattr(instance, name, value)
-
-        instance.load_status = LoadStatus.PARTIALLY
-        instance._post_refresh()
-
-        return instance
+        return cls.from_dict(post, source=ViewSource.PROFILE, client=client)
 
     @classmethod
-    def from_dict(cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, client: Client | None = None) -> 'Post':
-        instance = super().from_dict(data, client=client)
+    def from_dict(
+        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict = {}, client: Client | None = None
+    ) -> 'Post':
+        context.update({'source': source, 'source_context': source_context})
+        instance = super().from_dict(data, context=context, client=client)
+        instance._extra_context = {'source': source, 'source_context': source_context}
         instance.source = source
         instance.source_context = source_context
+        instance.visible = False
+
         return instance
 
     def vote(self, options: list[str | UUID | PollOption] | str | UUID | PollOption, client: Client | None = None) -> None:
@@ -426,39 +424,43 @@ class Post(ITDBaseModel):
         return Post.from_dict(post, client=client)
 
     def view(
-        self,
-        entered_at: datetime | None = None,
-        exited_at: datetime | None = None,
-        duration: int | None = None,
-        reason: ViewReason = ViewReason.NORMAL,
-        *,
-        client: Client | None = None
+        self, entered_at: datetime | None = None, exited_at: datetime | None = None, reason: ViewReason = ViewReason.NORMAL, *, client: Client | None = None
     ) -> None:
         """Просмотреть пост
 
         Args:
-            entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел пост). Если None, заполнится исходя из exited_at. Defaults to None.
-            exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, заполнится исходя из duration и entered_at (если есть) или datetime.now. Defaults to None.
-            duration (int | None, optional): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+. если None, вычисляется исхоодя из длины поста и вложений. Defaults to None.
+            entered_at (datetime | None, optional): Дата открытия поста (когда пользователь увидел верхнюю границу поста). Если None, ставится datetime.now - 5000. Defaults to None.
+            exited_at (datetime | None, optional): Дата скрытия поста (когда пост пропал из зоны видимости). Если None, ставится datetime.now. Defaults to None.
             reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
             client (Client | None, optional): Клиент. Defaults to None.
         """
         c = client or self.client
 
-        if c.dwell_tracker is not None:
-            if duration is None:
-                duration = calc_view_duration(c.config, self.content, self.attachments)
-            if exited_at is None:
-                if entered_at is not None:
-                    exited_at = entered_at + timedelta(milliseconds=duration)
-                else:
-                    exited_at = datetime.now()
-            if entered_at is None:
-                entered_at = exited_at - timedelta(milliseconds=duration)
+        if c.config.dwell_wait_durations:
+            sleep(calc_view_duration(c.config, self.content, self.attachments) / 1000)
 
-            c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
-        else:
-            l.error('old post viewing is no more supported. Please enable dwell_tracker in config.')
+        entered_at_autofill = entered_at is None
+        exited_at_autofill = exited_at is None
+        if exited_at_autofill:
+            exited_at = datetime.now()
+        if entered_at_autofill:
+            entered_at = exited_at - timedelta(milliseconds=calc_view_duration(c.config, self.content, self.attachments))
+
+        duration = round((exited_at.timestamp() - entered_at.timestamp()) * 1000)
+        l.debug(
+            'view post id=%s entered_at=%s%s exited_at=%s%s reason=%s',
+            self.id,
+            entered_at.strftime('%X.%f'),
+            ' (autofill)' if entered_at_autofill else '',
+            exited_at.strftime('%X.%f'),
+            ' (autofill)' if exited_at_autofill else '',
+            reason.name.lower()
+        )
+        if duration < c.config.dwell_min_duration:
+            l.warning('skip post view id=%s duration=%s (min is %s)', self.id, duration, c.config.dwell_min_duration)
+            return
+
+        c.dwell_tracker.record_view(self.id, self.vs, duration, entered_at, exited_at, self.source, self.source_context, reason)
 
         if c == self.client:
             self.is_viewed = True
@@ -520,7 +522,7 @@ class Post(ITDBaseModel):
         if (client or self.client).config.parse_mode == ParseMode.MARKDOWN and not spans:
             content, spans = parse_md(content)
 
-        updated_at = parse_datetime(edit_post(client or self.client, self.id, content, [span.model_dump(mode="json") for span in spans]).json()['updatedAt'])
+        updated_at = parse_datetime(edit_post(client or self.client, self.id, content, [span.model_dump(mode='json') for span in spans]).json()['updatedAt'])
         self.edited_at = updated_at
         self.content = content
         self.spans = spans
@@ -547,16 +549,24 @@ class Post(ITDBaseModel):
 
     def set_visible(self, client: Client | None = None):
         if not self.visible:
+            l.debug('set visible id=%s', self.id)
             self.visible = True
+
             self._entered_at = datetime.now()
             (client or self.client).visible_posts.append(self)
+        else:
+            l.warning('set_visible called on already visible post')
 
-    def set_invisible(self, client: Client | None = None):
+    def set_invisible(self, reason: ViewReason = ViewReason.NORMAL, client: Client | None = None):
         if self.visible:
+            l.debug('set invisible id=%s reason=%s', self.id, reason.name.lower())
             self.visible = False
+
             (client or self.client).visible_posts.remove(self)
             if self._entered_at and (client or self.client).config.post_auto_view:
-                self.view(self._entered_at, client=client or self.client)
+                self.view(self._entered_at, reason=reason, client=client or self.client)
+        else:
+            l.warning('set_invisible called on already invisible post')
 
     def on_stats_update(self):
         pass  # override this
@@ -586,8 +596,9 @@ class Post(ITDBaseModel):
 class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have some problems with init
     @field_validator('attachments', mode='plain')
     @classmethod
-    def validate_attachments(cls, attachments: list[dict]):
-        return [PostAttach(attach) for attach in attachments]
+    def validate_attachments(cls, attachments: list[dict], info: ValidationInfo):
+        assert info.context
+        return [PostAttach(attach, client=info.context.get('client')) for attach in attachments]
 
     @field_validator('edited_at', mode='plain')
     @classmethod
@@ -603,42 +614,57 @@ class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have 
 
     @field_validator('original_post', mode='plain')
     @classmethod
-    def validate_original_post(cls, post: dict | None = None):
+    def validate_original_post(cls, post: dict | None, info: ValidationInfo):
         if post is None:
             return
-        return Post.from_dict(post)
+        assert info.context
+        return Post.from_dict(post, info.context.get('source'), info.context.get('source_context'), client=info.context.get('client'))
 
     @field_validator('poll', mode='plain')
     @classmethod
-    def validate_poll(cls, poll: dict | None = None):
+    def validate_poll(cls, poll: dict | None, info: ValidationInfo):
         if poll is None:
             return
-        return Poll(poll)
+        assert info.context
+        return Poll.from_dict(poll, client=info.context.get('client'))
 
     @field_validator('first_comments', mode='plain')
     @classmethod
-    def validate_first_comments(cls, comments: list[dict]):
-        return [Comment.from_dict(comment) for comment in comments]
+    def validate_first_comments(cls, comments: list[dict], info: ValidationInfo):
+        assert info.context
+        return [Comment.from_dict(comment, client=info.context.get('client')) for comment in comments]
 
     @field_validator('comments', mode='plain')
     @classmethod
-    def validate_comments(cls, _):
-        return Comments()
+    def validate_comments(cls, _, info: ValidationInfo):
+        assert info.context
+        return Comments(client=info.context.get('client'))
 
     @field_validator('author', mode='plain')
     @classmethod
-    def validate_author(cls, author: dict | _UserBase | None):
+    def validate_author(cls, author: dict | _UserBase | None, info: ValidationInfo):
         if author is None:
             return None
         if isinstance(author, _UserBase):
             return author
-        return User.from_dict(author)
+        assert info.context
+        return User.from_dict(author, client=info.context.get('client'))
 
     @field_validator('wall_recipient', mode='plain')
     @classmethod
-    def validate_wall_recipient(cls, wall_recipient: dict | None):
+    def validate_wall_recipient(cls, wall_recipient: dict | None, info: ValidationInfo):
+        assert info.context
         if wall_recipient is not None:
-            return User.from_dict(wall_recipient)
+            return User.from_dict(wall_recipient, client=info.context.get('client'))
+
+    @model_validator(mode='after')
+    def validate_model(self):
+        self.comments._post = self
+        for comment in self.first_comments:
+            comment._post = self
+        for attachment in self.attachments:
+            attachment._post = self
+        return self
 
 
 class _BasePosts(ITDList[Post]):
@@ -704,7 +730,6 @@ class Posts(_BasePosts):
 class UserPosts(_BasePosts):
     _load_with_parent = False
     cursor: datetime | None = None
-    _force_remove_pinned_post: bool = False
     source = ViewSource.PROFILE
 
     # ! not includes posts from other users (wall posts)
@@ -723,6 +748,7 @@ class UserPosts(_BasePosts):
             raise ValueError('User must be instance of User or Me class')
 
         self.sorting = sorting  # sort is busy
+        self._force_remove_pinned_post: bool = False
 
     @property
     def source_context(self):
@@ -743,14 +769,14 @@ class UserPosts(_BasePosts):
 
     def wait_for_post(self, delay: float = 5, include_pinned_post: bool = False) -> Post:
         self._force_remove_pinned_post = not include_pinned_post
-        post = self[0]
+        post = self[0] if self else None
         l.info('userposts wait_for_post init')
         while True:
             sleep(delay)
             l.debug('userposts wait_for_post check for new posts')
-            self.refresh()
-            if self[0].id != post.id:
-                l.debug('userposts wait_for_post found diff old=%s new=%s', post.id, self[0].id)
+            self.refresh(1)
+            if (self[0].id if self else None) != (post.id if post is not None else None):
+                l.debug('userposts wait_for_post found diff old=%s new=%s', (post.id if post is not None else None), self[0].id)
                 self._force_remove_pinned_post = include_pinned_post
                 return self[0]
 
@@ -758,6 +784,7 @@ class UserPosts(_BasePosts):
 class LikedPosts(_BasePosts):  # [] if forbidden
     _load_with_parent = False
     cursor: datetime | None = None  # actually datetime but in runtime its string
+    source = ViewSource.PROFILE
 
     def __init__(self, user: str | UUID | _UserBase, client: Client | None = None) -> None:
         super().__init__(client)
@@ -774,14 +801,14 @@ class LikedPosts(_BasePosts):  # [] if forbidden
         return data['pagination']['hasMore']
 
     def wait_for_post(self, delay: float = 5) -> Post:
-        post = self[0]
+        post = self[0] if self else None
         l.info('likedposts wait_for_post init')
         while True:
             sleep(delay)
             l.debug('likedposts wait_for_post check for new posts')
-            self.refresh()
-            if self[0].id != post.id:
-                l.debug('likedposts wait_for_post found diff old=%s new=%s', post.id, self[0].id)
+            self.refresh(1)
+            if (self[0].id if self else None) != (post.id if post is not None else None):
+                l.debug('likedposts wait_for_post found diff old=%s new=%s', (post.id if post is not None else None), self[0].id)
                 return self[0]
 
 

@@ -1,10 +1,9 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
 
-from itd.poll import Poll, NewPoll
-
+from itd.poll import NewPoll, Poll
 
 POLL_DATA = {
     'id': '00000000-0000-0000-0000-000000000001',
@@ -34,7 +33,7 @@ def mock_client():
 
 @pytest.fixture
 def poll(mock_client):
-    return Poll(POLL_DATA, mock_client)
+    return Poll.from_dict(POLL_DATA, client=mock_client)
 
 
 def test_poll_str(poll):

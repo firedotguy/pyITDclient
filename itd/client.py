@@ -1,7 +1,9 @@
 from _io import BufferedReader
 from atexit import register
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import cached_property
+from os import getenv
 from threading import Thread
 from time import sleep
 from typing import Callable, Literal, overload
@@ -10,21 +12,22 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
 from requests.utils import default_user_agent
 
-from itd import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, LimiterConfig, set_limiter_config
+from itd._credfile import Credfile
 from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
-from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, RateLimitMode, Role, UserAgent
-from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError
+from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, Role, UserAgent, ViewReason
+from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
 from itd.request import decode_jwt_payload, fetch, fetch_stream
 from itd.user import Me, User, Users, get_follow_status
-from itd.utils import get_sdk_user_agent
+from itd.utils import get_credfile, get_sdk_user_agent, shorten_token
 
 l = get_logger('client')  # noqa: E741
 
@@ -75,13 +78,6 @@ class Config:
     # ^ это если что просто мысли, не обращайте внимания
     client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
 
-    rate_limit: RateLimitMode | None = None  # deprecated
-    rate_limit_default: int | None = None  # deprecated
-    rate_limit_actions: dict[str, float | int] | None = None  # deprecated
-    anti_rate_limit: bool | None = None  # deprecated
-    burst_requests: bool | None = None  # deprecated
-    anti_ip_ban: bool | None = None  # deprecated
-    limit_coefficient: float | None = None  # deprecated
     auto_acquire: bool | None = None
 
     # enable_logging: bool | None = None
@@ -91,8 +87,8 @@ class Config:
 
     userposts_add_pinned_post: bool = True
 
-    # load_on_init: bool = True
-    # load_on_getattr: bool = False
+    # load_on_init: bool = False
+    load_on_getattr: bool = True
     auto_load: bool | None = None
     load_on_getitem: int | All | Batch | None = 1
     load_on_iter: int | All | Batch | None = BATCH
@@ -105,7 +101,6 @@ class Config:
     timeout_file_download: float | None = None
 
     url: str = 'https://xn--d1ah4a.com/api'
-    url_api: str | None = None  # deprecated
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
@@ -116,7 +111,7 @@ class Config:
     retry_enabled: bool | None = None
     retry_delay: float = 10  # delay before next attempt (after rate limit error) if retry_after is not provided in response
     retry_max_retries: int | None = 10  # none for no limit
-    retry_exceptions: tuple[type[Exception]] = field(default_factory=lambda: (RateLimitError,))
+    retry_exceptions: tuple[type[Exception], ...] | None = None
     retry_max_retry_after: int = 500
 
     bypass_auth_level: bool = False
@@ -126,6 +121,11 @@ class Config:
     dwell_send_interval: float = 2
     dwell_save_on_quit: bool = True
     dwell_wait_durations: bool = False
+    dwell_max_duration: int = 30000
+    dwell_min_duration: int = 250
+    dwell_check_active: bool | None = None
+    dwell_check_active_interval: float = 5
+    dwell_inactive_timeout: int = 30
     post_view_increment: bool = False
     post_auto_view: bool = True  # view when called post.set_invisible()
 
@@ -140,10 +140,6 @@ class Config:
     refresh_token_cookie_name: str = 'refresh_token'
 
     def __post_init__(self):
-        if self.url_api is not None:
-            l.warning('config.url_api is deprecated and will be removed in 2.7.0. Please use config.url.')
-            self.url = self.url_api
-
         match self.user_agent:
             case UserAgent.DEFAULT:
                 self._user_agent = default_user_agent()
@@ -155,39 +151,6 @@ class Config:
                 self._user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0'
             case _:
                 self._user_agent = self.user_agent
-
-        if self.dwell_wait_durations:
-            l.warning('config.dwell_wait_durations is deprecated and will be removed in 2.6.0.')
-
-        if self.rate_limit is not None:
-            l.warning('config.rate_limit is deprecated and will be removed in 2.7.0.')
-        if self.rate_limit_default is not None:
-            l.warning('config.rate_limit_default is deprecated and will be removed in 2.7.0.')
-        if self.rate_limit_actions is not None:
-            l.warning('config.rate_limit_actions is deprecated and will be removed in 2.7.0.')
-        if self.anti_ip_ban is not None:
-            l.warning(
-                f'config.anti_ip_ban is deprecated and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(LimiterConfig(ip_limiter={"IPRateLimiter" if self.anti_ip_ban else None})).'
-            )
-            set_limiter_config(LimiterConfig(ip_limiter=IPRateLimiter() if self.anti_ip_ban else None))
-        if self.anti_rate_limit is not None:
-            l.warning(
-                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(limiter={"HalfRateLimiter" if self.anti_rate_limit else None}).'
-            )
-            set_limiter_config(LimiterConfig(limiter=HalfRateLimiter if self.anti_rate_limit else None))
-        if self.burst_requests is not None:
-            l.warning(
-                f'config.anti_rate_limit is depreacred and will be removed in 2.7.0. '
-                f'Please use set_limiter_config(limiter={"BurstRateLimiter" if self.burst_requests else None}).'
-            )
-            set_limiter_config(LimiterConfig(limiter=BurstRateLimiter if self.burst_requests else None))
-        if self.limit_coefficient is not None:
-            l.warning(
-                'config.limit_coefficient is deprecated and will be removed in 2.7.0. '
-                'Please define your own rate limiter that will override sync function of RateLimiter class and apply coefficient to remaining.'
-            )
 
         if self.timeout is None:
             match self.client_type:
@@ -210,8 +173,25 @@ class Config:
         else:
             self._post_update_stats = self.post_update_stats
 
+        if self.dwell_check_active is None:
+            self._dwell_check_active = self.client_type == 'client'
+        else:
+            self._dwell_check_active = self.dwell_check_active
+
+        if self.retry_exceptions is None:
+            if self.client_type == 'bot':
+                self._retry_exceptions = (RateLimitError, RequestException)
+            else:
+                self._retry_exceptions = ()
+        else:
+            self._retry_exceptions = self.retry_exceptions
+
         if self.load_comments_from_post is not None:
-            l.warning('load_comments_from_post is deprecated and will be removed in 2.7.0.')
+            l.warning('config.load_comments_from_post is deprecated and will be removed in 2.7.0.')
+
+        if self.auto_load is not None:
+            l.warning('config.auto_load is deprecated and will be removed in 2.8.0. Please use load_on_getattr.')
+            self.load_on_getattr = self.auto_load
 
 
 class AccessToken(BaseModel):
@@ -239,8 +219,10 @@ class Client:
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
-        self._user: Me | None = None
         self.visible_posts: list[Post] = []
+        self._visible_posts_buffer: list[Post] = []
+        self.last_active = datetime.now()
+        self._credfile: Credfile | None = None
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -248,7 +230,7 @@ class Client:
 
         if access:
             self.auth_level = AuthLevel.ACCESS
-            self.access_token = access.replace('Bearer ', '')
+            self.token = access.replace('Bearer ', '')
 
         if refresh:
             self.session.cookies.set(config.refresh_token_cookie_name, refresh, path='/')
@@ -260,14 +242,130 @@ class Client:
         if _default_client is None or config.is_default:
             set_default_client(self)
 
-        if self.auth_level > AuthLevel.NO and self.config.dwell_enabled:
-            self.dwell_tracker = DwellTracker(self)
-            self.dwell_tracker._start_timer()
-        else:
-            self.dwell_tracker = None
+        self.dwell_tracker = DwellTracker(self)
+        self.dwell_tracker._start_timer()
 
-        if self.config.post_update_stats:
+        if self.config._post_update_stats:
             self._start_update_timer()
+        if self.config._dwell_check_active:
+            self._start_check_active_timer()
+
+    @classmethod
+    def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
+        credfile = get_credfile(name)
+        l.debug('get credentials file refresh=%s access=%s', shorten_token(credfile.refresh), shorten_token(credfile.access))
+        if not credfile.valid:
+            l.warning('last refresh token was expired or not found. Please enter a new one:')
+            update = True
+        else:
+            update = credfile.refresh is None
+
+        if update:
+            if initial_refresh is not None:
+                credfile.refresh = initial_refresh
+            elif getenv('ITD_REFRESH_TOKEN') is not None:
+                credfile.refresh = getenv('ITD_REFRESH_TOKEN')
+            else:
+                try:
+                    from rich.prompt import Prompt
+                except ImportError:
+                    credfile.refresh = input('refresh token: ')
+                else:
+                    credfile.refresh = Prompt.ask('[cyan]refresh token[/]')
+
+        instance = cls(credfile.refresh, credfile.access, config=config)
+        if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
+            instance.access_token = instance.access_token_data = None
+        instance._credfile = credfile
+        if verify_refresh and initial_refresh is not None:
+            instance.refresh_auth(force=True)
+        elif update:
+            instance._update_file()
+        return instance
+
+    def _update_file(self, valid: bool = True):
+        if self._credfile is None:
+            return
+
+        l.debug('update credentials file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
+        if not valid:
+            l.warning('mark %s as not valid', shorten_token(self.refresh_token))
+
+        self._credfile.access = self.access_token
+        self._credfile.refresh = self.refresh_token
+        self._credfile.valid = valid
+        self._credfile.flush()
+
+    def refresh_auth(self, force: bool = False) -> str:
+        """Обновить access token
+
+        Returns:
+            str: Токен
+        """
+
+        l.debug('refresh access_token')
+        if not force and self._credfile and self._credfile.update():
+            self.token = self._credfile.access
+            self.refresh_token = self._credfile.refresh
+
+            if self.access_token:
+                assert self.access_token_data
+                if self.access_token_data.expired_at > datetime.now():
+                    l.debug('update access_token from credfile')
+                    return self.access_token
+                else:
+                    l.info('credfile access_token expired')
+            else:
+                l.info('crefile access_token is none')
+
+        try:
+            res = refresh_token(self)
+        except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
+            if force:
+                raise
+            self._update_file(valid=False)
+            raise
+
+        self.token = res.json().get('accessToken') or res.json()['token']
+        if 'refresh_token' in res.cookies:
+            self.refresh_token = res.cookies['refresh_token']
+        self._update_file()
+
+        return self.token
+
+    def _start_check_active_timer(self):
+        l.debug('start check active timer')
+        if not self.config.dwell_check_active_interval:
+            return
+
+        def loop():
+            while True:
+                sleep(self.config.dwell_check_active_interval)
+                is_active = self.last_active + timedelta(seconds=self.config.dwell_inactive_timeout) > datetime.now()
+
+                if not self._visible_posts_buffer and not is_active:
+                    self._visible_posts_buffer = self.visible_posts.copy()
+                    for post in self._visible_posts_buffer:
+                        post._entered_at = datetime.now() - timedelta(seconds=self.config.dwell_inactive_timeout)
+                        post.set_invisible(reason=ViewReason.INACTIVE)
+
+                elif self._visible_posts_buffer and is_active:
+                    for post in self._visible_posts_buffer:
+                        post.set_visible()
+                    self._visible_posts_buffer.clear()
+
+        self._check_active_thread = Thread(target=loop)
+        self._check_active_thread.daemon = True
+        self._check_active_thread.start()
+
+        def on_exit():
+            if self._check_active_thread:
+                self._check_active_thread.join(timeout=0)
+
+        register(on_exit)
+
+    def set_active(self):  # call when user is active (scroll, move etc)
+        self.last_active = datetime.now()
 
     def _start_update_timer(self):
         l.debug('start update timer')
@@ -279,14 +377,13 @@ class Client:
                 sleep(self.config.post_update_stats_interval)
                 self.update_post_stats()
 
-        self._thread = Thread(target=loop)
-        self._thread.daemon = True
-        self._thread.start()
+        self._update_thread = Thread(target=loop)
+        self._update_thread.daemon = True
+        self._update_thread.start()
 
         def on_exit():
-            l.debug('stop update timer')
-            if self._thread:
-                self._thread.join(timeout=0)
+            if self._update_thread:
+                self._update_thread.join(timeout=0)
 
         register(on_exit)
 
@@ -308,7 +405,11 @@ class Client:
         if level > self.auth_level and not self.config.bypass_auth_level:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
-        if level >= AuthLevel.ACCESS and self.access_token is None and url != 'v1/auth/refresh':
+        if (
+            level >= AuthLevel.ACCESS
+            and (self.access_token is None or (self.access_token_data and self.access_token_data.expired_at <= datetime.now()))
+            and url != 'v1/auth/refresh'
+        ):
             self.refresh_auth()
 
         return fetch(self, method, url, params, files)
@@ -338,38 +439,27 @@ class Client:
         assert self.access_token, 'Access token not refreshed yet'
         return self.access_token
 
+    @token.setter
+    def token(self, token: str | None):
+        self.access_token = token
+        if token is None:
+            self.access_token_data = None
+        else:
+            self.access_token_data = AccessToken.model_validate(decode_jwt_payload(token))
+
     @property
     def user_id(self) -> UUID:
         assert self.access_token_data
         return self.access_token_data.subject_id
 
-    @property
+    @cached_property
     def user(self) -> Me:
-        if not self._user:
-            self._user = Me(self)
-        return self._user
+        return Me(self)
 
     def _process_exc_callbacks(self, exception: Exception):
         # l.debug([v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()])
         for callback in [v for k, v in self.config.on_exceptions.items() if k in exception.__class__.mro()]:
             callback(exception)
-
-    def refresh_auth(self) -> str:
-        """Обновить access token
-
-        Returns:
-            str: Токен
-        """
-        l.debug('refresh token')
-
-        res = refresh_token(self)
-        res.raise_for_status()
-
-        self.access_token = res.json().get('accessToken') or res.json()['token']
-        self.access_token_data = AccessToken.model_validate(decode_jwt_payload(self.access_token))
-
-        assert self.access_token
-        return self.access_token
 
     def logout(self):
         """Выход из аккаунта"""
@@ -483,5 +573,5 @@ class Client:
         return get_follow_status(users)
 
 
-def init_client(refresh: str | None = None, access: str | None = None, config: Config = Config()):
-    return Client(refresh, access, config)
+def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()) -> Client:
+    return Client.from_file(name or 'default', initial_refresh=initial_refresh, verify_refresh=verify_refresh, config=config)

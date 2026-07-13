@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import cached_property
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.base import ITDBaseModel, ITDList
@@ -33,28 +34,29 @@ class Comment(ITDBaseModel):
     replies_count: int = Field(0, alias='repliesCount')
     is_liked: bool = Field(False, alias='isLiked')
 
-    attachments: list[CommentAttach]
-    replies: Replies = Field(default_factory=lambda: Replies())
-    reply_to: User | None = None  # author of replied comment, if this comment is reply
+    attachments: list[CommentAttach] = Field(default_factory=list)
+    first_replies: list[Comment] = Field(default_factory=list, alias='replies')
+    reply_to: User | None = Field(None, alias='replyTo')  # author of replied comment, if this comment is reply
 
-    _post: Post
+    _post: Post | None = None
     _base_comment: Comment | None = None
 
     @classmethod
-    def from_dict(cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, client: Client | None = None) -> Comment:
-        instance = super().from_dict(data, client=client)
-        if post is not None:
-            instance._post = post
-        instance._base_comment = base_comment
-        instance.replies._post = post
-        instance.replies._post_refresh()
-        return instance
+    def from_dict(
+        cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict = {}, client: Client | None = None
+    ) -> Comment:
+        return super().from_dict(data, client=client, context={'post': post, 'base_comment': base_comment, 'client': client})
+
+    @cached_property
+    def replies(self) -> Replies:
+        assert self._post is not None, 'post not set'
+        replies = Replies(client=self.client)
+        replies._post = self._post
+        replies._base_comment = self
+        return replies
 
     def __hash__(self):
         return int(self.id)
-
-    def _post_refresh(self):
-        self.replies._base_comment = self
 
     def __str__(self) -> str:
         return self.content
@@ -62,7 +64,7 @@ class Comment(ITDBaseModel):
     def report(self, reason: ReportReason, description: str | None = None, client: Client | None = None) -> Report:
         return Report(self.id, ReportTargetType.COMMENT, reason, description, client or self.client)
 
-    def reply(self, content: str | None = None, attachments: ATTACHMENTS = [], user_id: UUID | None = None, client: Client | None = None) -> 'Comment':
+    def reply(self, content: str | None = None, attachments: ATTACHMENTS = [], user_id: UUID | None = None, client: Client | None = None) -> Comment:
         """Ответить на комментарий
 
         Args:
@@ -74,12 +76,31 @@ class Comment(ITDBaseModel):
         Returns:
             Comment: Комментарий
         """
-        return Comment.from_dict(
-            add_reply_comment(client or self._client, self.id, user_id or self.author.id, content, format_attachments(attachments)).json(),
+        comment = Comment.from_dict(
+            add_reply_comment(
+                client or self._client,
+                self._base_comment.id if self.is_reply and self._base_comment is not None else self.id,
+                user_id or self.author.id,
+                content,
+                format_attachments(attachments)
+            ).json(),
             post=self._post,
             base_comment=self,
             client=client or self.client
         )
+        if self.is_reply:
+            assert self._base_comment is not None
+            self._base_comment.replies.insert(0, comment)
+            self._base_comment.replies.total += 1
+            self._base_comment.replies_count += 1
+        else:
+            self.replies.insert(0, comment)
+            self.replies.total += 1
+            self.replies_count += 1
+
+        if self._post is not None:
+            self._post.comments_count += 1
+        return comment
 
     def like(self, client: Client | None = None) -> int:
         """Лайкнуть комментарий
@@ -130,32 +151,59 @@ class Comment(ITDBaseModel):
         return parse_datetime(edited_at)
 
     @classmethod
-    def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None):
+    def new(cls, post: Post, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None) -> Comment:
         instance = cls.__new__(cls)
         super(Comment, instance).__init__(client)
-        return cls.from_dict(
+        comment = cls.from_dict(
             add_comment(client or instance.client, post.id, content, format_attachments(attachments)).json(), post, client=client or instance.client
         )
+        post.comments_count += 1
+        post.comments.insert(0, comment)
+        return comment
 
     @property
-    def url(self):
+    def url(self) -> str:
+        assert self._post is not None, 'post not set'
         return f'https://xn--d1ah4a.com/@{self._post.author.username}/post/{self._post.id}?comment={self.id}'
 
     @property
-    def link(self):
+    def link(self) -> str:
         return self.url
+
+    @property
+    def is_reply(self) -> bool:
+        return self.reply_to is not None
+
+    @property
+    def is_owner(self) -> bool:
+        return self.client.user_id == self.author.id
+
+    @property
+    def can_delete(self) -> bool:
+        assert self._post is not None, 'post not set'
+        return self.is_owner or self._post.is_owner
+
+    @property
+    def can_edit(self) -> bool:
+        return self.is_owner
+
+    @property
+    def can_report(self) -> bool:
+        return not self.is_owner
 
 
 class _CommentValidate(BaseModel, Comment):
     @field_validator('attachments', mode='plain')
     @classmethod
-    def validate_attachments(cls, attachments: list[dict]):
-        return [CommentAttach(attach) for attach in attachments]
+    def validate_attachments(cls, attachments: list[dict], info: ValidationInfo):
+        assert info.context
+        return [CommentAttach(attach, client=info.context.get('client')) for attach in attachments]
 
-    @field_validator('replies', mode='plain')
+    @field_validator('first_replies', mode='plain')
     @classmethod
-    def validate_replies(cls, replies: list[dict]):
-        return Replies(replies)
+    def validate_first_replies(cls, replies: list[dict], info: ValidationInfo):
+        assert info.context
+        return [Comment.from_dict(comment, info.context.get('post'), client=info.context.get('client')) for comment in replies]
 
     @field_validator('created_at', mode='plain')
     @classmethod
@@ -164,14 +212,25 @@ class _CommentValidate(BaseModel, Comment):
 
     @field_validator('reply_to', mode='plain')
     @classmethod
-    def validate_reply_to(cls, reply_to: dict | None):
+    def validate_reply_to(cls, reply_to: dict | None, info: ValidationInfo):
+        assert info.context
         if reply_to is not None:
-            return User.from_dict(reply_to)
+            return User.from_dict(reply_to, client=info.context.get('client'))
 
     @field_validator('author', mode='plain')
     @classmethod
-    def validate_author(cls, author: dict):
-        return User.from_dict(author)
+    def validate_author(cls, author: dict, info: ValidationInfo):
+        assert info.context
+        return User.from_dict(author, client=info.context.get('client'))
+
+    @model_validator(mode='after')
+    def validate_model(self, info: ValidationInfo):
+        assert info.context
+        self._base_comment = info.context.get('base_comment')
+        self._post = info.context.get('post')
+        for reply in self.first_replies:
+            reply._base_comment = self
+        return self
 
 
 class Comments(ITDList[Comment]):
@@ -207,7 +266,7 @@ class Comments(ITDList[Comment]):
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None) -> Comment:
         comment = Comment.new(self._post, content, attachments, client=client or self.client)
-        self.insert(0, comment)
+        self.total += 1
         return comment
 
     @property
@@ -229,19 +288,9 @@ class Replies(ITDList[Comment]):
     _post: Post
     total: int
     cursor: int = 1
-
-    def __init__(self, data: list[dict] = []):
-        super().__init__()
-        self._is_raw = True
-        self.first_replies = data
-
-    def _post_refresh(self):
-        self.extend(self._to_models(self.first_replies, self.client))
+    _is_page_pagination = True
 
     def _fetch(self, client: Client, limit: int):
-        if self._is_raw:
-            self._is_raw = False
-            self.clear()
         return get_replies(client or self._client, self._base_comment.id, self.cursor, limit).json()['data']
 
     @staticmethod
@@ -264,7 +313,4 @@ class Replies(ITDList[Comment]):
         return [Comment.from_dict(comment, self._post, self._base_comment, client=client) for comment in objects]
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None, *, author_id: str | UUID | None = None) -> 'Comment':
-        assert self._base_comment is not None
-        reply = self._base_comment.reply(content, attachments, to_nullable_uuid(author_id), client)
-        self.insert(0, reply)
-        return reply
+        return self._base_comment.reply(content, attachments, to_nullable_uuid(author_id), client)

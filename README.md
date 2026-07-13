@@ -1,6 +1,6 @@
 # itd-sdk
 
-[![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff)
+[![ncruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/fi-res/ncruff) [![EffVer Versioning](https://img.shields.io/badge/version_scheme-EffVer-0097a7)](https://jacobtomlinson.dev/effver)
 
 SDK для работы с [https://xn--d1ah4a.com](итд.com) на python.
 
@@ -50,7 +50,11 @@ pip install itd-sdk
 ## API
 
 ```python
-from itd import Me, User, Post, Posts, File, Hashtag, Notifications
+from itd import ITDClient, init_client, Me, User, Post, Posts, File, Hashtag, Notifications
+
+init_client() # попросит ввести refresh token в консоли
+ITDClient(access='access token') # через access token
+ITDClient('refresh token') # одноразовая инициализация (не рекомендуется)
 
 me = Me() # получить себя
 me.privacy.update(is_private=True)
@@ -102,4 +106,12 @@ stream = notifications.stream_bg() # background SSE
     - ИТД: [@itd_sdk](https://xn--d1ah4a.com/@itd_sdk) или [@fdg](https://xn--d1ah4a.com/@pingbot)
     - ТГ: [@desicars](https://t.me/desicars)
 
-[![Star History Chart](https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left)](https://www.star-history.com/?repos=itd-sdk%2Fitd-sdk&type=date&legend=top-left)
+## Star History
+
+<a href="https://www.star-history.com/?repos=itd-sdk%2Fitd-sdk&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&theme=dark&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=itd-sdk/itd-sdk&type=date&legend=top-left&sealed_token=brjbpfz1rF0nnwX3YlCjR4ev8hGgrQBUWTajkwrWZAu2DXCavP5gmI3QYtM1p0NZAc8hmqMTLGTenVMGB9bgCzyRlzi36KDjQvj1HQo3NHJyPisbfBbVVA" />
+ </picture>
+</a>

@@ -33,8 +33,8 @@ class ViewReason(Enum):
     BLUR = 1  # страница скрыта (listener blur)
     HIDDEN = 2  # тоже страница скрыта (listener visibilitychange и доп.проверка что document.hidden)
     PAGE_HIDE = 3  # и это тоже страница скрыта (listener pagehiden)
-    UNOBSERVE = 4  # что то заумное на фронтедерском
-    THRESHOLD_MET = 5  # трэшхолд типо плавный просмотр, я не осбо понял для чего это
+    UNOBSERVE = 4  # что то заумное на фронтедерском, пост удалили из дома
+    THRESHOLD_MET = INACTIVE = 5  # юзер перестал активить
 
 
 class AuthLevel(Enum):
@@ -89,7 +89,7 @@ class NotificationType(Enum):
     FOLLOW = 'follow'
     FOLLOW_REQUEST = 'follow_request'
     FOLLOW_ACCEPTED = 'follow_accepted'
-    COMMENT_LIKE = 'comment_reaction'
+    COMMENT_LIKE = 'comment_like'
     COMMENT_MENTION = 'comment_mention'
     WALL_POST = 'wall_post'
 
@@ -102,6 +102,10 @@ class ParseMode(Enum):
 
 class NotificationTargetType(Enum):
     POST = 'post'
+
+
+class NotificationSubjectType(Enum):
+    COMMENT = 'comment'
 
 
 class ReportTargetType(Enum):

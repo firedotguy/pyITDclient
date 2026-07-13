@@ -97,12 +97,12 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
     def _do_request():
         m = method.lower()
         if m == "get":
-            return client.session.get(f'{client.config.url}/{url}', timeout=client.config.timeout, params=params, headers=headers)
+            return client.session.get(f'{client.config.url}/{url}', timeout=client.config._timeout, params=params, headers=headers)
 
         return client.session.request(
             m.upper(),
             f'{client.config.url}/{url}',
-            timeout=client.config.timeout_file if files else client.config.timeout,
+            timeout=client.config.timeout_file if files else client.config._timeout,
             json=params,
             headers=headers,
             files=files

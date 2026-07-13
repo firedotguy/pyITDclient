@@ -44,10 +44,7 @@ def update_notifications_settings(client: Client, settings: NotificationsSetting
 
     data = {}
     if old:
-        print(settings.follows)
-
         data.update(_NotificationsSettingsOld.model_validate(settings, from_attributes=True).model_dump(mode='json', by_alias=True))
-        print(settings.follows)
 
     if new:
         data.update(

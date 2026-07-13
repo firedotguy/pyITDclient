@@ -50,7 +50,7 @@ def unlike_comment(client: Client, id: UUID):
     return client.request('delete', f'comments/{id}/like')
 
 
-@api_wrapper(NotFoundError('Comment'), AlreadyDeletedError('Comment'))
+@api_wrapper(NotFoundError('Comment'), AlreadyDeletedError('Comment'), ForbiddenError('delete comment'))
 def delete_comment(client: Client, id: UUID):
     return client.request('delete', f'comments/{id}')
 

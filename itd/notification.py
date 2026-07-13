@@ -20,7 +20,7 @@ from itd.api.notifications import (
 )
 from itd.base import ITDBaseModel, ITDList
 from itd.client import Client
-from itd.enums import LoadStatus, NotificationTargetType, NotificationType
+from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
 from itd.logger import get_logger
 from itd.user import User
 
@@ -125,10 +125,17 @@ class Notification(ITDBaseModel):
     id: UUID
     type: NotificationType
 
-    target_type: NotificationTargetType | None = Field(None, alias='targetType')  # none - follows, other - NotificationTragetType.POST
+    target_type: NotificationTargetType | None = Field(None, alias='targetType')  # none if follow, NotificationTargetType.POST otherwise
     target_id: UUID | None = Field(None, alias='targetId')  # none - follows
 
-    preview: str | None = None  # follow - none, comment/reply - content, repost - original post content, like - post content, wall_post - wall post content
+    subject_type: NotificationSubjectType | None = Field(
+        None, alias='subjectType'
+    )  # NotificationSubjectType.COMMENT if comment_like or reply follows, other - NotificationTragetType.POST, none otherwise
+    subject_id: UUID | None = Field(None, alias='subjectId')
+
+    preview: str | None = (
+        None  # follow - none, comment/reply - content, repost - original post content, like - post/comment content, wall_post - wall post content
+    )
 
     is_read: bool = Field(False, alias='read')
     read_at: datetime | None = Field(None, alias='readAt')
@@ -219,8 +226,12 @@ class Notifications(ITDList[Notification]):
     def __init__(self, client: Client | None = None):
         super().__init__(client=client)
         self._unread: int | None = None
-        self._callbacks: dict[str | None, Callable[[Notification], Any]] = {}
         self.settings = NotificationsSettings(client=client)
+
+        self._callbacks: dict[NotificationType | None, list[Callable[[Notification], Any]]] = {}
+        for type in NotificationType:
+            self._callbacks[type] = []
+        self._callbacks[None] = []
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return get_notifications(client, limit, len(self)).json()
@@ -255,9 +266,11 @@ class Notifications(ITDList[Notification]):
 
         for event in SSEClient(cast(Iterator[bytes], self._stream)).events():
             data = loads(event.data)
+            if self.client.config.debug_response != DebugResponseMode.NO:
+                l.debug('< %s', data)
 
             if 'userId' in data and 'timestamp' in data and 'type' not in data:
-                l.debug('got init message %s', data)
+                l.info('received init message', data)
                 continue  # initial message
 
             notification: Notification = Notification.from_dict(data, self, client=self.client)
@@ -268,10 +281,8 @@ class Notifications(ITDList[Notification]):
             l.info('new notification type=%s', notification.type.value)
             exec(f'self.on_{notification.type.value}(notification)')
             self.on_notification(notification)
-            if None in self._callbacks:
-                self._callbacks[None](notification)
-            if notification.type.value in self._callbacks:
-                self._callbacks[notification.type.value](notification)
+            for callback in self._callbacks[notification.type] + self._callbacks[None]:
+                callback(notification)
 
             yield notification
 
@@ -317,19 +328,13 @@ class Notifications(ITDList[Notification]):
 
     def on_notification(self, notification: Notification, /) -> None: ...
 
-    def on(
-        self,
-        type: Literal[
-            'like', 'comment', 'reply', 'repost', 'mention', 'follow', 'follow_request', 'follow_accepted', 'comment_like', 'comment_mention', 'wall_post'
-        ]
-        | None = None
-    ):
+    def on(self, type: NotificationType | None = None):
         def decorator(func: Callable[[Notification], Any]):
-            self._callbacks[type] = func
-
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            return wrapper
+            self._callbacks[type].append(func)
+            return func
 
         return decorator
+
+
+Ntfs = Notifications  # short alias
+Ntf = Notification
