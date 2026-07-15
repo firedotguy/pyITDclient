@@ -22,9 +22,18 @@
 === "refresh"
 
     ```python
-    from itd import ITDClient
+    from itd import init_client
+
+    c = init_client(initial_refresh='xxx')
+    ```
+
+=== "refresh (без сохранения)"
+
+    ```python
+    from itd import init_client
 
     c = ITDClient('xxx')
+    # при обновлении токена старый перестанет быть действителен, т.е при перезапуске скрипт уже перестанет работать
     ```
 
 === "access"

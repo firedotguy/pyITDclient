@@ -1358,7 +1358,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;token expired&#39;</span> <span class="ow">or</span> <span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Invalid or expired token&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;token expired&#39;</span> <span class="ow">or</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Invalid or expired token&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1530,7 +1530,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="get">get</span></span><span class="p">(</span><span class="s1">&#39;code&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;ACCOUNT_BANNED&#39;</span><span class="p">,</span> <span class="s1">&#39;ACCOUNT_DEACTIVATED&#39;</span><span class="p">))</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n"><span title="get">get</span></span><span class="p">(</span><span class="s1">&#39;code&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;ACCOUNT_BANNED&#39;</span><span class="p">,</span> <span class="s1">&#39;ACCOUNT_DEACTIVATED&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2290,7 +2290,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">res_check</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n"><span title="res.status_code">status_code</span></span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n"><span title="res.text">text</span></span> <span class="o">==</span> <span class="s1">&#39;Комментарий не найден&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">res_check</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n"><span title="res">res</span></span><span class="o">.</span><span class="n"><span title="res.status_code">status_code</span></span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n"><span title="res">res</span></span><span class="o">.</span><span class="n"><span title="res.text">text</span></span> <span class="o">==</span> <span class="s1">&#39;Комментарий не найден&#39;</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5078,7 +5078,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Insufficient auth level (current is </span><span class="si">{</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(current).name">name</span></span><span class="si">}</span><span class="s1">, requires </span><span class="si">{</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(requires).name">name</span></span><span class="si">}</span><span class="s1">)&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Insufficient auth level (current is </span><span class="si">{</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(current)">current</span></span><span class="o">.</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(current).name">name</span></span><span class="si">}</span><span class="s1">, requires </span><span class="si">{</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(requires)">requires</span></span><span class="o">.</span><span class="n"><span title="itd.exceptions.InsufficientAuthLevelError(requires).name">name</span></span><span class="si">}</span><span class="s1">)&#39;</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5350,7 +5350,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;invalid signature&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;invalid signature&#39;</span><span class="p">,</span> <span class="s1">&#39;invalid token&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6382,7 +6382,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Unsupported token algorithm&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Unsupported token algorithm&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8790,7 +8790,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Too Many Requests&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_check</span> <span class="o">=</span> <span class="n"><span title="staticmethod">staticmethod</span></span><span class="p">(</span><span class="k">lambda</span> <span class="n">json</span><span class="p">:</span> <span class="n"><span title="json">json</span></span><span class="o">.</span><span class="n"><span title="json.get">get</span></span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Too Many Requests&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">

@@ -1,22 +1,48 @@
 # ITDClient
 
-```py
-c = ITDClient(
-    refresh=getenv('TOKEN')
-    access=None,
-    config=ITDConfig()
-)
-```
+=== "С сохранением"
+    ```py
+    c = init_client(
+        'default',
+        initial_refresh=None, 
+        verify_refresh=None,
+        config=ITDConfig()
+    )
+    ```
+    ### Параметры
+    #### name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+    Уникальное имя сессии. Файл с токенами будет сохранен под этим именем. По умолчанию `default`.
 
-### Параметры
-#### refresh <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Refresh токен.
+    !!! tip
+        Используйте разные имена сессий для разных аккаунтов.
+    
+    #### initial_refresh <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+    Refresh токен. Если не указан, будет взят из env `ITD_REFRESH_TOKEN` или попросится напрямую в консоли (через `input`).
 
-#### access <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Access токен (JWT).
+    #### verify_refresh <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+    Нужно ли проверить токен на валидность сразу после инициализации. Полезно для реальных клиентов (сразу покзаать ошибку пользователю при неверном значении). По умолчанию `False`.
+    
+    #### config <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-gear:</span><span class="mdx-badge__text">ITDConfig</span></span>
+    [Конфиг](../config.md).
 
-#### config <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-gear:</span><span class="mdx-badge__text">ITDConfig</span></span>
-[Конфиг](../config.md).
+=== "Без сохранения"
+    ```py
+    c = ITDClient(
+        refresh='xxx',
+        access=None,
+        config=ITDConfig()
+    )
+    ```
+
+    ### Параметры
+    #### refresh <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+    Refresh токен.
+    
+    #### access <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+    Access токен (JWT).
+    
+    #### config <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-gear:</span><span class="mdx-badge__text">ITDConfig</span></span>
+    [Конфиг](../config.md).
 
 ## Сделать запрос
 ```py

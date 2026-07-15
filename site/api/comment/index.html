@@ -1322,7 +1322,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">attachments</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            CommentAttach (itd.file.CommentAttach)" href="../file/#itd.file.CommentAttach">CommentAttach</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">attachments</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            CommentAttach (itd.file.CommentAttach)" href="../file/#itd.file.CommentAttach">CommentAttach</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="pydantic.Field">Field</span></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="n"><span title="list">list</span></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1341,6 +1341,60 @@
 
 </h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">author</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            User (itd.user.User)" href="../user/#itd.user.User">User</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.comment.Comment.can_delete" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">can_delete</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">can_delete</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.comment.Comment.can_edit" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">can_edit</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">can_edit</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.comment.Comment.can_report" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">can_report</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">can_report</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1407,6 +1461,24 @@
 
 
 
+<h4 id="itd.comment.Comment.first_replies" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">first_replies</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">first_replies</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="pydantic.Field">Field</span></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="n"><span title="list">list</span></span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;replies&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h4 id="itd.comment.Comment.id" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">id</span>
 
@@ -1443,6 +1515,42 @@
 
 
 
+<h4 id="itd.comment.Comment.is_owner" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">is_owner</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_owner</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.comment.Comment.is_reply" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">is_reply</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_reply</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h4 id="itd.comment.Comment.likes_count" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">likes_count</span>
 
@@ -1466,7 +1574,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">link</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">link</span><span class="p">:</span> <span class="n"><span title="str">str</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1484,7 +1592,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1502,7 +1610,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">replies</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Replies (itd.comment.Replies)" href="#itd.comment.Replies">Replies</a></span> <span class="o">=</span> <span class="n"><span title="pydantic.Field">Field</span></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Replies (itd.comment.Replies)" href="#itd.comment.Replies">Replies</a></span><span class="p">())</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">replies</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Replies (itd.comment.Replies)" href="#itd.comment.Replies">Replies</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1538,7 +1646,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">reply_to</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            User (itd.user.User)" href="../user/#itd.user.User">User</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">reply_to</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            User (itd.user.User)" href="../user/#itd.user.User">User</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n"><span title="pydantic.Field">Field</span></span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;replyTo&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1556,7 +1664,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">url</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">url</span><span class="p">:</span> <span class="n"><span title="str">str</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1717,7 +1825,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="n">post</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Post (itd.post.Post)" href="../post/#itd.post.Post">Post</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">base_comment</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="n">post</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Post (itd.post.Post)" href="../post/#itd.post.Post">Post</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">base_comment</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span> <span class="o">=</span> <span class="p">{},</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1809,7 +1917,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">new</span><span class="p">(</span><span class="n">post</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Post (itd.post.Post)" href="../post/#itd.post.Post">Post</a></span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attachments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ATTACHMENTS (itd.utils.ATTACHMENTS)" href="../utils/#itd.utils.ATTACHMENTS">ATTACHMENTS</a></span> <span class="o">=</span> <span class="p">[],</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">new</span><span class="p">(</span><span class="n">post</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Post (itd.post.Post)" href="../post/#itd.post.Post">Post</a></span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attachments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ATTACHMENTS (itd.utils.ATTACHMENTS)" href="../utils/#itd.utils.ATTACHMENTS">ATTACHMENTS</a></span> <span class="o">=</span> <span class="p">[],</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1845,7 +1953,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reply</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attachments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ATTACHMENTS (itd.utils.ATTACHMENTS)" href="../utils/#itd.utils.ATTACHMENTS">ATTACHMENTS</a></span> <span class="o">=</span> <span class="p">[],</span> <span class="n">user_id</span><span class="p">:</span> <span class="n"><span title="uuid.UUID">UUID</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Comment&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reply</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attachments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ATTACHMENTS (itd.utils.ATTACHMENTS)" href="../utils/#itd.utils.ATTACHMENTS">ATTACHMENTS</a></span> <span class="o">=</span> <span class="p">[],</span> <span class="n">user_id</span><span class="p">:</span> <span class="n"><span title="uuid.UUID">UUID</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1943,7 +2051,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Comment</code></td>            <td>
-                  <code>&#39;Comment&#39;</code>
+                  <code><a class="autorefs autorefs-internal" title="            Comment (itd.comment.Comment)" href="#itd.comment.Comment">Comment</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2195,7 +2303,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2269,7 +2377,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span> <span class="o">=</span> <span class="p">{},</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2700,24 +2808,6 @@
 
 
 
-<h4 id="itd.comment.Replies.first_replies" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">first_replies</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">first_replies</span> <span class="o">=</span> <span class="n"><span title="itd.comment.Replies(data)">data</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h4 id="itd.comment.Replies.has_more" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">has_more</span>
 
@@ -2759,7 +2849,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            LoadStatus (itd.enums.LoadStatus)" href="../enums/#itd.enums.LoadStatus">LoadStatus</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.LoadStatus.NO)" href="../enums/#itd.enums.LoadStatus.NO">NO</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2815,7 +2905,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span> <span class="o">=</span> <span class="p">{},</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="../client/#itd.client.Client">Client</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">

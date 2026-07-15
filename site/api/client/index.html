@@ -1412,7 +1412,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">roles</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Role (itd.enums.Role)" href="../enums/#itd.enums.Role">Role</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            USER (itd.enums.Role.USER)" href="../enums/#itd.enums.Role.USER">USER</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">roles</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Role (itd.enums.Role)" href="../enums/#itd.enums.Role">Role</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="            Role (itd.enums.Role)" href="../enums/#itd.enums.Role">Role</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            USER (itd.enums.Role.USER)" href="../enums/#itd.enums.Role.USER">USER</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1824,7 +1824,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">auth_level</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AuthLevel (itd.enums.AuthLevel)" href="../enums/#itd.enums.AuthLevel">AuthLevel</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.AuthLevel.NO)" href="../enums/#itd.enums.AuthLevel.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">auth_level</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            AuthLevel (itd.enums.AuthLevel)" href="../enums/#itd.enums.AuthLevel">AuthLevel</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            AuthLevel (itd.enums.AuthLevel)" href="../enums/#itd.enums.AuthLevel">AuthLevel</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.AuthLevel.NO)" href="../enums/#itd.enums.AuthLevel.NO">NO</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1879,6 +1879,24 @@
 
 </h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">last_actions</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="n"><span title="float">float</span></span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.client.Client.last_active" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">last_active</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">last_active</span> <span class="o">=</span> <span class="n"><span title="datetime.datetime">datetime</span></span><span class="o">.</span><span class="n"><span title="datetime.datetime.now">now</span></span><span class="p">()</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2111,6 +2129,24 @@
 <div class="doc doc-object doc-function">
 
 
+<h4 id="itd.client.Client.from_file" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">from_file</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_file</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n">initial_refresh</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verify_refresh</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span><span class="p">())</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="itd.client.Client.get_follow_status" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_follow_status</span>
 
@@ -2214,7 +2250,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">refresh_auth</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="str">str</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">refresh_auth</span><span class="p">(</span><span class="n">force</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="str">str</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2842,6 +2878,24 @@
 <div class="doc doc-object doc-function">
 
 
+<h4 id="itd.client.Client.set_active" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_active</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_active</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="itd.client.Client.update_post_stats" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">update_post_stats</span>
 
@@ -2902,42 +2956,6 @@
 
 
 
-<h4 id="itd.client.Config.anti_ip_ban" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">anti_ip_ban</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">anti_ip_ban</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.client.Config.anti_rate_limit" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">anti_rate_limit</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">anti_rate_limit</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h4 id="itd.client.Config.auto_acquire" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">auto_acquire</span>
 
@@ -2992,24 +3010,6 @@
 
 
 
-<h4 id="itd.client.Config.burst_requests" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">burst_requests</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">burst_requests</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h4 id="itd.client.Config.bypass_auth_level" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">bypass_auth_level</span>
 
@@ -3051,7 +3051,43 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">debug_response</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            DebugResponseMode (itd.enums.DebugResponseMode)" href="../enums/#itd.enums.DebugResponseMode">DebugResponseMode</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.DebugResponseMode.NO)" href="../enums/#itd.enums.DebugResponseMode.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">debug_response</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            DebugResponseMode (itd.enums.DebugResponseMode)" href="../enums/#itd.enums.DebugResponseMode">DebugResponseMode</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            DebugResponseMode (itd.enums.DebugResponseMode)" href="../enums/#itd.enums.DebugResponseMode">DebugResponseMode</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.DebugResponseMode.NO)" href="../enums/#itd.enums.DebugResponseMode.NO">NO</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.client.Config.dwell_check_active" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_check_active</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_check_active</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.client.Config.dwell_check_active_interval" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_check_active_interval</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_check_active_interval</span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">=</span> <span class="mi">5</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3082,12 +3118,66 @@
 
 
 
+<h4 id="itd.client.Config.dwell_inactive_timeout" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_inactive_timeout</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_inactive_timeout</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">30</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h4 id="itd.client.Config.dwell_max_buffer" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_max_buffer</span>
 
 
 </h4>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_max_buffer</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">20</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.client.Config.dwell_max_duration" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_max_duration</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_max_duration</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">30000</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="itd.client.Config.dwell_min_duration" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">dwell_min_duration</span>
+
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dwell_min_duration</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">250</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3190,12 +3280,12 @@
 
 
 
-<h4 id="itd.client.Config.limit_coefficient" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">limit_coefficient</span>
+<h4 id="itd.client.Config.load_comments_from_post" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">load_comments_from_post</span>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">limit_coefficient</span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_comments_from_post</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3208,12 +3298,12 @@
 
 
 
-<h4 id="itd.client.Config.load_comments_from_post" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">load_comments_from_post</span>
+<h4 id="itd.client.Config.load_on_getattr" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">load_on_getattr</span>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_comments_from_post</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">load_on_getattr</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3285,7 +3375,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ParseMode (itd.enums.ParseMode)" href="../enums/#itd.enums.ParseMode">ParseMode</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.ParseMode.NO)" href="../enums/#itd.enums.ParseMode.NO">NO</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ParseMode (itd.enums.ParseMode)" href="../enums/#itd.enums.ParseMode">ParseMode</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            ParseMode (itd.enums.ParseMode)" href="../enums/#itd.enums.ParseMode">ParseMode</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            NO (itd.enums.ParseMode.NO)" href="../enums/#itd.enums.ParseMode.NO">NO</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3370,60 +3460,6 @@
 
 
 
-<h4 id="itd.client.Config.rate_limit" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">rate_limit</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">rate_limit</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            RateLimitMode (itd.enums.RateLimitMode)" href="../enums/#itd.enums.RateLimitMode">RateLimitMode</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.client.Config.rate_limit_actions" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">rate_limit_actions</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">rate_limit_actions</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="float">float</span></span> <span class="o">|</span> <span class="n"><span title="int">int</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="itd.client.Config.rate_limit_default" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">rate_limit_default</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">rate_limit_default</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h4 id="itd.client.Config.refresh_token_cookie_name" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">refresh_token_cookie_name</span>
 
@@ -3483,7 +3519,7 @@
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">retry_exceptions</span><span class="p">:</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="type">type</span></span><span class="p">[</span><span class="n"><span title="Exception">Exception</span></span><span class="p">]]</span> <span class="o">=</span> <span class="n"><span title="dataclasses.field">field</span></span><span class="p">(</span><span class="n"><span title="dataclasses.field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="            RateLimitError (itd.exceptions.RateLimitError)" href="../exceptions/#itd.exceptions.RateLimitError">RateLimitError</a></span><span class="p">,))</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">retry_exceptions</span><span class="p">:</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="type">type</span></span><span class="p">[</span><span class="n"><span title="Exception">Exception</span></span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3622,30 +3658,12 @@
 
 
 
-<h4 id="itd.client.Config.url_api" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">url_api</span>
-
-
-</h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">url_api</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h4 id="itd.client.Config.user_agent" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">user_agent</span>
 
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">user_agent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            UserAgent (itd.enums.UserAgent)" href="../enums/#itd.enums.UserAgent">UserAgent</a></span> <span class="o">|</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            BROWSER (itd.enums.UserAgent.BROWSER)" href="../enums/#itd.enums.UserAgent.BROWSER">BROWSER</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">user_agent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            UserAgent (itd.enums.UserAgent)" href="../enums/#itd.enums.UserAgent">UserAgent</a></span> <span class="o">|</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            UserAgent (itd.enums.UserAgent)" href="../enums/#itd.enums.UserAgent">UserAgent</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" title="            BROWSER (itd.enums.UserAgent.BROWSER)" href="../enums/#itd.enums.UserAgent.BROWSER">BROWSER</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3728,7 +3746,7 @@
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">init_client</span><span class="p">(</span><span class="n">refresh</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">access</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span><span class="p">())</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">init_client</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">initial_refresh</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verify_refresh</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            Config (itd.client.Config)" href="#itd.client.Config">Config</a></span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="            Client (itd.client.Client)" href="#itd.client.Client">Client</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
