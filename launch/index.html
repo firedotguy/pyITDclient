@@ -1260,12 +1260,19 @@
 <p>Найти <code>refresh token</code> можно найти в запросе <code>/auth/refresh</code>:
 <img alt="refresh token" src="../refresh-token.png" /></p>
 <h2 id="_3">Запуск клиента</h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">refresh</label><label for="__tabbed_1_2">access</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">refresh</label><label for="__tabbed_1_2">refresh (без сохранения)</label><label for="__tabbed_1_3">access</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd</span><span class="w"> </span><span class="kn">import</span> <span class="n">ITDClient</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_client</span>
+
+<span class="n">c</span> <span class="o">=</span> <span class="n">init_client</span><span class="p">(</span><span class="n">initial_refresh</span><span class="o">=</span><span class="s1">&#39;xxx&#39;</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">itd</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_client</span>
 
 <span class="n">c</span> <span class="o">=</span> <span class="n">ITDClient</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">)</span>
+<span class="c1"># при обновлении токена старый перестанет быть действителен, т.е при перезапуске скрипт уже перестанет работать</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
