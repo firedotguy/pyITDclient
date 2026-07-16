@@ -271,14 +271,14 @@ class Post(ITDBaseModel):
 
     def __init__(self, id: str | UUID, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> None:
         super().__init__(client)
-
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
         self.visible = False
-        self.comments = Comments()
+        self.comments = Comments(client=client)
         self.comments._post = self
         self._extra_context = {'source': source, 'source_context': source_context}
+        self._init_refresh()
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)

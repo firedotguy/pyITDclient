@@ -87,7 +87,7 @@ class Config:
 
     userposts_add_pinned_post: bool = True
 
-    # load_on_init: bool = False
+    load_on_init: bool = False
     load_on_getattr: bool = True
     auto_load: bool | None = None
     load_on_getitem: int | All | Batch | None = 1

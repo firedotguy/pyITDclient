@@ -11,8 +11,8 @@ class Portal(ITDBaseModel):
     title: str
     url: str
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, client: Client | None = None):
+        super().__init__(client=client)
         self.refresh()
 
     def _refresh(self, client: Client):

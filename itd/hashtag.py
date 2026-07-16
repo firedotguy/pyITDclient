@@ -25,6 +25,7 @@ class Hashtag(ITDBaseModel):
     def __init__(self, name: str, client: Client | None = None) -> None:
         super().__init__(client)
         self.name = name.lstrip('#')
+        self._init_refresh()
 
     def _refresh(self, *, client: Client):
         return get_posts_by_hashtag(client, self.name, limit=1).json()['data']['hashtag']

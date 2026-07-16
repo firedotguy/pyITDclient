@@ -55,6 +55,10 @@ class ITDBaseModel:
         self._loaded_attrs: set[str] = set()
         self._extra_context = {}
 
+    def _init_refresh(self):
+        if self.client.config.load_on_init and self._refreshable:
+            self.refresh()
+
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client

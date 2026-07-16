@@ -88,6 +88,7 @@ class Privacy(ITDBaseModel):
     _validator = lambda _: _PrivacyValidate
     _user: 'Me | None' = None
     _load_with_parent = False
+    _autorefresh_on_init = False
 
     is_private: bool = Field(alias='isPrivate')
     wall_access: AccessType = Field(alias='wallAccess')
@@ -207,13 +208,12 @@ class _UserBase(ITDBaseModel):
     bio: str | None = None
 
     def __init__(self, username_or_id: str | UUID, client: Client | None = None) -> None:
-        super().__init__(client)
-
         self._identifier = username_or_id
         if isinstance(username_or_id, str) and username_or_id != 'me':
             self.username = username_or_id
         elif isinstance(username_or_id, UUID):
             self.id = username_or_id
+        super().__init__(client)
 
     def __str__(self) -> str:
         return self.display_name
@@ -420,6 +420,7 @@ class _UserValidate(BaseModel, User):
 
 class Me(_UserBase):
     _validator = lambda _: _MeValidate
+    _autorefresh_on_init = False
 
     wall_access: AccessType = Field(alias='wallAccess')
     likes_visibility: AccessType = Field(alias='likesVisibility')
@@ -435,10 +436,8 @@ class Me(_UserBase):
 
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)
-
-        self.blocked: Blocked = Blocked()
-        self.privacy: Privacy = Privacy(self.client)
-        self.profile: Profile = Profile(self.client)
+        self.privacy = Privacy(self.client)
+        self._init_refresh()
 
     def _post_refresh(self):
         if self.pin:
@@ -522,6 +521,14 @@ class Me(_UserBase):
     @cached_property
     def pins(self) -> list[Pin]:
         return [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
+
+    @cached_property
+    def blocked(self) -> Blocked:
+        return Blocked()
+
+    @cached_property
+    def profile(self) -> Profile:
+        return Profile(self.client)
 
     def _refresh(self, *, client: Client):
         user = get_user(client, self._identifier).json()
