@@ -47,6 +47,7 @@ from itd.file import File
 from itd.hashtag import Hashtag, Hashtags
 from itd.notification import Notifications
 from itd.poll import NewPoll
+from itd.portal import Portal
 from itd.post import HashtagPosts, LikedPosts, Post, Posts, UserPosts
 from itd.session import Sessions
 from itd.user import Me, User, Users, get_follow_status
@@ -84,6 +85,7 @@ __all__ = [
     'User',
     'Me',
     'Users',
+    'Portal',
     'get_follow_status',
     'set_limiter_config',
     'LimiterConfig',

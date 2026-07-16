@@ -29,7 +29,7 @@ from itd.request import decode_jwt_payload, fetch, fetch_stream
 from itd.user import Me, User, Users, get_follow_status
 from itd.utils import get_credfile, get_sdk_user_agent, shorten_token
 
-l = get_logger('client')  # noqa: E741
+l = get_logger('client')
 
 
 @dataclass
