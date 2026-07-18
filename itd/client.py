@@ -21,7 +21,15 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, Role, UserAgent, ViewReason
-from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
+from itd.exceptions import (
+    AccessTokenExpiredError,
+    InsufficientAuthLevelError,
+    NotFoundError,
+    RateLimitError,
+    SessionExpiredError,
+    SessionNotFoundError,
+    SessionRevokedError
+)
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
@@ -403,7 +411,7 @@ class Client:
 
         if (
             level >= AuthLevel.ACCESS
-            and (self.access_token is None or (self.access_token_data and self.access_token_data.expired_at <= datetime.now()))
+            and (self.access_token is None or (self.access_token_data and self.access_token_data.expired_at - timedelta(minutes=1) <= datetime.now()))
             and url != 'v1/auth/refresh'
         ):
             self.refresh_auth()
@@ -413,7 +421,7 @@ class Client:
     def request_sse(self, url: str):
         l.debug('sse %s', url)
 
-        if self.access_token is None and url != 'v1/auth/refresh':
+        if self.access_token is None or (self.access_token_data and self.access_token_data.expired_at - timedelta(minutes=1) <= datetime.now()):
             self.refresh_auth()
 
         return fetch_stream(self, url)
