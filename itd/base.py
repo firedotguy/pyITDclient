@@ -470,19 +470,3 @@ def api_wrapper(*exceptions: ITDException):
         return wrapper
 
     return decorator
-
-
-catch_errors = api_wrapper
-
-
-def rate_limit():
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            l.warning('base.rate_limit is deprecated and will be removed in 2.7.0.')
-            return func(client, *args, **kwargs)
-
-        return wrapper
-
-    return decorator

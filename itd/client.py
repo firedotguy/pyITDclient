@@ -21,15 +21,7 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, Role, UserAgent, ViewReason
-from itd.exceptions import (
-    AccessTokenExpiredError,
-    InsufficientAuthLevelError,
-    NotFoundError,
-    RateLimitError,
-    SessionExpiredError,
-    SessionNotFoundError,
-    SessionRevokedError
-)
+from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
@@ -112,8 +104,6 @@ class Config:
     user_agent: UserAgent | str = UserAgent.BROWSER
     solve_challenge: bool = True
 
-    load_comments_from_post: bool | None = None
-
     parse_mode: ParseMode = ParseMode.NO
 
     retry_enabled: bool | None = None
@@ -193,9 +183,6 @@ class Config:
                 self._retry_exceptions = ()
         else:
             self._retry_exceptions = self.retry_exceptions
-
-        if self.load_comments_from_post is not None:
-            l.warning('config.load_comments_from_post is deprecated and will be removed in 2.7.0.')
 
         if self.auto_load is not None:
             l.warning('config.auto_load is deprecated and will be removed in 2.8.0. Please use load_on_getattr.')
