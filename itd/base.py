@@ -48,7 +48,8 @@ class ITDBaseModel:
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
 
-        self._loaded_attrs: set[str] = set()
+        if '_loaded_attrs' not in self.__dict__:  # model could set attributes before calling super().__init__() (eg User sets username)
+            self._loaded_attrs: set[str] = set()
         self._extra_context = {}
 
     def _init_refresh(self):
@@ -58,8 +59,9 @@ class ITDBaseModel:
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
-        if '_loaded_attrs' in self.__dict__:
-            self._loaded_attrs.add(name)
+        if '_loaded_attrs' not in self.__dict__:  # attribute is set before __init__, remember it anyway - otherwise getattr will refresh loaded value
+            object.__setattr__(self, '_loaded_attrs', set())
+        self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...

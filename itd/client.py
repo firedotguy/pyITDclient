@@ -22,7 +22,6 @@ from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, Role, UserAgent, ViewReason
 from itd.exceptions import (
-    AccessTokenExpiredError,
     InsufficientAuthLevelError,
     NotFoundError,
     RateLimitError,
