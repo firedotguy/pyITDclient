@@ -10,7 +10,6 @@ from pydantic.fields import FieldInfo
 from itd._default import get_default_client
 from itd.enums import ALL, BATCH, All, Batch, LoadStatus
 from itd.logger import get_logger
-from itd.request import api_wrapper, catch_errors, rate_limit  # noqa: F401 # moved to itd.request, reexported for backwards compatibility
 
 if TYPE_CHECKING:
     from itd.client import Client

@@ -14,7 +14,7 @@ from requests.exceptions import JSONDecodeError
 
 from itd._default import get_config, limiters, limits
 from itd.enums import AuthLevel, DebugResponseMode
-from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, ITDException, InvalidAccessTokenError
+from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, InvalidAccessTokenError, ITDException
 from itd.logger import get_logger
 
 if TYPE_CHECKING:
@@ -73,7 +73,7 @@ def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:
     """
     parts = jwt_token.split('.')
     if len(parts) != 3:
-        raise ValueError("Not enough parts in access token")
+        raise ValueError('Not enough parts in access token')
     payload = parts[1]
     payload += '=' * ((4 - len(payload) % 4) % 4)
     decoded = urlsafe_b64decode(payload).decode('utf-8')
@@ -95,14 +95,9 @@ def is_token_expired(access_token: str) -> bool:
 
 
 def fetch(
-    client: 'Client',
-    method: str,
-    url: str,
-    params: dict = {},
-    files: dict[str, tuple[str, BufferedReader | bytes]] = {},
-    send_token: bool = True
+    client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, send_token: bool = True
 ) -> Response:
-    headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3"}
+    headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
     if client.config._user_agent:
         headers['User-Agent'] = client.config._user_agent
     if client.access_token and send_token:
@@ -111,7 +106,7 @@ def fetch(
     # ai begin ---
     def _do_request():
         m = method.lower()
-        if m == "get":
+        if m == 'get':
             return client.session.get(f'{client.config.url}/{url}', timeout=client.config._timeout, params=params, headers=headers)
 
         return client.session.request(
@@ -141,9 +136,9 @@ def fetch_stream(client: 'Client', url: str):
     """Fetch для SSE streaming запросов"""
     base = f'https://xn--d1ah4a.com/api/{url}'
     headers = {
-        "Accept": "text/event-stream",
-        "Authorization": 'Bearer ' + client.token,
-        "Cache-Control": "no-cache",
+        'Accept': 'text/event-stream',
+        'Authorization': 'Bearer ' + client.token,
+        'Cache-Control': 'no-cache',
         'Sec-WebSocket-Extensions': 'permessage-deflate',
         'Sec-WebSocket-Key': '3tMaiXFWtq34tenKN/+T4Q==',
         'Sec-WebSocket-Version': '13'
@@ -301,9 +296,6 @@ def api_wrapper(*exceptions: ITDException):
     return decorator
 
 
-catch_errors = api_wrapper
-
-
 @dataclass
 class Endpoint:
     """Описание эндпоинта, доступно как атрибут `.endpoint` у декорированной функции"""
@@ -345,19 +337,6 @@ def endpoint(method: str, url: str, *exceptions: ITDException, level: AuthLevel 
 
         wrapper = api_wrapper(*exceptions)(request)
         wrapper.endpoint = Endpoint(method, url, level, exceptions)
-        return wrapper
-
-    return decorator
-
-
-def rate_limit():
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: 'Client', *args, **kwargs) -> Response | None:
-            l.warning('rate_limit is deprecated and will be removed in 2.7.0.')
-            return func(client, *args, **kwargs)
-
         return wrapper
 
     return decorator
