@@ -1,6 +1,7 @@
 from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta
 from json import dumps
+from logging import WARNING, getLogger
 from uuid import uuid4
 
 import pytest
@@ -42,7 +43,7 @@ def keep_default_client():
 
 
 def make_client(access: str | None = None, refresh: str | None = 'refresh-token') -> Client:
-    # таймеры выключены, чтобы клиент не ходил в сеть
+    # timers are disabled so client doesnt go to network
     return Client(refresh, access, config=Config(dwell_send_interval=0, post_update_stats=False, dwell_check_active=False))
 
 
@@ -74,7 +75,7 @@ def refreshes(monkeypatch):
 
 def test_is_token_expired():
     assert make_client(make_token(-10)).is_token_expired()
-    assert make_client(make_token(30)).is_token_expired()  # истечет раньше, чем пройдет запас (token_expiry_margin)
+    assert make_client(make_token(30)).is_token_expired()  # expires sooner than token_expiry_margin
     assert not make_client(make_token(900)).is_token_expired()
     assert make_client(None).is_token_expired()
 
@@ -123,7 +124,7 @@ def test_refresh_auth_skips_request_if_token_is_fresh(refreshes):
     client = make_client(make_token(900))
 
     assert client.refresh_auth() == client.access_token
-    assert refreshes == []  # уже обновлен (например другим потоком)
+    assert refreshes == []  # already fresh (eg refreshed by another thread)
 
     client.refresh_auth(force=True)
     assert len(refreshes) == 1
@@ -151,6 +152,24 @@ def test_api_wrapper_retries_after_token_expired(fetches, refreshes):
     assert len(refreshes) == 1
 
 
+@pytest.mark.parametrize(('expires_in', 'warned'), [(900, True), (-10, False)])
+def test_api_wrapper_warns_if_token_rejected_but_not_expired(fetches, refreshes, caplog, expires_in, warned):
+    """Если по нашим часам токен еще жив, а сервер его отверг - предупреждаем (расхождение часов / отозванная сессия)"""
+    getLogger('itd').propagate = True
+    client = make_client(make_token(expires_in))
+    responses = [make_response(401, {'error': 'token expired'}), make_response(200, {'data': {}})]
+
+    @api_wrapper()
+    def get_something(client: Client):
+        return responses.pop(0)
+
+    with caplog.at_level(WARNING, logger='itd.base'):
+        get_something(client)
+
+    assert any('clock skew' in record.getMessage() for record in caplog.records) is warned
+    assert len(refreshes) == 1
+
+
 def test_api_wrapper_raises_if_retry_failed(fetches, refreshes):
     client = make_client(make_token(900))
 
@@ -161,7 +180,7 @@ def test_api_wrapper_raises_if_retry_failed(fetches, refreshes):
     with pytest.raises(AccessTokenExpiredError):
         get_something(client)
 
-    assert len(refreshes) == 1  # обновляем и повторяем только один раз
+    assert len(refreshes) == 1  # refresh and retry only once
 
 
 def test_api_wrapper_does_not_retry_without_refresh_token(fetches, refreshes):

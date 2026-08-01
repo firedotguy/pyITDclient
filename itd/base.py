@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from datetime import datetime
 from functools import wraps
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
@@ -439,8 +440,8 @@ def api_wrapper(*exceptions: ITDException):
                         if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                             exception.retry_after = json.get('error', {}).get('retryAfter', 0)
 
-                        # токен проверяется перед запросом, но сервер все равно может его отвергнуть (расхождение часов, отозванная сессия,
-                        # токен протух пока запрос шел) - обновляем и повторяем запрос один раз, до колбэков и до выброса ошибки
+                        # token is checked before the request, but server still can reject it (clock skew, revoked session,
+                        # token expired while request was in flight) - refresh and repeat the request once, before callbacks and before raising
                         if (
                             isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError))
                             and not reauthed
@@ -448,6 +449,13 @@ def api_wrapper(*exceptions: ITDException):
                             and client.can_refresh_auth
                         ):
                             reauthed = True
+                            if not client.is_token_expired(margin=0):
+                                l.warning(
+                                    'server rejected access_token that is not expired by local clock (expires at %s, now is %s): '
+                                    'check system time (clock skew) or session was revoked',
+                                    client.access_token_data.expired_at if client.access_token_data else None,
+                                    datetime.now()
+                                )
                             l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)
                             client.refresh_auth(force=True)
                             return exec()

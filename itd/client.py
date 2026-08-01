@@ -146,7 +146,7 @@ class Config:
     on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
     refresh_token_cookie_name: str = 'refresh_token'
-    token_expiry_margin: float = 60  # за сколько секунд до истечения access token считается протухшим (запас на сеть и расхождение часов)
+    token_expiry_margin: float = 60  # how many seconds before expiration access token is considered expired (margin for network and clock skew)
 
     def __post_init__(self):
         match self.user_agent:
@@ -232,7 +232,7 @@ class Client:
         self._visible_posts_buffer: list[Post] = []
         self.last_active = datetime.now()
         self._credfile: Credfile | None = None
-        self._refresh_lock = RLock()  # чтобы фоновые таймеры и основной поток не обновляли токен одновременно
+        self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -317,7 +317,7 @@ class Client:
         """
         if self.access_token is None:
             return True
-        if self.access_token_data is None:  # не смогли распарсить jwt - считаем валидным, решать серверу
+        if self.access_token_data is None:  # failed to parse jwt - assume valid, let server decide
             return False
 
         margin = self.config.token_expiry_margin if margin is None else margin
@@ -339,7 +339,7 @@ class Client:
         """
 
         with self._refresh_lock:
-            if not force and not self.is_token_expired():  # обновлен другим потоком, пока ждали лок
+            if not force and not self.is_token_expired():  # refreshed by another thread while we were waiting for the lock
                 l.debug('access_token is already fresh')
                 return self.token
 
@@ -441,8 +441,8 @@ class Client:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
         send_token = True
-        # access token подставляется в любой запрос (в тч в эндпоинты с AuthLevel.NO), поэтому и обновлять его нужно вне зависимости от level:
-        # иначе после истечения токена такие запросы навсегда падают с AccessTokenExpiredError
+        # access token is attached to every request (including AuthLevel.NO endpoints), so it must be refreshed regardless of level:
+        # otherwise such requests fail with AccessTokenExpiredError forever once the token expires
         if url != 'v1/auth/refresh' and self.is_token_expired():
             if level >= AuthLevel.ACCESS or self.can_refresh_auth:
                 self.refresh_auth()
