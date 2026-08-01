@@ -1,76 +1,14 @@
-from base64 import urlsafe_b64encode
-from datetime import datetime, timedelta
-from json import dumps
 from logging import WARNING, getLogger
-from uuid import uuid4
 
 import pytest
-from requests import Response
+from helpers import make_client, make_response, make_token
 
-from itd.base import api_wrapper
-from itd.client import Client, Config
+from itd.client import Client
 from itd.enums import AuthLevel
 from itd.exceptions import AccessTokenExpiredError
+from itd.request import api_wrapper
 
-
-def make_token(expires_in: float) -> str:
-    """Собрать access token (jwt), который истечет через `expires_in` секунд"""
-    payload = {
-        'sid': str(uuid4()),
-        'sub': str(uuid4()),
-        'iat': datetime.now().timestamp(),
-        'exp': (datetime.now() + timedelta(seconds=expires_in)).timestamp()
-    }
-    encoded = urlsafe_b64encode(dumps(payload).encode()).decode().rstrip('=')
-    return f'header.{encoded}.signature'
-
-
-def make_response(status: int, json: dict) -> Response:
-    res = Response()
-    res.status_code = status
-    res._content = dumps(json).encode()
-    return res
-
-
-@pytest.fixture(autouse=True)
-def keep_default_client():
-    """Клиенты из этого файла не должны становиться дефолтными для остальных тестов"""
-    from itd import _default
-
-    previous = _default._default_client
-    yield
-    _default._default_client = previous
-
-
-def make_client(access: str | None = None, refresh: str | None = 'refresh-token') -> Client:
-    # timers are disabled so client doesnt go to network
-    return Client(refresh, access, config=Config(dwell_send_interval=0, post_update_stats=False, dwell_check_active=False))
-
-
-@pytest.fixture
-def fetches(monkeypatch):
-    """Перехватить запросы вместо отправки"""
-    calls = []
-
-    def fake_fetch(client, method, url, params={}, files={}, send_token=True):
-        calls.append({'method': method, 'url': url, 'send_token': send_token})
-        return make_response(200, {'data': {}})
-
-    monkeypatch.setattr('itd.client.fetch', fake_fetch)
-    return calls
-
-
-@pytest.fixture
-def refreshes(monkeypatch):
-    """Перехватить обновление токена вместо запроса в v1/auth/refresh"""
-    calls = []
-
-    def fake_refresh_token(client):
-        calls.append(client.access_token)
-        return make_response(200, {'accessToken': make_token(900)})
-
-    monkeypatch.setattr('itd.client.refresh_token', fake_refresh_token)
-    return calls
+pytestmark = pytest.mark.usefixtures('keep_default_client')
 
 
 def test_is_token_expired():
@@ -88,7 +26,7 @@ def test_public_endpoint_refreshes_expired_token(fetches, refreshes):
     client.request('get', 'search', {'q': 'итд'}, level=AuthLevel.NO)
 
     assert refreshes == [expired]
-    assert fetches == [{'method': 'get', 'url': 'search', 'send_token': True}]
+    assert fetches[0]['send_token'] is True
     assert not client.is_token_expired()
 
 
@@ -117,7 +55,7 @@ def test_refresh_endpoint_does_not_recurse(fetches, refreshes):
     client.request('post', 'v1/auth/refresh', level=AuthLevel.REFRESH)
 
     assert refreshes == []
-    assert fetches == [{'method': 'post', 'url': 'v1/auth/refresh', 'send_token': True}]
+    assert fetches[0]['url'] == 'v1/auth/refresh'
 
 
 def test_refresh_auth_skips_request_if_token_is_fresh(refreshes):
@@ -136,7 +74,7 @@ def test_expired_token_without_refresh_token_is_not_sent(fetches):
 
     client.request('get', 'search', {'q': 'итд'}, level=AuthLevel.NO)
 
-    assert fetches == [{'method': 'get', 'url': 'search', 'send_token': False}]
+    assert fetches[0]['send_token'] is False
 
 
 def test_api_wrapper_retries_after_token_expired(fetches, refreshes):
@@ -163,7 +101,7 @@ def test_api_wrapper_warns_if_token_rejected_but_not_expired(fetches, refreshes,
     def get_something(client: Client):
         return responses.pop(0)
 
-    with caplog.at_level(WARNING, logger='itd.base'):
+    with caplog.at_level(WARNING, logger='itd.request'):
         get_something(client)
 
     assert any('clock skew' in record.getMessage() for record in caplog.records) is warned

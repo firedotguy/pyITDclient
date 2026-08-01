@@ -18,6 +18,48 @@ class ITDException(Exception):
     def __str__(self) -> str:
         return self.text
 
+    # instances listed in DEFAULT_ERRORS and passed to @endpoint are declarations: they only describe how to recognize the error.
+    # matches() recognizes it in the response, prepare() builds the exception to raise
+    def matches(self, res: Response, json: dict) -> bool:
+        """Похож ли ответ на эту ошибку
+
+        Args:
+            res (Response): Ответ
+            json (dict): Тело ответа
+
+        Returns:
+            bool: Совпадение
+        """
+        error = json.get('error') if isinstance(json.get('error'), dict) else {}
+        return bool(
+            (self.res_check and self.res_check(res))
+            or (self.text_check and self.text_check(res.text))
+            or (self.json_check and self.json_check(json))
+            or (self.status_code is not None and res.status_code == self.status_code)
+            or (self.code is not None and error.get('code') == self.code)
+            or (self.message is not None and error.get('message') == self.message)
+        )
+
+    def prepare(self, json: dict) -> 'ITDException':
+        """Собрать ошибку для выброса - копию декларации, дополненную данными из ответа
+
+        Args:
+            json (dict): Тело ответа
+
+        Returns:
+            ITDException: Ошибка
+        """
+        # именно копию: декларации переиспользуются между запросами и потоками, мутировать их нельзя.
+        # __init__ не вызываем - у наследников он с разными аргументами (NotFoundError('Post') и тд)
+        exception = self.__class__.__new__(self.__class__)
+        BaseException.__init__(exception, *self.args)
+        exception.__dict__.update(self.__dict__)
+        exception._fill(json.get('error') if isinstance(json.get('error'), dict) else {})
+        return exception
+
+    def _fill(self, error: dict) -> None:
+        """Дополнить ошибку данными из ['error'] (пустой dict если там не объект)"""
+
 
 class ValidateError(ITDException):
     pass
@@ -29,6 +71,9 @@ class ValidationError(ValidateError):
     status_code = 422
     json_check = staticmethod(lambda json: 'found' in json)
 
+    def _fill(self, error: dict) -> None:
+        self.text = error.get('message', 'Failed validation')
+
 
 class RateLimitError(ITDException):
     code = 'RATE_LIMIT_EXCEEDED'
@@ -36,6 +81,9 @@ class RateLimitError(ITDException):
 
     def __init__(self, retry_after: int = 0):
         self.retry_after = retry_after
+
+    def _fill(self, error: dict) -> None:
+        self.retry_after = error.get('retryAfter', 0)
 
     def __str__(self) -> str:
         if self.retry_after:
@@ -344,6 +392,9 @@ class AccountDeletedError(ITDException):
     text = 'Account has been deleted'
     can_restore: bool = True
     restore_deadline: datetime | None = None
+
+    def _fill(self, error: dict) -> None:
+        self.can_restore = error.get('canRestore', True)
 
 
 DEFAULT_ERRORS = (
