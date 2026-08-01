@@ -106,6 +106,7 @@ class NotificationTargetType(Enum):
 
 class NotificationSubjectType(Enum):
     COMMENT = 'comment'
+    POST = 'post'
 
 
 class ReportTargetType(Enum):
