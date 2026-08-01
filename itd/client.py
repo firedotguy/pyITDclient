@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import cached_property
 from os import getenv
-from threading import Thread
+from threading import RLock, Thread
 from time import sleep
 from typing import Callable, Literal, overload
 from uuid import UUID
@@ -21,7 +21,14 @@ from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
 from itd.enums import BATCH, All, AuthLevel, Batch, DebugResponseMode, ParseMode, Role, UserAgent, ViewReason
-from itd.exceptions import InsufficientAuthLevelError, NotFoundError, RateLimitError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
+from itd.exceptions import (
+    InsufficientAuthLevelError,
+    NotFoundError,
+    RateLimitError,
+    SessionExpiredError,
+    SessionNotFoundError,
+    SessionRevokedError
+)
 from itd.hashtag import Hashtag, Hashtags
 from itd.logger import get_logger
 from itd.post import DwellTracker, Post
@@ -136,6 +143,7 @@ class Config:
     on_exceptions: dict[type[Exception], Callable[[Exception], None]] = field(default_factory=dict)
     batch_sizes: BatchSizes = field(default_factory=BatchSizes)
     refresh_token_cookie_name: str = 'refresh_token'
+    token_expiry_margin: float = 60  # how many seconds before expiration access token is considered expired (margin for network and clock skew)
 
     def __post_init__(self):
         match self.user_agent:
@@ -218,6 +226,7 @@ class Client:
         self._visible_posts_buffer: list[Post] = []
         self.last_active = datetime.now()
         self._credfile: Credfile | None = None
+        self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -291,42 +300,71 @@ class Client:
         self._credfile.valid = valid
         self._credfile.flush()
 
+    def is_token_expired(self, margin: float | None = None) -> bool:
+        """Истёк ли (или вот-вот истечет) access token
+
+        Args:
+            margin (float | None, optional): Запас в секундах (None - config.token_expiry_margin). Defaults to None.
+
+        Returns:
+            bool: Истёк ли токен (True если токена нет вообще)
+        """
+        if self.access_token is None:
+            return True
+        if self.access_token_data is None:  # failed to parse jwt - assume valid, let server decide
+            return False
+
+        margin = self.config.token_expiry_margin if margin is None else margin
+        return self.access_token_data.expired_at - timedelta(seconds=margin) <= datetime.now()
+
+    @property
+    def can_refresh_auth(self) -> bool:
+        """Есть ли refresh token, чтобы обновить access token"""
+        return self.refresh_token is not None or self.auth_level >= AuthLevel.REFRESH
+
     def refresh_auth(self, force: bool = False) -> str:
         """Обновить access token
+
+        Args:
+            force (bool, optional): Обновить, даже если текущий токен еще валиден. Defaults to False.
 
         Returns:
             str: Токен
         """
 
-        l.debug('refresh access_token')
-        if not force and self._credfile and self._credfile.update():
-            self.token = self._credfile.access
-            self.refresh_token = self._credfile.refresh
+        with self._refresh_lock:
+            if not force and not self.is_token_expired():  # refreshed by another thread while we were waiting for the lock
+                l.debug('access_token is already fresh')
+                return self.token
 
-            if self.access_token:
-                assert self.access_token_data
-                if self.access_token_data.expired_at > datetime.now():
-                    l.debug('update access_token from credfile')
-                    return self.access_token
+            l.debug('refresh access_token')
+            if not force and self._credfile and self._credfile.update():
+                self.token = self._credfile.access
+                self.refresh_token = self._credfile.refresh
+
+                if self.access_token:
+                    if not self.is_token_expired():
+                        l.debug('update access_token from credfile')
+                        return self.access_token
+                    else:
+                        l.info('credfile access_token expired')
                 else:
-                    l.info('credfile access_token expired')
-            else:
-                l.info('crefile access_token is none')
+                    l.info('crefile access_token is none')
 
-        try:
-            res = refresh_token(self)
-        except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
-            if force:
+            try:
+                res = refresh_token(self)
+            except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
+                if force:
+                    raise
+                self._update_file(valid=False)
                 raise
-            self._update_file(valid=False)
-            raise
 
-        self.token = res.json().get('accessToken') or res.json()['token']
-        if 'refresh_token' in res.cookies:
-            self.refresh_token = res.cookies['refresh_token']
-        self._update_file()
+            self.token = res.json().get('accessToken') or res.json()['token']
+            if 'refresh_token' in res.cookies:
+                self.refresh_token = res.cookies['refresh_token']
+            self._update_file()
 
-        return self.token
+            return self.token
 
     def _start_check_active_timer(self):
         l.debug('start check active timer')
@@ -396,19 +434,22 @@ class Client:
         if level > self.auth_level and not self.config.bypass_auth_level:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
-        if (
-            level >= AuthLevel.ACCESS
-            and (self.access_token is None or (self.access_token_data and self.access_token_data.expired_at - timedelta(minutes=1) <= datetime.now()))
-            and url != 'v1/auth/refresh'
-        ):
-            self.refresh_auth()
+        send_token = True
+        # access token is attached to every request (including AuthLevel.NO endpoints), so it must be refreshed regardless of level:
+        # otherwise such requests fail with AccessTokenExpiredError forever once the token expires
+        if url != 'v1/auth/refresh' and self.is_token_expired():
+            if level >= AuthLevel.ACCESS or self.can_refresh_auth:
+                self.refresh_auth()
+            elif self.access_token is not None:
+                l.warning('access_token expired and cannot be refreshed, send %s %s without authorization', method.upper(), url)
+                send_token = False
 
-        return fetch(self, method, url, params, files)
+        return fetch(self, method, url, params, files, send_token=send_token)
 
     def request_sse(self, url: str):
         l.debug('sse %s', url)
 
-        if self.access_token is None or (self.access_token_data and self.access_token_data.expired_at - timedelta(minutes=1) <= datetime.now()):
+        if self.is_token_expired():
             self.refresh_auth()
 
         return fetch_stream(self, url)

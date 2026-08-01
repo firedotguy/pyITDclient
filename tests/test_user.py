@@ -1,9 +1,10 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
+from helpers import make_client, make_response, make_token
 
+from itd._default import set_default_client
 from itd.exceptions import PinNotOwnedError
-from itd.pin import Pin
 from itd.user import Followers, Following, Me, User
 
 
@@ -17,16 +18,43 @@ def me2(client2):
     return Me(client2)
 
 
-def test_by_username_is_lazy():
+@pytest.fixture
+def default_client(keep_default_client):
+    """Ленивым тестам нужен только дефолтный клиент: в сеть они не ходят, поэтому TOKEN не нужен"""
+    client = make_client(make_token(900))
+    set_default_client(client)
+    return client
+
+
+def test_by_username_is_lazy(default_client, fetches):
     user = User.by_username('example')
     assert user.username == 'example'
     assert user._identifier == 'example'
+    assert fetches == []
 
 
-def test_by_id_is_lazy():
+def test_by_id_is_lazy(default_client, fetches):
     uid = UUID('00000000-0000-0000-0000-000000000001')
     user = User.by_id(uid)
     assert user.id == uid
+    assert fetches == []
+
+
+def test_not_loaded_field_still_refreshes(default_client, monkeypatch):
+    """Лениво отдаются только те поля, которые задали сами - за остальными модель идет в апи"""
+    uid = uuid4()
+    calls = []
+
+    def fake_fetch(client, method, url, params={}, files={}, send_token=True):
+        calls.append(url)
+        return make_response(200, {'id': str(uid), 'username': 'example', 'displayName': 'Example'})
+
+    monkeypatch.setattr('itd.client.fetch', fake_fetch)
+
+    user = User.by_username('example')
+    assert user.display_name == 'Example'
+    assert user.id == uid
+    assert calls == ['users/example']
 
 
 def test_me_loads(me):

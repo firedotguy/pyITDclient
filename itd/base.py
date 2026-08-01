@@ -1,19 +1,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from functools import wraps
-from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from requests import Response
-from requests.exceptions import JSONDecodeError
 
-from itd._default import get_config, get_default_client, limiters, limits
-from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
-from itd.exceptions import DEFAULT_ERRORS, AccountDeletedError, ITDException, RateLimitError, ValidationError
+from itd._default import get_default_client
+from itd.enums import ALL, BATCH, All, Batch, LoadStatus
 from itd.logger import get_logger
 
 if TYPE_CHECKING:
@@ -52,7 +47,8 @@ class ITDBaseModel:
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
 
-        self._loaded_attrs: set[str] = set()
+        if '_loaded_attrs' not in self.__dict__:  # model could set attributes before calling super().__init__() (eg User sets username)
+            self._loaded_attrs: set[str] = set()
         self._extra_context = {}
 
     def _init_refresh(self):
@@ -62,8 +58,9 @@ class ITDBaseModel:
     def __setattr__(self, name: str, value: Any) -> None:
         if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
-        if '_loaded_attrs' in self.__dict__:
-            self._loaded_attrs.add(name)
+        if '_loaded_attrs' not in self.__dict__:  # attribute is set before __init__, remember it anyway - otherwise getattr will refresh loaded value
+            object.__setattr__(self, '_loaded_attrs', set())
+        self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
     def _post_refresh(self): ...
@@ -340,133 +337,3 @@ class ITDList(ITDBaseModel, list[T]):
         super().clear()
         self.cursor = None
         self.has_more = True
-
-
-def _filter_bytes(args: tuple):
-    filtered = []
-    for arg in args:
-        if isinstance(arg, bytes):
-            filtered.append('_bytecode_')
-        else:
-            filtered.append(arg)
-    return filtered
-
-
-# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model
-def api_wrapper(*exceptions: ITDException):
-    """Декоратор для отлавливания ошибок
-
-    Args:
-        *exceptions (ITDException): Список ошибок для отлавливания
-    """
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            name = func.__name__
-
-            def exec():
-                l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-
-                config = get_config()
-                is_first = True
-                if name in limits and limits[name] in limiters:
-                    limiter = limiters[limits[name]]
-                    if config.auto_acquire:
-                        limiter.acquire()
-                    is_first = not limiter.used
-                    limiter.request()
-
-                ip_limiter = config.ip_limiter
-                if ip_limiter:
-                    ip_limiter.acquire()
-
-                res: Response = func(client, *args, **kwargs)
-
-                assert isinstance(res, Response)
-                if res.status_code == 204:
-                    if client.config.debug_response != DebugResponseMode.NO:
-                        l.debug('no response')
-                    return res
-
-                remaining = int(res.headers.get('x-ratelimit-remaining', 0))
-                limit = int(res.headers.get('x-ratelimit-limit', 0))
-                limits[name] = limit
-
-                if limit not in limiters and config.limiter is not None:
-                    limiters[limit] = config.limiter(limit)
-
-                if limit in limiters and (config.auto_acquire or is_first):
-                    limiters[limit].sync(remaining)
-
-                if client.config.debug_response == DebugResponseMode.BEFORE:
-                    l.debug('response (raw): %s', res.text)
-
-                try:
-                    json = res.json()
-                except JSONDecodeError:
-                    json = {}
-                    l.warning('failed to parse json: %s', res.text[:1000])
-
-                for exception in DEFAULT_ERRORS + exceptions:
-                    if (
-                        (exception.res_check and exception.res_check(res))
-                        or (exception.text_check and exception.text_check(res.text))
-                        or (exception.json_check and exception.json_check(json))
-                        or exception.status_code is not None
-                        and res.status_code == exception.status_code
-                        or isinstance(json.get('error'), dict)
-                        and (
-                            exception.code is not None
-                            and json['error'].get('code') == exception.code
-                            or exception.message is not None
-                            and json['error'].get('message') == exception.message
-                        )
-                    ):
-                        if isinstance(exception, ValidationError):
-                            exception.text = json.get('error', {}).get('message', 'Failed validation')
-
-                        if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
-                            exception.retry_after = json.get('error', {}).get('retryAfter', 0)
-
-                        # now checks token before request
-                        # if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
-                        #     client.refresh_auth()
-                        #     return wrapper(client, *args, **kwargs)
-
-                        if isinstance(exception, AccountDeletedError):
-                            exception.can_restore = json.get('error', {}).get('canRestore', True)
-
-                        client._process_exc_callbacks(exception)
-                        raise exception
-
-                if client.config.debug_response == DebugResponseMode.AFTER:
-                    l.debug('response: %s', json)
-                if client.config.debug_response == DebugResponseMode.KEYS:
-                    if 'data' in json:
-                        l.debug('response keys: data - %s', list(json['data'].keys()))
-                    else:
-                        l.debug('response keys: %s', list(json.keys()))
-                res.raise_for_status()
-                return res
-
-            if not client.config._retry_enabled:
-                return exec()
-
-            while True:
-                try:
-                    return exec()
-                except client.config._retry_exceptions as e:
-                    if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
-                        l.error('too large rate limit')
-                        raise
-
-                    retry_after = getattr(e, 'retry_after', 0) or client.config.retry_delay
-                    l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
-                    sleep(retry_after)
-                    if name in limits and limits[name] in limiters:
-                        limiters[limits[name]].on_limit()
-
-        return wrapper
-
-    return decorator

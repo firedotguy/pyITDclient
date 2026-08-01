@@ -3,21 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from itd.request import endpoint
+
 if TYPE_CHECKING:
     from itd.client import Client
-from itd.base import api_wrapper
 
 
-@api_wrapper()
-def get_sessions(client: Client):
-    return client.request('get', 'v1/auth/sessions')
+@endpoint('get', 'v1/auth/sessions')
+def get_sessions(client: Client): ...
 
 
-@api_wrapper()
-def revoke(client: Client, id: UUID):
-    return client.request('delete', f'v1/auth/sessions/{id}')
+@endpoint('delete', 'v1/auth/sessions/{id}')
+def revoke(client: Client, id: UUID): ...
 
 
-@api_wrapper()
-def revoke_all(client: Client):
-    return client.request('delete', 'v1/auth/sessions')
+@endpoint('delete', 'v1/auth/sessions')
+def revoke_all(client: Client): ...
