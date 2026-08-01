@@ -13,7 +13,15 @@ from requests.exceptions import JSONDecodeError
 
 from itd._default import get_config, get_default_client, limiters, limits
 from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
-from itd.exceptions import DEFAULT_ERRORS, AccountDeletedError, ITDException, RateLimitError, ValidationError
+from itd.exceptions import (
+    DEFAULT_ERRORS,
+    AccessTokenExpiredError,
+    AccountDeletedError,
+    InvalidAccessTokenError,
+    ITDException,
+    RateLimitError,
+    ValidationError
+)
 from itd.logger import get_logger
 
 if TYPE_CHECKING:
@@ -364,8 +372,10 @@ def api_wrapper(*exceptions: ITDException):
         @wraps(func)
         def wrapper(client: Client, *args, **kwargs) -> Response | None:
             name = func.__name__
+            reauthed = False
 
             def exec():
+                nonlocal reauthed
                 l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
 
                 config = get_config()
@@ -429,10 +439,18 @@ def api_wrapper(*exceptions: ITDException):
                         if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
                             exception.retry_after = json.get('error', {}).get('retryAfter', 0)
 
-                        # now checks token before request
-                        # if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
-                        #     client.refresh_auth()
-                        #     return wrapper(client, *args, **kwargs)
+                        # токен проверяется перед запросом, но сервер все равно может его отвергнуть (расхождение часов, отозванная сессия,
+                        # токен протух пока запрос шел) - обновляем и повторяем запрос один раз, до колбэков и до выброса ошибки
+                        if (
+                            isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError))
+                            and not reauthed
+                            and name != 'refresh_token'
+                            and client.can_refresh_auth
+                        ):
+                            reauthed = True
+                            l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)
+                            client.refresh_auth(force=True)
+                            return exec()
 
                         if isinstance(exception, AccountDeletedError):
                             exception.can_restore = json.get('error', {}).get('canRestore', True)

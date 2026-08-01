@@ -86,11 +86,18 @@ def is_token_expired(access_token: str) -> bool:
     return time() - 1 >= payload['exp']
 
 
-def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}) -> Response:
+def fetch(
+    client: 'Client',
+    method: str,
+    url: str,
+    params: dict = {},
+    files: dict[str, tuple[str, BufferedReader | bytes]] = {},
+    send_token: bool = True
+) -> Response:
     headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3"}
     if client.config._user_agent:
         headers['User-Agent'] = client.config._user_agent
-    if client.access_token:
+    if client.access_token and send_token:
         headers['Authorization'] = 'Bearer ' + client.access_token
 
     # ai begin ---
