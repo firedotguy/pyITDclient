@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from atexit import register
 from datetime import datetime
-from threading import Thread
-from time import sleep
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -11,8 +8,9 @@ from pydantic import BaseModel, Field, field_serializer
 
 from itd.api.dwell import send_interactions, send_views
 from itd.core.base import ITDBaseModel
-from itd.enums import InteractionType, ViewReason, ViewSource
 from itd.core.logger import get_logger
+from itd.core.timer import Timer
+from itd.enums import InteractionType, ViewReason, ViewSource
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -62,7 +60,7 @@ class DwellTracker(ITDBaseModel):
         self.interactions: list[InteractionEvent] = []
         self.seen_posts: set[UUID] = set()
         self.sid = uuid4()
-        self._thread: Thread | None = None
+        self.timer: Timer | None = None
 
     def send_views(self) -> bool:  # call on app visibilitychange
         """Отправить просмотры (api/v1/i) и очистить буффер
@@ -181,26 +179,15 @@ class DwellTracker(ITDBaseModel):
         if len(self.interactions) >= self.client.config.dwell_max_buffer:
             self.send_interactions()
 
-    def _start_timer(self):
-        if not self.client.config.dwell_send_interval:
-            return
-        l.debug('start dwell timer')
+    def send(self):
+        """Отправить накопленные просмотры и взаимодействия"""
+        self.send_views()
+        self.send_interactions()
 
-        def loop():
-            while True:
-                sleep(self.client.config.dwell_send_interval)
-                self.send_views()
-                self.send_interactions()
+    def start(self):
+        """Запустить отправку батчами"""
+        self.timer = Timer('dwell', self.client.config.dwell_send_interval, self.send, on_exit=self.send if self.client.config.dwell_save_on_quit else None)
+        self.timer.start()
 
-        self._thread = Thread(target=loop)
-        self._thread.daemon = True
-        self._thread.start()
-
-        def on_exit():
-            if self._thread:
-                self._thread.join(timeout=0)
-            self.send_views()
-            self.send_interactions()
-
-        if self.client.config.dwell_save_on_quit:
-            register(on_exit)
+    def stop(self):
+        self.timer.stop(run_on_exit=self.client.config.dwell_save_on_quit)
