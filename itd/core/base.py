@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+from pydantic_core.core_schema import with_info_plain_validator_function
 
 from itd.core.default import get_default_client
 from itd.core.logger import get_logger
-from itd.core.schema import model_core_schema, validator_for
 from itd.enums import ALL, BATCH, All, Batch, LoadStatus
 
 if TYPE_CHECKING:
@@ -17,6 +18,13 @@ if TYPE_CHECKING:
 
 
 l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
+
+
+@cache
+def validator_for(cls: type) -> type[BaseModel]:
+    """Класс-валидатор модели: собирается один раз на модель при первой валидации"""
+    # __module__ нужен, чтобы pydantic резолвил forward refs в аннотациях модели
+    return type(f'_{cls.__name__}Validate', (BaseModel, cls), {'__module__': cls.__module__})
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -63,6 +71,34 @@ class ITDBaseModel:
 
     def _post_refresh(self, context: dict = {}): ...
 
+    def is_loaded(self, name: str) -> bool:
+        """Пришло ли поле в данных
+
+        Не трогает апи, в отличие от обычного обращения к полю: `post.is_loaded('first_comments')` вместо `post.first_comments`,
+        когда надо просто узнать, есть ли значение (в списках приходит не все, что есть в одиночном ответе).
+
+        Args:
+            name (str): Имя поля
+
+        Returns:
+            bool: Загружено ли поле
+        """
+        return name in self._loaded_attrs
+
+    def get_loaded(self, name: str, default: Any = None) -> Any:
+        """Значение поля, если оно пришло в данных, иначе `default` - тоже без похода в апи
+
+        Args:
+            name (str): Имя поля
+            default (Any, optional): Что вернуть, если поля нет. Defaults to None.
+
+        Returns:
+            Any: Значение
+        """
+        if not self.is_loaded(name):
+            return default
+        return self.__dict__.get(name, default)
+
     @property
     def client(self) -> Client:
         return self._client
@@ -100,7 +136,14 @@ class ITDBaseModel:
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
-    __get_pydantic_core_schema__ = classmethod(model_core_schema)
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler):
+        if issubclass(source, BaseModel):  # это сам класс-валидатор - строим обычную pydantic модель
+            return handler(source)
+        # модель как тип поля: собираем ее из dict через from_dict, с контекстом родителя
+        return with_info_plain_validator_function(
+            lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
+        )
 
     @property
     def _validator(self) -> type[BaseModel]:
