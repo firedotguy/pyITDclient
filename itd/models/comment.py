@@ -43,9 +43,14 @@ class Comment(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict = {}, client: Client | None = None
+        cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict | None = None, client: Client | None = None
     ) -> Comment:
-        return super().from_dict(data, client=client, context={'post': post, 'base_comment': base_comment, 'client': client})
+        context = dict(context or {})  # контекст родителя не выбрасываем, иначе комментарий потеряет его клиента
+        if post is not None:
+            context['post'] = post
+        if base_comment is not None:
+            context['base_comment'] = base_comment
+        return super().from_dict(data, client=client, context=context)
 
     @cached_property
     def replies(self) -> Replies:
