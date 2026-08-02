@@ -250,11 +250,12 @@ def api_wrapper(*exceptions: ITDException):
                         and client.can_refresh_auth
                     ):
                         reauthed = True
-                        if not client.is_token_expired(margin=0):
+                        expired_at = client.access_token_data.expired_at if client.access_token_data else None
+                        if expired_at and expired_at > datetime.now():  # is_token_expired учитывает запас, тут нужен факт
                             l.warning(
                                 'server rejected access_token that is not expired by local clock (expires at %s, now is %s): '
                                 'check system time (clock skew) or session was revoked',
-                                client.access_token_data.expired_at if client.access_token_data else None,
+                                expired_at,
                                 datetime.now()
                             )
                         l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)

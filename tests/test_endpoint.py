@@ -11,6 +11,7 @@ from itd.api.comments import get_comments
 from itd.api.files import upload_file
 from itd.api.pins import get_pins
 from itd.api.posts import get_user_posts, like_post
+from itd.api.search import search
 from itd.exceptions import InsufficientAuthLevelError
 
 pytestmark = pytest.mark.usefixtures('keep_default_client')
@@ -64,8 +65,8 @@ def test_endpoint_can_send_files(fetches):
     assert fetches[0]['params'] == {}
 
 
-def test_search_from_client_goes_through_pipeline(monkeypatch, refreshes):
-    """Путь целиком: Client.search -> эндпоинт search -> Client.request (обновление токена) -> fetch"""
+def test_search_goes_through_whole_pipeline(monkeypatch, refreshes):
+    """Путь целиком: эндпоинт -> Client.request (обновление токена) -> fetch"""
     client = make_client(make_token(-10))
     calls = []
 
@@ -75,7 +76,7 @@ def test_search_from_client_goes_through_pipeline(monkeypatch, refreshes):
 
     monkeypatch.setattr('itd.core.client.fetch', fake_fetch)
 
-    assert client.search('итд', hashtags_limit=3, users_limit=2) == ([], [])
+    assert search(client, 'итд', 2, 3).json()['data'] == {'users': [], 'hashtags': []}
     assert calls == [('get', 'search', {'userLimit': 2, 'hashtagLimit': 3, 'q': 'итд'}, True)]
     assert len(refreshes) == 1  # протухший токен обновлен, хотя эндпоинт с AuthLevel.NO
 

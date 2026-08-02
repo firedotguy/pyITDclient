@@ -53,11 +53,12 @@ def test_single_post_wires_its_comments(refreshes):
     assert [comment._post for comment in post.first_comments] == [post]
 
 
-def test_get_loaded_does_not_touch_api(refreshes):
+def test_is_loaded_does_not_touch_api(refreshes):
     post = Post.from_dict(dict(IN_LIST), client=make_client(make_token(900)))
 
-    assert post.get_loaded('first_comments', []) == []
-    assert post.get_loaded('content') == 'привет'
+    assert post.is_loaded('first_comments') is False
+    assert post.is_loaded('content') is True
+    assert post.__dict__['first_comments'] == []  # значение есть, просто дефолтное
     assert refreshes == []
 
     post.first_comments  # а обычное обращение - идет за данными

@@ -12,10 +12,10 @@ pytestmark = pytest.mark.usefixtures('keep_default_client')
 
 
 def test_is_token_expired():
-    assert make_client(make_token(-10)).is_token_expired()
-    assert make_client(make_token(30)).is_token_expired()  # expires sooner than token_expiry_margin
-    assert not make_client(make_token(900)).is_token_expired()
-    assert make_client(None).is_token_expired()
+    assert make_client(make_token(-10)).is_token_expired
+    assert make_client(make_token(30)).is_token_expired  # expires sooner than token_expiry_margin
+    assert not make_client(make_token(900)).is_token_expired
+    assert make_client(None).is_token_expired
 
 
 def test_public_endpoint_refreshes_expired_token(fetches, refreshes):
@@ -27,7 +27,7 @@ def test_public_endpoint_refreshes_expired_token(fetches, refreshes):
 
     assert refreshes == [expired]
     assert fetches[0]['send_token'] is True
-    assert not client.is_token_expired()
+    assert not client.is_token_expired
 
 
 def test_endpoint_with_auth_refreshes_expired_token(fetches, refreshes):
@@ -36,7 +36,7 @@ def test_endpoint_with_auth_refreshes_expired_token(fetches, refreshes):
     client.request('get', 'profile/me', level=AuthLevel.ACCESS)
 
     assert len(refreshes) == 1
-    assert not client.is_token_expired()
+    assert not client.is_token_expired
 
 
 def test_fresh_token_is_not_refreshed(fetches, refreshes):
