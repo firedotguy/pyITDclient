@@ -95,15 +95,13 @@ class Post(ITDBaseModel):
         return Post(self.id, client=client)
 
     def _post_refresh(self, context: dict = {}):
+        self.comments._client = self._client  # comments приходит не из данных, а из default_factory, поэтому про клиент не знает
         self.comments._post = self
-        self.comments._client = context['client']
-        if self.is_loaded('first_comments'):
+        if self.is_loaded('first_comments'):  # в списках постов комментариев нет, обычное обращение сходило бы за ними в апи
             for comment in self.first_comments:
                 comment._post = self
-                comment._client = context['client']
         for attachment in self.attachments:
             attachment._post = self
-            attachment._client = context['client']
 
     @classmethod
     def new(
@@ -149,8 +147,9 @@ class Post(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict = {}, client: Client | None = None
+        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict | None = None, client: Client | None = None
     ) -> 'Post':
+        context = dict(context or {})
         context.update({'source': source, 'source_context': source_context})
         instance = super().from_dict(data, context=context, client=client)
         instance._extra_context = {'source': source, 'source_context': source_context}

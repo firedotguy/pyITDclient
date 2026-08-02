@@ -53,7 +53,9 @@ class ITDBaseModel:
             self.refresh()
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
+        # клиент раздается только настоящим полям (post.author = user), но не обратным ссылкам:
+        # comment._post = post отдал бы клиента комментария посту, а не наоборот
+        if not name.startswith('_') and isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
         if '_loaded_attrs' not in self.__dict__:  # attribute is set before __init__, remember it anyway - otherwise getattr will refresh loaded value
             object.__setattr__(self, '_loaded_attrs', set())
@@ -93,10 +95,11 @@ class ITDBaseModel:
         self.load_status = LoadStatus.FULL
         return self
 
-    def _fill_from_data(self, data: dict, *, context: dict = {}):
+    def _fill_from_data(self, data: dict, *, context: dict | None = None):
         assert self._validator, 'Unable to use fill_from_data without a validator'
+        context = dict(context or {})  # копия: дефолт {} общий на все вызовы, его нельзя мутировать
         context.update(self._extra_context)
-        validated = self._validator.model_validate(data)
+        validated = self._validator.model_validate(data, context=context)  # вложенные модели строятся с клиентом родителя
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             object.__setattr__(self, name, value)
@@ -104,11 +107,12 @@ class ITDBaseModel:
         self._post_refresh(context=context)
 
     @classmethod
-    def from_dict(cls, data: dict, *, context: dict = {}, client: Client | None = None):
+    def from_dict(cls, data: dict, *, context: dict | None = None, client: Client | None = None):
+        context = dict(context or {})
         instance = cls.__new__(cls)
-        ITDBaseModel.__init__(instance, client)
+        ITDBaseModel.__init__(instance, client or context.get('client'))  # клиент из контекста - так вложенные модели попадают к клиенту родителя
 
-        context.setdefault('client', client or instance.client)
+        context.setdefault('client', instance.client)
         instance._fill_from_data(data, context=context)
         instance.load_status = LoadStatus.PARTIALLY
         return instance
