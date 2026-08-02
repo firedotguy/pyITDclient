@@ -23,7 +23,7 @@ l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l
 @cache
 def validator_for(cls: type) -> type[BaseModel]:
     """Класс-валидатор модели: собирается один раз на модель при первой валидации"""
-    # __module__ нужен, чтобы pydantic резолвил forward refs в аннотациях модели
+    # __module__ for correct forward refs in annotations
     return type(f'_{cls.__name__}Validate', (BaseModel, cls), {'__module__': cls.__module__})
 
 
@@ -32,15 +32,6 @@ def _getattr(self: object, name: str, default: Any | None = None) -> Any:
         return object.__getattribute__(self, name)
     except AttributeError:
         return default
-
-
-# def _field_has_default(cls: type, name: str) -> bool:
-#     """Returns True if the field is declared as Field(...) with a default value."""
-#     for klass in cls.__mro__:
-#         val = klass.__dict__.get(name)
-#         if isinstance(val, FieldInfo):
-#             return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
-#     return False
 
 
 class ITDBaseModel:
@@ -71,10 +62,10 @@ class ITDBaseModel:
 
     def _post_refresh(self, context: dict = {}): ...
 
-    def is_loaded(self, name: str) -> bool:
+    def is_loaded(self, name: str) -> bool:  # claudes idea
         """Пришло ли поле в данных
 
-        Не трогает апи, в отличие от обычного обращения к полю: `post.is_loaded('first_comments')` вместо `post.first_comments`,
+        Не трогает API, в отличие от обычного обращения к полю: `post.is_loaded('first_comments')` вместо `post.first_comments`,
         когда надо просто узнать, есть ли значение (в списках приходит не все, что есть в одиночном ответе).
 
         Args:
@@ -84,20 +75,6 @@ class ITDBaseModel:
             bool: Загружено ли поле
         """
         return name in self._loaded_attrs
-
-    def get_loaded(self, name: str, default: Any = None) -> Any:
-        """Значение поля, если оно пришло в данных, иначе `default` - тоже без похода в апи
-
-        Args:
-            name (str): Имя поля
-            default (Any, optional): Что вернуть, если поля нет. Defaults to None.
-
-        Returns:
-            Any: Значение
-        """
-        if not self.is_loaded(name):
-            return default
-        return self.__dict__.get(name, default)
 
     @property
     def client(self) -> Client:
@@ -138,9 +115,9 @@ class ITDBaseModel:
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler):
-        if issubclass(source, BaseModel):  # это сам класс-валидатор - строим обычную pydantic модель
+        if issubclass(source, BaseModel):
             return handler(source)
-        # модель как тип поля: собираем ее из dict через from_dict, с контекстом родителя
+        # build like just  simple from_dict
         return with_info_plain_validator_function(
             lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
         )
@@ -218,7 +195,6 @@ class ITDList(ITDBaseModel, list[T]):
         return {}
 
     # edited by calude, thats so fucking crazy pagination
-    # ai begin ---
     def load(self, count: int | All | Batch = BATCH, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
         """Загрузить объекты
 
@@ -279,8 +255,6 @@ class ITDList(ITDBaseModel, list[T]):
 
         return added
 
-    # --- ai end
-
     @abstractmethod
     def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
@@ -335,7 +309,7 @@ class ITDList(ITDBaseModel, list[T]):
     @overload
     def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:
         if isinstance(index, slice):
             value: int | None = index.stop
         else:
