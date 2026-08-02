@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from itd.api.polls import vote
 from itd.base import ITDBaseModel
+from itd.utils import parse_datetime
 
 if TYPE_CHECKING:
     from itd.client import Client
@@ -37,7 +38,7 @@ class Poll(ITDBaseModel):
 
     id: UUID
     post_id: UUID = Field(alias='postId')
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     question: str
     options: list[PollOption]
@@ -55,6 +56,10 @@ class Poll(ITDBaseModel):
 
     def __int__(self) -> int:
         return self.total_votes
+
+    def _post_refresh(self, context: dict = {}):
+        for option in self.options:
+            option._post_id = self.post_id
 
     def vote(self, options: list[str | UUID | PollOption] | str | UUID | PollOption, client: Client | None = None) -> None:
         uuid_options = []
