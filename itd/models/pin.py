@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 from pydantic import Field
 
 from itd.api.pins import remove_pin, set_pin
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.user import _UserBase
+    from itd.core.client import Client
+    from itd.models.user import _UserBase
 
 
 class Pin(ITDBaseModel):

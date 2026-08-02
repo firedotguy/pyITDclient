@@ -12,13 +12,13 @@ from urllib.parse import quote
 from requests import Response, Session
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_config, limiters, limits
+from itd.core.default import get_config, limiters, limits
 from itd.enums import AuthLevel, DebugResponseMode
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, InvalidAccessTokenError, ITDException
-from itd.logger import get_logger
+from itd.core.logger import get_logger
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('request')  # noqa: E741
 

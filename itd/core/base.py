@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from pydantic_core.core_schema import with_info_plain_validator_function
 
-from itd._default import get_default_client
+from itd.core.default import get_default_client
+from itd.core.logger import get_logger
+from itd.core.schema import model_core_schema, validator_for
 from itd.enums import ALL, BATCH, All, Batch, LoadStatus
-from itd.logger import get_logger
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
@@ -101,18 +100,11 @@ class ITDBaseModel:
         instance.load_status = LoadStatus.PARTIALLY
         return instance
 
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source, handler):
-        if issubclass(source, BaseModel):
-            return handler(source)
-        # build with from_dict
-        return with_info_plain_validator_function(
-            lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
-        )
+    __get_pydantic_core_schema__ = classmethod(model_core_schema)
 
-    @cached_property
+    @property
     def _validator(self) -> type[BaseModel]:
-        return type(f'_{self.__class__.__name__}Validate', (BaseModel, type(self)), {})
+        return validator_for(type(self))  # один класс на модель, а не на объект
 
     if not TYPE_CHECKING:
 

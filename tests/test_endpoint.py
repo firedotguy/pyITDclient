@@ -73,7 +73,7 @@ def test_search_from_client_goes_through_pipeline(monkeypatch, refreshes):
         calls.append((method, url, params, send_token))
         return make_response(200, {'data': {'users': [], 'hashtags': []}})
 
-    monkeypatch.setattr('itd.client.fetch', fake_fetch)
+    monkeypatch.setattr('itd.core.client.fetch', fake_fetch)
 
     assert client.search('итд', hashtags_limit=3, users_limit=2) == ([], [])
     assert calls == [('get', 'search', {'userLimit': 2, 'hashtagLimit': 3, 'q': 'итд'}, True)]

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from itd.request import endpoint
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 @endpoint('get', 'users/stats/top-clans')

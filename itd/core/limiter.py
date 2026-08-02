@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from time import monotonic, sleep
 
-from itd.logger import get_logger
+from itd.core.logger import get_logger
 
 l = get_logger('limiter')
 

@@ -14,10 +14,10 @@ from itd.exceptions import (
     SessionNotFoundError,
     SessionRevokedError
 )
-from itd.request import endpoint
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 @endpoint('post', 'v1/auth/refresh', SessionExpiredError(), SessionNotFoundError(), SessionRevokedError(), level=AuthLevel.REFRESH)

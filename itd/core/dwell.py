@@ -10,12 +10,12 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, field_serializer
 
 from itd.api.dwell import send_interactions, send_views
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 from itd.enums import InteractionType, ViewReason, ViewSource
-from itd.logger import get_logger
+from itd.core.logger import get_logger
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('dwell')  # noqa: E741
 

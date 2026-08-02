@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from _io import BufferedReader
 from atexit import register
 from datetime import datetime, timedelta
@@ -5,28 +7,30 @@ from functools import cached_property
 from os import getenv
 from threading import RLock, Thread
 from time import sleep
-from typing import overload
+from typing import TYPE_CHECKING, overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 
-from itd._credfile import Credfile
-from itd._default import _default_client, set_default_client
+from itd.core.credfile import Credfile
+from itd.core.default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
 from itd.api.posts import get_stats
 from itd.api.search import search
-from itd.config import Config
+from itd.core.config import Config
 from itd.enums import AuthLevel, Role, ViewReason
 from itd.exceptions import InsufficientAuthLevelError, NotFoundError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
-from itd.hashtag import Hashtag, Hashtags
-from itd.logger import get_logger
-from itd.post import Post
-from itd.post_dwell import DwellTracker
-from itd.request import decode_jwt_payload, fetch, fetch_stream
-from itd.user import Me, User, Users, get_follow_status
-from itd.utils import get_credfile, shorten_token
+from itd.core.logger import get_logger
+from itd.core.dwell import DwellTracker
+from itd.core.request import decode_jwt_payload, fetch, fetch_stream
+from itd.core.utils import get_credfile, shorten_token
+
+if TYPE_CHECKING:  # core не зависит от моделей: они нужны только для аннотаций и создаются внутри методов
+    from itd.models.hashtag import Hashtag
+    from itd.models.post import Post
+    from itd.models.user import Me, User
 
 l = get_logger('client')
 
@@ -320,6 +324,8 @@ class Client:
 
     @cached_property
     def user(self) -> Me:
+        from itd.models.user import Me
+
         return Me(client=self)
 
     def _process_exc_callbacks(self, exception: Exception):
@@ -361,6 +367,9 @@ class Client:
         Returns:
             tuple[list[User], list[Hashtag]]: Результат поиска
         """
+        from itd.models.hashtag import Hashtag
+        from itd.models.user import User
+
         res = search(self, query, users_limit, hashtags_limit).json()['data']
         return [User.from_dict(user, client=self) for user in res['users']], [Hashtag.from_dict(hashtag, client=self) for hashtag in res['hashtags']]
 
@@ -374,6 +383,8 @@ class Client:
         Returns:
             list[User]: Список пользователей
         """
+        from itd.models.user import Users
+
         l.warning('Client.search_users is deprecated. Please use Users.search.')
         return Users.search(query, limit)
 
@@ -387,6 +398,8 @@ class Client:
         Returns:
             list[Hashtag]: Список хэштэгов
         """
+        from itd.models.hashtag import Hashtags
+
         l.warning('Client.search_hashtags is deprecated. Please use Hashtags.search.')
         return Hashtags.search(query, limit)
 
@@ -399,6 +412,8 @@ class Client:
         Returns:
             User | None: Пользователь
         """
+        from itd.models.user import User
+
         l.warning('Client.search_user is deprecated. Please use User.search.')
         try:
             return User.search(query)
@@ -414,6 +429,8 @@ class Client:
         Returns:
             Hashtag | None: Хэштэг
         """
+        from itd.models.hashtag import Hashtag
+
         l.warning('Client.search_hashtag is deprecated. Please use Hashtag.search.')
         try:
             return Hashtag.search(query)
@@ -435,6 +452,8 @@ class Client:
         Returns:
             dict[UUID, bool] | bool: Результат
         """
+        from itd.models.user import get_follow_status
+
         l.warning('Client.get_follow_status is deprecated. Please use get_follow_status.')
         return get_follow_status(users)
 

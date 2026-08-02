@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from itd.user import Me
+from itd.models.user import Me
 
 
 @pytest.fixture(scope="module")

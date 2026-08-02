@@ -7,10 +7,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from itd.api.polls import vote
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 class PollOption(ITDBaseModel):

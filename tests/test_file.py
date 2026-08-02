@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from itd.file import File
+from itd.models.file import File
 
 
 MP3_PATH = Path(__file__).parent.parent / '1.mp3'

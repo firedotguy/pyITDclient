@@ -3,10 +3,10 @@ from logging import WARNING, getLogger
 import pytest
 from helpers import make_client, make_response, make_token
 
-from itd.client import Client
+from itd.core.client import Client
 from itd.enums import AuthLevel
 from itd.exceptions import AccessTokenExpiredError
-from itd.request import api_wrapper
+from itd.core.request import api_wrapper
 
 pytestmark = pytest.mark.usefixtures('keep_default_client')
 
@@ -101,7 +101,7 @@ def test_api_wrapper_warns_if_token_rejected_but_not_expired(fetches, refreshes,
     def get_something(client: Client):
         return responses.pop(0)
 
-    with caplog.at_level(WARNING, logger='itd.request'):
+    with caplog.at_level(WARNING, logger='itd.core.request'):
         get_something(client)
 
     assert any('clock skew' in record.getMessage() for record in caplog.records) is warned

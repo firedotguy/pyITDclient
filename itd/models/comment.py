@@ -8,16 +8,17 @@ from uuid import UUID
 from pydantic import BeforeValidator, Field
 
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
-from itd.base import ITDBaseModel, ITDList
+from itd.core.base import ITDBaseModel, ITDList
 from itd.enums import CommentSorting, ReportReason, ReportTargetType
-from itd.file import CommentAttach
-from itd.report import Report
-from itd.user import User
-from itd.utils import ATTACHMENTS, format_attachments, parse_datetime, to_nullable_uuid
+from itd.models.file import CommentAttach
+from itd.models.report import Report
+from itd.models.user import User
+from itd.core.utils import parse_datetime, to_nullable_uuid
+from itd.models.utils import ATTACHMENTS, format_attachments
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import Post
+    from itd.core.client import Client
+    from itd.models.post import Post
 
 
 class Comment(ITDBaseModel):

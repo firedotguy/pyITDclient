@@ -2,7 +2,7 @@ import pytest
 from helpers import make_response
 
 from itd.exceptions import DEFAULT_ERRORS, AccountDeletedError, NotFoundError, RateLimitError, ValidationError
-from itd.request import _find_error
+from itd.core.request import _find_error
 
 
 def find(status: int, json: dict, *declarations):

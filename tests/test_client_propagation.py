@@ -1,7 +1,7 @@
 import pytest
 
-from itd.post import Post
-from itd.user import Me
+from itd.models.post import Post
+from itd.models.user import Me
 
 
 POST_ID = '0fe47f03-3fda-4d95-a0f0-8bc0f950df8a'

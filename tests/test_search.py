@@ -1,5 +1,5 @@
-from itd.user import User
-from itd.hashtag import Hashtag
+from itd.models.user import User
+from itd.models.hashtag import Hashtag
 
 
 def test_search_returns_tuple(client):

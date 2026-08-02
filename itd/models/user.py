@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from itd._default import get_default_client
+from itd.core.default import get_default_client
 from itd.api.etc import get_who_to_follow
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
@@ -29,18 +29,19 @@ from itd.api.users import (
     update_profile
 )
 from itd.api.users import get_follow_status as _get_follow_status
-from itd.base import ITDBaseModel, ITDList
+from itd.core.base import ITDBaseModel, ITDList
 from itd.enums import AccessType, LastSeenUnit, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
-from itd.pin import Pin
-from itd.poll import NewPoll
-from itd.report import Report
-from itd.span import Span
-from itd.utils import ATTACHMENTS, parse_datetime, to_uuid
+from itd.models.pin import Pin
+from itd.models.poll import NewPoll
+from itd.models.report import Report
+from itd.models.span import Span
+from itd.core.utils import parse_datetime, to_uuid
+from itd.models.utils import ATTACHMENTS
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import LikedPosts, Post, UserPosts
+    from itd.core.client import Client
+    from itd.models.post import LikedPosts, Post, UserPosts
 
 
 class ProfileUser(BaseModel):
@@ -200,13 +201,13 @@ class _UserBase(ITDBaseModel):
 
     @cached_property
     def posts(self) -> UserPosts:
-        from itd.post import UserPosts
+        from itd.models.post import UserPosts
 
         return UserPosts(self, client=self.client)
 
     @cached_property
     def liked_posts(self) -> LikedPosts:
-        from itd.post import LikedPosts
+        from itd.models.post import LikedPosts
 
         return LikedPosts(self, client=self.client)
 
@@ -361,7 +362,7 @@ class User(_UserBase):
     def post(
         self, content: str | None = None, spans: list[Span] = [], attachments: ATTACHMENTS = [], poll: NewPoll | None = None, client: Client | None = None
     ) -> Post:
-        from itd.post import Post  # stupid circular import
+        from itd.models.post import Post  # stupid circular import
 
         return Post.new(content, spans, attachments, poll, self, client or self.client)
 

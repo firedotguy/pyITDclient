@@ -6,7 +6,7 @@ from requests.utils import default_user_agent
 
 from itd.enums import BATCH, All, Batch, DebugResponseMode, ParseMode, UserAgent
 from itd.exceptions import RateLimitError
-from itd.utils import get_sdk_user_agent
+from itd.core.utils import get_sdk_user_agent
 
 
 @dataclass

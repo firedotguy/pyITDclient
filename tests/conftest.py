@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from helpers import make_response, make_token
 
 from itd import ITDConfig, init_client
-from itd.post import Post
+from itd.models.post import Post
 
 load_dotenv()
 config = ITDConfig()
@@ -35,11 +35,11 @@ def redis_post(client):  # думаешь redis это какое нибудь �
 @pytest.fixture
 def keep_default_client():
     """Клиенты оффлайн тестов не должны становиться дефолтными для остальных"""
-    from itd import _default
+    from itd.core import default
 
-    previous = _default._default_client
+    previous = default._default_client
     yield
-    _default._default_client = previous
+    default._default_client = previous
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def fetches(monkeypatch):
         calls.append({'method': method, 'url': url, 'params': params, 'files': files, 'send_token': send_token})
         return make_response(200, {'data': {}})
 
-    monkeypatch.setattr('itd.client.fetch', fake_fetch)
+    monkeypatch.setattr('itd.core.client.fetch', fake_fetch)
     return calls
 
 
@@ -64,5 +64,5 @@ def refreshes(monkeypatch):
         calls.append(client.access_token)
         return make_response(200, {'accessToken': make_token(900)})
 
-    monkeypatch.setattr('itd.client.refresh_token', fake_refresh_token)
+    monkeypatch.setattr('itd.core.client.refresh_token', fake_refresh_token)
     return calls

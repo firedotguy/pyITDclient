@@ -24,21 +24,22 @@ from itd.api.posts import (
     unlike_post,
     unpin_post
 )
-from itd.base import ITDBaseModel, ITDList
-from itd.comment import Comment, Comments
+from itd.core.base import ITDBaseModel, ITDList
+from itd.models.comment import Comment, Comments
 from itd.enums import ALL, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
 from itd.exceptions import NotFoundError
-from itd.file import PostAttach
-from itd.hashtag import Hashtag
-from itd.logger import get_logger
-from itd.poll import NewPoll, Poll, PollOption
-from itd.report import Report
-from itd.span import Span
-from itd.user import Me, User, _UserBase
-from itd.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_datetime, parse_html, parse_md, to_uuid
+from itd.models.file import PostAttach
+from itd.models.hashtag import Hashtag
+from itd.core.logger import get_logger
+from itd.models.poll import NewPoll, Poll, PollOption
+from itd.models.report import Report
+from itd.models.span import Span
+from itd.models.user import Me, User, _UserBase
+from itd.core.utils import parse_datetime, to_uuid
+from itd.models.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_html, parse_md
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('post')  # noqa: E741
 

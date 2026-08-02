@@ -5,8 +5,8 @@ from uuid import UUID
 from pydantic import Field
 
 from itd.api.sessions import get_sessions, revoke, revoke_all
-from itd.base import ITDBaseModel
-from itd.client import Client
+from itd.core.base import ITDBaseModel
+from itd.core.client import Client
 from itd.enums import DeviceType
 
 
