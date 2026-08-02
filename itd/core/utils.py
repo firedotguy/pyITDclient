@@ -1,5 +1,3 @@
-"""Хелперы, не зависящие от моделей"""
-
 from datetime import datetime
 from json import dumps, loads
 from sys import version

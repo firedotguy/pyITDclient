@@ -13,9 +13,9 @@ from requests import Response, Session
 from requests.exceptions import JSONDecodeError
 
 from itd.core.default import get_config, limiters, limits
+from itd.core.logger import get_logger
 from itd.enums import AuthLevel, DebugResponseMode
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, InvalidAccessTokenError, ITDException
-from itd.core.logger import get_logger
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -23,10 +23,7 @@ if TYPE_CHECKING:
 l = get_logger('request')  # noqa: E741
 
 
-# ai begin ---
-
-
-def _get_jhash(b: int) -> int:
+def _get_jhash(b: int) -> int:  # ai
     """Calculate DDoS-Guard challenge hash (JS get_jhash port)."""
     x = 123456789
     k = 0
@@ -37,7 +34,7 @@ def _get_jhash(b: int) -> int:
     return k
 
 
-def _solve_ddos_guard(session: Session, response: Response, user_agent: str = '') -> bool:
+def _solve_ddos_guard(session: Session, response: Response, user_agent: str = '') -> bool:  # ai
     """Solve DDoS-Guard JS challenge. Returns True if solved (duplicate request required)."""
     if '<html>' not in response.text[:500] or 'get_jhash' not in response.text:
         return False
@@ -57,9 +54,6 @@ def _solve_ddos_guard(session: Session, response: Response, user_agent: str = ''
     session.cookies.set('__jua_', quote(user_agent, safe=''), path='/')
 
     return True
-
-
-# --- ai end
 
 
 def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:

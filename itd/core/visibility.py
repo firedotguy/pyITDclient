@@ -17,11 +17,6 @@ l = get_logger('visibility')  # noqa: E741
 
 
 class VisibilityTracker:
-    """Видимые посты: обновление их статистики и скрытие, пока пользователь неактивен
-
-    Оба таймера живут здесь, а не в клиенте: клиенту от них нужен только запуск.
-    """
-
     def __init__(self, client: Client) -> None:
         self.client = client
         self.posts: list[Post] = []

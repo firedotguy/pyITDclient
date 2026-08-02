@@ -180,14 +180,13 @@ class DwellTracker(ITDBaseModel):
             self.send_interactions()
 
     def send(self):
-        """Отправить накопленные просмотры и взаимодействия"""
         self.send_views()
         self.send_interactions()
 
     def start(self):
-        """Запустить отправку батчами"""
         self.timer = Timer('dwell', self.client.config.dwell_send_interval, self.send, on_exit=self.send if self.client.config.dwell_save_on_quit else None)
         self.timer.start()
 
     def stop(self):
+        assert self.timer, 'start timer first'
         self.timer.stop(run_on_exit=self.client.config.dwell_save_on_quit)

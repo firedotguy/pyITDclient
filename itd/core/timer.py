@@ -9,17 +9,16 @@ from itd.core.logger import get_logger
 l = get_logger('timer')  # noqa: E741
 
 
+# да навайбкодил и че вы мне сделаете
 class Timer:
-    """Фоновый поток, дергающий `target` раз в `interval` секунд
-
-    Args:
-        name (str): Имя (для логов)
-        interval (float): Интервал в секундах (0 - таймер не запустится)
-        target (Callable[[], None]): Что вызывать
-        on_exit (Callable[[], None] | None, optional): Что вызвать при выходе из программы. Defaults to None.
-    """
-
     def __init__(self, name: str, interval: float, target: Callable[[], None], on_exit: Callable[[], None] | None = None) -> None:
+        """
+        Args:
+            name (str): Имя (для логов)
+            interval (float): Интервал в секундах (0 - таймер не запустится)
+            target (Callable[[], None]): Что вызывать
+            on_exit (Callable[[], None] | None, optional): Что вызвать при выходе из программы. Defaults to None.
+        """
         self.name = name
         self.interval = interval
         self.target = target
