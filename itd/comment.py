@@ -266,7 +266,8 @@ class Comments(ITDList[Comment]):
 
     def new(self, content: str | None = None, attachments: ATTACHMENTS = [], client: Client | None = None) -> Comment:
         comment = Comment.new(self._post, content, attachments, client=client or self.client)
-        self.total += 1
+        if hasattr(self, 'total'):
+            self.total += 1
         return comment
 
     @property
