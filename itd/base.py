@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+from pydantic_core.core_schema import with_info_plain_validator_function
 
 from itd._default import get_default_client
 from itd.enums import ALL, BATCH, All, Batch, LoadStatus
@@ -40,9 +42,6 @@ class ITDBaseModel:
     _refreshable: bool = True
     load_status: LoadStatus = LoadStatus.NO
     _load_with_parent: bool = True  # load parent model if model called
-    _validator: Callable[[Any], type[BaseModel]] | None = (
-        None  # callable (pls use lambda), becuase we havent validator at that moment (it depends on this class)
-    )
 
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
@@ -63,7 +62,7 @@ class ITDBaseModel:
         self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
-    def _post_refresh(self): ...
+    def _post_refresh(self, context: dict = {}): ...
 
     @property
     def client(self) -> Client:
@@ -85,12 +84,12 @@ class ITDBaseModel:
     def _fill_from_data(self, data: dict, *, context: dict = {}):
         assert self._validator, 'Unable to use fill_from_data without a validator'
         context.update(self._extra_context)
-        validated = self._validator().model_validate(data, context=context)  # ty: ignore[missing-argument]
+        validated = self._validator.model_validate(data)
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             object.__setattr__(self, name, value)
 
-        self._post_refresh()
+        self._post_refresh(context=context)
 
     @classmethod
     def from_dict(cls, data: dict, *, context: dict = {}, client: Client | None = None):
@@ -101,6 +100,19 @@ class ITDBaseModel:
         instance._fill_from_data(data, context=context)
         instance.load_status = LoadStatus.PARTIALLY
         return instance
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler):
+        if issubclass(source, BaseModel):
+            return handler(source)
+        # build with from_dict
+        return with_info_plain_validator_function(
+            lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
+        )
+
+    @cached_property
+    def _validator(self) -> type[BaseModel]:
+        return type(f'_{self.__class__.__name__}Validate', (BaseModel, type(self)), {})
 
     if not TYPE_CHECKING:
 

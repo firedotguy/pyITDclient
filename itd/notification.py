@@ -6,7 +6,7 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from sseclient import SSEClient
 
 from itd.api.notifications import (
@@ -32,7 +32,6 @@ l = get_logger('notifications')  # noqa: E741
 
 
 class NotificationsSettings(ITDBaseModel):
-    _validator = lambda _: _NotificationsSettingsValidate
     enabled: bool
     web_enabled: bool = Field(True, alias='webEnabled')
     sound: bool = Field(alias='sound')
@@ -87,10 +86,6 @@ class NotificationsSettings(ITDBaseModel):
         update_notifications_settings(client or self.client, self, old=old, new=new)
 
 
-class _NotificationsSettingsValidate(BaseModel, NotificationsSettings):
-    pass
-
-
 class _NotificationsSettingsOld(BaseModel):
     enabled: bool
     sound: bool
@@ -120,7 +115,6 @@ class _NotificationsSettingsNew(BaseModel):
 class Notification(ITDBaseModel):
     _refreshable = False
     _notifications: Notifications
-    _validator = lambda _: _NotificationValidate
 
     id: UUID
     type: NotificationType
@@ -211,13 +205,6 @@ class Notification(ITDBaseModel):
 
     def __str__(self):
         return self.get_text()
-
-
-class _NotificationValidate(BaseModel, Notification):
-    @field_validator('actor', mode='plain')
-    @classmethod
-    def validate_actor(cls, actor: dict):
-        return User.from_dict(actor)
 
 
 class Notifications(ITDList[Notification]):

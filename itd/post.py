@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from time import sleep
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Annotated, Literal, overload
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BeforeValidator, Field
 
 from itd.api.hashtags import get_posts_by_hashtag
 from itd.api.posts import (
@@ -44,12 +44,11 @@ l = get_logger('post')  # noqa: E741
 
 
 class Post(ITDBaseModel):
-    _validator = lambda _: _PostValidate
     _entered_at: datetime | None = None
 
     id: UUID
     author: User
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     content: str
     spans: list[Span] = []
@@ -93,6 +92,16 @@ class Post(ITDBaseModel):
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
+
+    def _post_refresh(self, context: dict = {}):
+        self.comments._post = self
+        self.comments._client = context['client']
+        for comment in self.first_comments:
+            comment._post = self
+            comment._client = context['client']
+        for attachment in self.attachments:
+            attachment._post = self
+            attachment._client = context['client']
 
     @classmethod
     def new(
@@ -389,7 +398,7 @@ class Post(ITDBaseModel):
         self._set_stats(stats[0])
 
     def _set_stats(self, stats: dict):
-        fields = {value.alias or name: name for name, value in _PostValidate.model_fields.items()}
+        fields = {value.alias or name: name for name, value in self._validator.model_fields.items()}
         for name, value in stats.items():
             if name in fields:
                 setattr(self, fields[name], value)
@@ -402,80 +411,6 @@ class Post(ITDBaseModel):
     @property
     def link(self) -> str:
         return self.url
-
-
-class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have some problems with init
-    @field_validator('attachments', mode='plain')
-    @classmethod
-    def validate_attachments(cls, attachments: list[dict], info: ValidationInfo):
-        assert info.context
-        return [PostAttach(attach, client=info.context.get('client')) for attach in attachments]
-
-    @field_validator('edited_at', mode='plain')
-    @classmethod
-    def validate_edited_at(cls, v: str | None):
-        if v is None:
-            return
-        return parse_datetime(v)
-
-    @field_validator('created_at', mode='plain')
-    @classmethod
-    def validate_created_at(cls, v: str):
-        return parse_datetime(v)
-
-    @field_validator('original_post', mode='plain')
-    @classmethod
-    def validate_original_post(cls, post: dict | None, info: ValidationInfo):
-        if post is None:
-            return
-        assert info.context
-        return Post.from_dict(post, info.context.get('source'), info.context.get('source_context'), client=info.context.get('client'))
-
-    @field_validator('poll', mode='plain')
-    @classmethod
-    def validate_poll(cls, poll: dict | None, info: ValidationInfo):
-        if poll is None:
-            return
-        assert info.context
-        return Poll.from_dict(poll, client=info.context.get('client'))
-
-    @field_validator('first_comments', mode='plain')
-    @classmethod
-    def validate_first_comments(cls, comments: list[dict], info: ValidationInfo):
-        assert info.context
-        return [Comment.from_dict(comment, client=info.context.get('client')) for comment in comments]
-
-    @field_validator('comments', mode='plain')
-    @classmethod
-    def validate_comments(cls, _, info: ValidationInfo):
-        assert info.context
-        return Comments(client=info.context.get('client'))
-
-    @field_validator('author', mode='plain')
-    @classmethod
-    def validate_author(cls, author: dict | _UserBase | None, info: ValidationInfo):
-        if author is None:
-            return None
-        if isinstance(author, _UserBase):
-            return author
-        assert info.context
-        return User.from_dict(author, client=info.context.get('client'))
-
-    @field_validator('wall_recipient', mode='plain')
-    @classmethod
-    def validate_wall_recipient(cls, wall_recipient: dict | None, info: ValidationInfo):
-        assert info.context
-        if wall_recipient is not None:
-            return User.from_dict(wall_recipient, client=info.context.get('client'))
-
-    @model_validator(mode='after')
-    def validate_model(self):
-        self.comments._post = self
-        for comment in self.first_comments:
-            comment._post = self
-        for attachment in self.attachments:
-            attachment._post = self
-        return self
 
 
 class _BasePosts(ITDList[Post]):

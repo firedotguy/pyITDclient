@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from itd.api.hashtags import get_hashtags, get_posts_by_hashtag, search_hashtags
 from itd.base import ITDBaseModel
@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 
 
 class Hashtag(ITDBaseModel):
-    _validator = lambda _: _HashtagValidate
-
     id: UUID
     name: str
     posts_count: int = Field(alias='postsCount')
@@ -51,10 +49,6 @@ class Hashtag(ITDBaseModel):
         if result:
             return result[0]
         raise NotFoundError('Hashtag')
-
-
-class _HashtagValidate(BaseModel, Hashtag):
-    pass
 
 
 class Hashtags(ITDBaseModel, list[Hashtag]):

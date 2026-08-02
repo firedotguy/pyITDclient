@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from itd.api.pins import remove_pin, set_pin
 from itd.base import ITDBaseModel
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 class Pin(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _PinValidate
     _user: '_UserBase'
 
     slug: str
@@ -24,14 +23,9 @@ class Pin(ITDBaseModel):
     url: str | None = None
     granted_at: datetime | None = Field(None, alias='grantedAt')
 
-    def __init__(self, pin: dict, user: '_UserBase | None' = None, client: Client | None = None):
-        super().__init__(client)
-
-        for name, value in _PinValidate.model_validate(pin).__dict__.items():
-            setattr(self, name, value)
-
-        if user:
-            self._user = user
+    def _post_refresh(self, context: dict = {}):
+        if context.get('user'):
+            self._user = context['user']
 
     def __str__(self) -> str:
         return self.name
@@ -43,7 +37,3 @@ class Pin(ITDBaseModel):
     def remove(self, client: Client | None = None) -> None:
         remove_pin(client or self.client)
         self._user.pin = None
-
-
-class _PinValidate(BaseModel, Pin):
-    pass

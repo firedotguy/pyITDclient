@@ -1,12 +1,9 @@
-from pydantic import BaseModel
-
 from itd.api.portal import get_portal
 from itd.base import ITDBaseModel
 from itd.client import Client
 
 
 class Portal(ITDBaseModel):
-    _validator = lambda _: _PortalValidate
     active: bool = True
     title: str
     url: str
@@ -23,7 +20,3 @@ class Portal(ITDBaseModel):
 
     def __bool__(self):
         return self.active
-
-
-class _PortalValidate(BaseModel, Portal):
-    pass

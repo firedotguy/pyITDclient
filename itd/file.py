@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 class File(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _FileValidate
 
     id: UUID
     url: str
@@ -69,12 +68,7 @@ class File(ITDBaseModel):
         return self.filename
 
 
-class _FileValidate(BaseModel, File):
-    pass
-
-
 class PostAttach(ITDBaseModel):
-    _validator = lambda _: _PostAttachValidate
     _post: Post
     _refreshable = False
 
@@ -140,18 +134,11 @@ class _PostAttachValidate(BaseModel, PostAttach):
 
 
 class CommentAttach(PostAttach):
-    _validator = lambda _: _CommentAttachValidate
     filename: str
     mime_type: str = Field(alias='mimeType')
     size: int
     duration: int | None = None
     order: int = 0
-
-    def __init__(self, attach: dict, client: Client | None = None) -> None:
-        super(PostAttach, self).__init__(client)
-
-        for name, value in _CommentAttachValidate.model_validate(attach).__dict__.items():
-            setattr(self, name, value)
 
     def record_open(self, client: Client | None = None):
         raise AttributeError
@@ -167,7 +154,3 @@ class CommentAttach(PostAttach):
         """
         with open(name or self.filename, 'wb') as fl:
             fl.write(get(self.url, timeout=self.client.config.timeout_file_download).content)
-
-
-class _CommentAttachValidate(BaseModel, CommentAttach):
-    pass

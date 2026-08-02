@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BeforeValidator, Field
 
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.base import ITDBaseModel, ITDList
@@ -22,12 +22,11 @@ if TYPE_CHECKING:
 
 class Comment(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _CommentValidate
 
     id: UUID
     content: str
 
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
     author: User
 
     likes_count: int = Field(0, alias='likesCount')
@@ -191,46 +190,11 @@ class Comment(ITDBaseModel):
     def can_report(self) -> bool:
         return not self.is_owner
 
-
-class _CommentValidate(BaseModel, Comment):
-    @field_validator('attachments', mode='plain')
-    @classmethod
-    def validate_attachments(cls, attachments: list[dict], info: ValidationInfo):
-        assert info.context
-        return [CommentAttach(attach, client=info.context.get('client')) for attach in attachments]
-
-    @field_validator('first_replies', mode='plain')
-    @classmethod
-    def validate_first_replies(cls, replies: list[dict], info: ValidationInfo):
-        assert info.context
-        return [Comment.from_dict(comment, info.context.get('post'), client=info.context.get('client')) for comment in replies]
-
-    @field_validator('created_at', mode='plain')
-    @classmethod
-    def validate_created_at(cls, v: str):
-        return parse_datetime(v)
-
-    @field_validator('reply_to', mode='plain')
-    @classmethod
-    def validate_reply_to(cls, reply_to: dict | None, info: ValidationInfo):
-        assert info.context
-        if reply_to is not None:
-            return User.from_dict(reply_to, client=info.context.get('client'))
-
-    @field_validator('author', mode='plain')
-    @classmethod
-    def validate_author(cls, author: dict, info: ValidationInfo):
-        assert info.context
-        return User.from_dict(author, client=info.context.get('client'))
-
-    @model_validator(mode='after')
-    def validate_model(self, info: ValidationInfo):
-        assert info.context
-        self._base_comment = info.context.get('base_comment')
-        self._post = info.context.get('post')
+    def _post_refresh(self, context: dict = {}):
+        self._base_comment = context.get('base_comment')
+        self._post = context.get('post')
         for reply in self.first_replies:
             reply._base_comment = self
-        return self
 
 
 class Comments(ITDList[Comment]):

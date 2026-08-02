@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from itd.api.reports import report
 from itd.base import ITDBaseModel
@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 class Report(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _ReportValidate
 
     id: UUID
     created_at: datetime = Field(alias='createdAt')
@@ -33,7 +32,3 @@ class Report(ITDBaseModel):
 
     def __hash__(self):
         return int(self.id)
-
-
-class _ReportValidate(BaseModel, Report):
-    pass
