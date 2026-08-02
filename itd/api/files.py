@@ -4,18 +4,17 @@ from _io import BufferedReader
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import api_wrapper
 from itd.exceptions import InvalidFileTypeError, ModerationFailedError, TooLargeError, UploadError
+from itd.request import Payload, endpoint
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-@api_wrapper(UploadError(), ModerationFailedError(), InvalidFileTypeError(), TooLargeError('File', 413))
+@endpoint('post', 'files/upload', UploadError(), ModerationFailedError(), InvalidFileTypeError(), TooLargeError('File', 413))
 def upload_file(client: Client, name: str, data: BufferedReader | bytes):
-    return client.request('post', 'files/upload', files={'file': (name, data)})
+    return Payload(files={'file': (name, data)})
 
 
-@api_wrapper()
-def delete_file(client: Client, id: UUID):
-    return client.request('delete', f'files/{id}')
+@endpoint('delete', 'files/{id}')
+def delete_file(client: Client, id: UUID): ...

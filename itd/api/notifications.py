@@ -3,42 +3,36 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import api_wrapper
 from itd.exceptions import NotFoundError
+from itd.request import endpoint
 
 if TYPE_CHECKING:
     from itd.client import Client
     from itd.notification import NotificationsSettings
 
 
-@api_wrapper()
+@endpoint('get', 'notifications')
 def get_notifications(client: Client, limit: int = 20, offset: int = 0):
-    return client.request('get', 'notifications', {'limit': limit, 'offset': offset})
+    return {'limit': limit, 'offset': offset}
 
 
-@api_wrapper(NotFoundError('Notification', json_check=lambda json: json.get('success') is False))
-def mark_as_read(client: Client, id: UUID):
-    return client.request('post', f'notifications/{id}/read')
+@endpoint('post', 'notifications/{id}/read', NotFoundError('Notification', json_check=lambda json: json.get('success') is False))
+def mark_as_read(client: Client, id: UUID): ...
 
 
-@api_wrapper()
-def mark_all_as_read(client: Client):
-    return client.request('post', 'notifications/read-all')
+@endpoint('post', 'notifications/read-all')
+def mark_all_as_read(client: Client): ...
 
 
-@api_wrapper()
-def get_unread_notifications_count(client: Client):
-    return client.request('get', 'notifications/count')
+@endpoint('get', 'notifications/count')
+def get_unread_notifications_count(client: Client): ...
 
 
-def stream_notifications(client: Client):
-    return client.request_sse('notifications/stream')
+@endpoint('get', 'notifications/settings')
+def get_notifications_settings(client: Client): ...
 
 
-def get_notifications_settings(client: Client):
-    return client.request('get', 'notifications/settings')
-
-
+@endpoint('put', 'notifications/settings')
 def update_notifications_settings(client: Client, settings: NotificationsSettings, *, old: bool = True, new: bool = True):
     from itd.notification import _NotificationsSettingsNew, _NotificationsSettingsNewPreferences, _NotificationsSettingsOld  # жду фикс circular import день 67
 
@@ -56,4 +50,8 @@ def update_notifications_settings(client: Client, settings: NotificationsSetting
             ).model_dump(mode='json', by_alias=True)
         )
 
-    return client.request('put', 'notifications/settings', data)
+    return data
+
+
+def stream_notifications(client: Client):
+    return client.request_sse('notifications/stream')

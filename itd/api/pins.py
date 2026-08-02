@@ -2,23 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from itd.base import api_wrapper
 from itd.exceptions import PinNotOwnedError
+from itd.request import endpoint
 
 if TYPE_CHECKING:
     from itd.client import Client
 
 
-@api_wrapper()
-def get_pins(client: Client):
-    return client.request('get', 'users/me/pins')
+@endpoint('get', 'users/me/pins')
+def get_pins(client: Client): ...
 
 
-@api_wrapper()
-def remove_pin(client: Client):
-    return client.request('delete', 'users/me/pin')
+@endpoint('delete', 'users/me/pin')
+def remove_pin(client: Client): ...
 
 
-@api_wrapper(PinNotOwnedError())
+@endpoint('put', 'users/me/pin', PinNotOwnedError())
 def set_pin(client: Client, slug: str):
-    return client.request('put', 'users/me/pin', {'slug': slug})
+    return {'slug': slug}
