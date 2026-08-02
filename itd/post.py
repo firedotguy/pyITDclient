@@ -96,9 +96,10 @@ class Post(ITDBaseModel):
     def _post_refresh(self, context: dict = {}):
         self.comments._post = self
         self.comments._client = context['client']
-        for comment in self.first_comments:
-            comment._post = self
-            comment._client = context['client']
+        if 'first_comments' in self._loaded_attrs:
+            for comment in self.first_comments:
+                comment._post = self
+                comment._client = context['client']
         for attachment in self.attachments:
             attachment._post = self
             attachment._client = context['client']
