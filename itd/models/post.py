@@ -25,17 +25,17 @@ from itd.api.posts import (
     unpin_post
 )
 from itd.core.base import ITDBaseModel, ITDList
-from itd.models.comment import Comment, Comments
+from itd.core.logger import get_logger
+from itd.core.utils import parse_datetime, to_uuid
 from itd.enums import ALL, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
 from itd.exceptions import NotFoundError
+from itd.models.comment import Comment, Comments
 from itd.models.file import PostAttach
 from itd.models.hashtag import Hashtag
-from itd.core.logger import get_logger
 from itd.models.poll import NewPoll, Poll, PollOption
 from itd.models.report import Report
 from itd.models.span import Span
 from itd.models.user import Me, User, _UserBase
-from itd.core.utils import parse_datetime, to_uuid
 from itd.models.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_html, parse_md
 
 if TYPE_CHECKING:
@@ -97,7 +97,7 @@ class Post(ITDBaseModel):
     def _post_refresh(self, context: dict = {}):
         self.comments._post = self
         self.comments._client = context['client']
-        for comment in self.get_loaded('first_comments', []):  # в списках постов комментариев нет, обычное обращение сходило бы за ними в апи
+        for comment in self.get_loaded('first_comments', []):
             comment._post = self
             comment._client = context['client']
         for attachment in self.attachments:
