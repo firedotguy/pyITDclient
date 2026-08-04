@@ -3,9 +3,9 @@ from uuid import UUID, uuid4
 import pytest
 from helpers import make_client, make_response, make_token
 
-from itd._default import set_default_client
+from itd.core.default import set_default_client
 from itd.exceptions import PinNotOwnedError
-from itd.user import Followers, Following, Me, User
+from itd.models.user import Followers, Following, Me, User
 
 
 @pytest.fixture(scope="module")
@@ -49,7 +49,7 @@ def test_not_loaded_field_still_refreshes(default_client, monkeypatch):
         calls.append(url)
         return make_response(200, {'id': str(uid), 'username': 'example', 'displayName': 'Example'})
 
-    monkeypatch.setattr('itd.client.fetch', fake_fetch)
+    monkeypatch.setattr('itd.core.client.fetch', fake_fetch)
 
     user = User.by_username('example')
     assert user.display_name == 'Example'

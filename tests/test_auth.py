@@ -3,19 +3,19 @@ from logging import WARNING, getLogger
 import pytest
 from helpers import make_client, make_response, make_token
 
-from itd.client import Client
+from itd.core.client import Client
 from itd.enums import AuthLevel
 from itd.exceptions import AccessTokenExpiredError
-from itd.request import api_wrapper
+from itd.core.request import api_wrapper
 
 pytestmark = pytest.mark.usefixtures('keep_default_client')
 
 
 def test_is_token_expired():
-    assert make_client(make_token(-10)).is_token_expired()
-    assert make_client(make_token(30)).is_token_expired()  # expires sooner than token_expiry_margin
-    assert not make_client(make_token(900)).is_token_expired()
-    assert make_client(None).is_token_expired()
+    assert make_client(make_token(-10)).is_token_expired
+    assert make_client(make_token(30)).is_token_expired  # expires sooner than token_expiry_margin
+    assert not make_client(make_token(900)).is_token_expired
+    assert make_client(None).is_token_expired
 
 
 def test_public_endpoint_refreshes_expired_token(fetches, refreshes):
@@ -27,7 +27,7 @@ def test_public_endpoint_refreshes_expired_token(fetches, refreshes):
 
     assert refreshes == [expired]
     assert fetches[0]['send_token'] is True
-    assert not client.is_token_expired()
+    assert not client.is_token_expired
 
 
 def test_endpoint_with_auth_refreshes_expired_token(fetches, refreshes):
@@ -36,7 +36,7 @@ def test_endpoint_with_auth_refreshes_expired_token(fetches, refreshes):
     client.request('get', 'profile/me', level=AuthLevel.ACCESS)
 
     assert len(refreshes) == 1
-    assert not client.is_token_expired()
+    assert not client.is_token_expired
 
 
 def test_fresh_token_is_not_refreshed(fetches, refreshes):
@@ -101,7 +101,7 @@ def test_api_wrapper_warns_if_token_rejected_but_not_expired(fetches, refreshes,
     def get_something(client: Client):
         return responses.pop(0)
 
-    with caplog.at_level(WARNING, logger='itd.request'):
+    with caplog.at_level(WARNING, logger='itd.core.request'):
         get_something(client)
 
     assert any('clock skew' in record.getMessage() for record in caplog.records) is warned

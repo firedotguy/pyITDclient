@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from itd.client import Client
+from itd.core.client import Client
 
 try:
     from dateparser import parse
@@ -10,7 +10,7 @@ except ImportError:
     parse = None
 
 from itd.api.platform import get_apps, get_changelog
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 
 
 class Version(BaseModel):

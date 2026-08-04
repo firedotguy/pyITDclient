@@ -12,21 +12,18 @@ from urllib.parse import quote
 from requests import Response, Session
 from requests.exceptions import JSONDecodeError
 
-from itd._default import get_config, limiters, limits
+from itd.core.default import get_config, limiters, limits
+from itd.core.logger import get_logger
 from itd.enums import AuthLevel, DebugResponseMode
 from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, InvalidAccessTokenError, ITDException
-from itd.logger import get_logger
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('request')  # noqa: E741
 
 
-# ai begin ---
-
-
-def _get_jhash(b: int) -> int:
+def _get_jhash(b: int) -> int:  # ai
     """Calculate DDoS-Guard challenge hash (JS get_jhash port)."""
     x = 123456789
     k = 0
@@ -37,7 +34,7 @@ def _get_jhash(b: int) -> int:
     return k
 
 
-def _solve_ddos_guard(session: Session, response: Response, user_agent: str = '') -> bool:
+def _solve_ddos_guard(session: Session, response: Response, user_agent: str = '') -> bool:  # ai
     """Solve DDoS-Guard JS challenge. Returns True if solved (duplicate request required)."""
     if '<html>' not in response.text[:500] or 'get_jhash' not in response.text:
         return False
@@ -57,9 +54,6 @@ def _solve_ddos_guard(session: Session, response: Response, user_agent: str = ''
     session.cookies.set('__jua_', quote(user_agent, safe=''), path='/')
 
     return True
-
-
-# --- ai end
 
 
 def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:
@@ -250,11 +244,12 @@ def api_wrapper(*exceptions: ITDException):
                         and client.can_refresh_auth
                     ):
                         reauthed = True
-                        if not client.is_token_expired(margin=0):
+                        expired_at = client.access_token_data.expired_at if client.access_token_data else None
+                        if expired_at and expired_at > datetime.now():  # is_token_expired учитывает запас, тут нужен факт
                             l.warning(
                                 'server rejected access_token that is not expired by local clock (expires at %s, now is %s): '
                                 'check system time (clock skew) or session was revoked',
-                                client.access_token_data.expired_at if client.access_token_data else None,
+                                expired_at,
                                 datetime.now()
                             )
                         l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)

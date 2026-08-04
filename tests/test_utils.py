@@ -3,7 +3,8 @@ from uuid import UUID
 import pytest
 
 from itd.enums import SpanType
-from itd.utils import format_attachments, parse_datetime, parse_html, parse_md, to_nullable_uuid, to_uuid
+from itd.core.utils import parse_datetime, to_nullable_uuid, to_uuid
+from itd.models.utils import format_attachments, parse_html, parse_md
 
 # --- to_uuid ---
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from functools import cached_property
+from functools import cache
 from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
@@ -9,15 +9,22 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pydantic_core.core_schema import with_info_plain_validator_function
 
-from itd._default import get_default_client
+from itd.core.default import get_default_client
+from itd.core.logger import get_logger
 from itd.enums import ALL, BATCH, All, Batch, LoadStatus
-from itd.logger import get_logger
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
+
+
+@cache
+def validator_for(cls: type) -> type[BaseModel]:
+    """Класс-валидатор модели: собирается один раз на модель при первой валидации"""
+    # __module__ for correct forward refs in annotations
+    return type(f'_{cls.__name__}Validate', (BaseModel, cls), {'__module__': cls.__module__})
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -25,15 +32,6 @@ def _getattr(self: object, name: str, default: Any | None = None) -> Any:
         return object.__getattribute__(self, name)
     except AttributeError:
         return default
-
-
-# def _field_has_default(cls: type, name: str) -> bool:
-#     """Returns True if the field is declared as Field(...) with a default value."""
-#     for klass in cls.__mro__:
-#         val = klass.__dict__.get(name)
-#         if isinstance(val, FieldInfo):
-#             return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
-#     return False
 
 
 class ITDBaseModel:
@@ -55,7 +53,9 @@ class ITDBaseModel:
             self.refresh()
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
+        # клиент раздается только настоящим полям (post.author = user), но не обратным ссылкам:
+        # comment._post = post отдал бы клиента комментария посту, а не наоборот
+        if not name.startswith('_') and isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
         if '_loaded_attrs' not in self.__dict__:  # attribute is set before __init__, remember it anyway - otherwise getattr will refresh loaded value
             object.__setattr__(self, '_loaded_attrs', set())
@@ -63,6 +63,20 @@ class ITDBaseModel:
         object.__setattr__(self, name, value)
 
     def _post_refresh(self, context: dict = {}): ...
+
+    def is_loaded(self, name: str) -> bool:  # claudes idea
+        """Пришло ли поле в данных
+
+        Не трогает API, в отличие от обычного обращения к полю: `post.is_loaded('first_comments')` вместо `post.first_comments`,
+        когда надо просто узнать, есть ли значение (в списках приходит не все, что есть в одиночном ответе).
+
+        Args:
+            name (str): Имя поля
+
+        Returns:
+            bool: Загружено ли поле
+        """
+        return name in self._loaded_attrs
 
     @property
     def client(self) -> Client:
@@ -81,10 +95,11 @@ class ITDBaseModel:
         self.load_status = LoadStatus.FULL
         return self
 
-    def _fill_from_data(self, data: dict, *, context: dict = {}):
+    def _fill_from_data(self, data: dict, *, context: dict | None = None):
         assert self._validator, 'Unable to use fill_from_data without a validator'
+        context = dict(context or {})  # копия: дефолт {} общий на все вызовы, его нельзя мутировать
         context.update(self._extra_context)
-        validated = self._validator.model_validate(data)
+        validated = self._validator.model_validate(data, context=context)  # вложенные модели строятся с клиентом родителя
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             object.__setattr__(self, name, value)
@@ -92,11 +107,12 @@ class ITDBaseModel:
         self._post_refresh(context=context)
 
     @classmethod
-    def from_dict(cls, data: dict, *, context: dict = {}, client: Client | None = None):
+    def from_dict(cls, data: dict, *, context: dict | None = None, client: Client | None = None):
+        context = dict(context or {})
         instance = cls.__new__(cls)
-        ITDBaseModel.__init__(instance, client)
+        ITDBaseModel.__init__(instance, client or context.get('client'))  # клиент из контекста - так вложенные модели попадают к клиенту родителя
 
-        context.setdefault('client', client or instance.client)
+        context.setdefault('client', instance.client)
         instance._fill_from_data(data, context=context)
         instance.load_status = LoadStatus.PARTIALLY
         return instance
@@ -105,14 +121,14 @@ class ITDBaseModel:
     def __get_pydantic_core_schema__(cls, source, handler):
         if issubclass(source, BaseModel):
             return handler(source)
-        # build with from_dict
+        # build like just  simple from_dict
         return with_info_plain_validator_function(
             lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
         )
 
-    @cached_property
+    @property
     def _validator(self) -> type[BaseModel]:
-        return type(f'_{self.__class__.__name__}Validate', (BaseModel, type(self)), {})
+        return validator_for(type(self))  # один класс на модель, а не на объект
 
     if not TYPE_CHECKING:
 
@@ -183,7 +199,6 @@ class ITDList(ITDBaseModel, list[T]):
         return {}
 
     # edited by calude, thats so fucking crazy pagination
-    # ai begin ---
     def load(self, count: int | All | Batch = BATCH, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
         """Загрузить объекты
 
@@ -244,8 +259,6 @@ class ITDList(ITDBaseModel, list[T]):
 
         return added
 
-    # --- ai end
-
     @abstractmethod
     def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
@@ -300,7 +313,7 @@ class ITDList(ITDBaseModel, list[T]):
     @overload
     def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:
         if isinstance(index, slice):
             value: int | None = index.stop
         else:

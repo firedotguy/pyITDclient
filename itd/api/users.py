@@ -20,10 +20,10 @@ from itd.exceptions import (
     UsernameTakenError,
     ValidationError
 )
-from itd.request import endpoint
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 @endpoint('get', 'users/{username_or_id}', NotFoundError('User'), TooLargeError('User'), NotFoundError('Profile'), TargetUserBannedError())

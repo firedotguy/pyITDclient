@@ -24,21 +24,22 @@ from itd.api.posts import (
     unlike_post,
     unpin_post
 )
-from itd.base import ITDBaseModel, ITDList
-from itd.comment import Comment, Comments
+from itd.core.base import ITDBaseModel, ITDList
+from itd.core.logger import get_logger
+from itd.core.utils import parse_datetime, to_uuid
 from itd.enums import ALL, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
 from itd.exceptions import NotFoundError
-from itd.file import PostAttach
-from itd.hashtag import Hashtag
-from itd.logger import get_logger
-from itd.poll import NewPoll, Poll, PollOption
-from itd.report import Report
-from itd.span import Span
-from itd.user import Me, User, _UserBase
-from itd.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_datetime, parse_html, parse_md, to_uuid
+from itd.models.comment import Comment, Comments
+from itd.models.file import PostAttach
+from itd.models.hashtag import Hashtag
+from itd.models.poll import NewPoll, Poll, PollOption
+from itd.models.report import Report
+from itd.models.span import Span
+from itd.models.user import Me, User, _UserBase
+from itd.models.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_html, parse_md
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('post')  # noqa: E741
 
@@ -94,15 +95,13 @@ class Post(ITDBaseModel):
         return Post(self.id, client=client)
 
     def _post_refresh(self, context: dict = {}):
+        self.comments._client = self._client  # comments приходит не из данных, а из default_factory, поэтому про клиент не знает
         self.comments._post = self
-        self.comments._client = context['client']
-        if 'first_comments' in self._loaded_attrs:
+        if self.is_loaded('first_comments'):  # в списках постов комментариев нет, обычное обращение сходило бы за ними в апи
             for comment in self.first_comments:
                 comment._post = self
-                comment._client = context['client']
         for attachment in self.attachments:
             attachment._post = self
-            attachment._client = context['client']
 
     @classmethod
     def new(
@@ -148,8 +147,9 @@ class Post(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict = {}, client: Client | None = None
+        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict | None = None, client: Client | None = None
     ) -> 'Post':
+        context = dict(context or {})
         context.update({'source': source, 'source_context': source_context})
         instance = super().from_dict(data, context=context, client=client)
         instance._extra_context = {'source': source, 'source_context': source_context}

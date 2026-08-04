@@ -1,6 +1,6 @@
 from itd.api.portal import get_portal
-from itd.base import ITDBaseModel
-from itd.client import Client
+from itd.core.base import ITDBaseModel
+from itd.core.client import Client
 
 
 class Portal(ITDBaseModel):

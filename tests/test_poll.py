@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from itd.poll import NewPoll, Poll
+from itd.models.poll import NewPoll, Poll
 
 POLL_DATA = {
     'id': '00000000-0000-0000-0000-000000000001',
@@ -82,7 +82,7 @@ def test_poll_vote_invalid_text_in_list(poll):
         poll.vote(['Go'])
 
 
-@patch('itd.poll.vote')
+@patch('itd.models.poll.vote')
 def test_poll_vote_by_text(mock_vote, poll):
     poll.vote('Python')
     mock_vote.assert_called_once()
@@ -90,7 +90,7 @@ def test_poll_vote_by_text(mock_vote, poll):
     assert PYTHON_ID in option_ids
 
 
-@patch('itd.poll.vote')
+@patch('itd.models.poll.vote')
 def test_poll_vote_by_uuid(mock_vote, poll):
     poll.vote(RUST_ID)
     mock_vote.assert_called_once()
@@ -98,7 +98,7 @@ def test_poll_vote_by_uuid(mock_vote, poll):
     assert RUST_ID in option_ids
 
 
-@patch('itd.poll.vote')
+@patch('itd.models.poll.vote')
 def test_poll_vote_by_option_object(mock_vote, poll):
     poll.vote(poll.options[0])
     mock_vote.assert_called_once()
@@ -106,7 +106,7 @@ def test_poll_vote_by_option_object(mock_vote, poll):
     assert PYTHON_ID in option_ids
 
 
-@patch('itd.poll.vote')
+@patch('itd.models.poll.vote')
 def test_poll_vote_list_of_text(mock_vote, poll):
     poll.vote(['Python', 'Rust'])
     mock_vote.assert_called_once()
@@ -116,7 +116,7 @@ def test_poll_vote_list_of_text(mock_vote, poll):
     assert RUST_ID in option_ids
 
 
-@patch('itd.poll.vote')
+@patch('itd.models.poll.vote')
 def test_poll_vote_list_of_uuids(mock_vote, poll):
     poll.vote([PYTHON_ID, RUST_ID])
     _, _, option_ids = mock_vote.call_args[0]

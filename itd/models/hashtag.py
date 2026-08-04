@@ -7,12 +7,12 @@ from uuid import UUID
 from pydantic import Field
 
 from itd.api.hashtags import get_hashtags, get_posts_by_hashtag, search_hashtags
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 from itd.exceptions import NotFoundError
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import HashtagPosts
+    from itd.core.client import Client
+    from itd.models.post import HashtagPosts
 
 
 class Hashtag(ITDBaseModel):
@@ -39,7 +39,7 @@ class Hashtag(ITDBaseModel):
 
     @cached_property
     def posts(self) -> 'HashtagPosts':
-        from itd.post import HashtagPosts
+        from itd.models.post import HashtagPosts
 
         return HashtagPosts(self, client=self.client)
 

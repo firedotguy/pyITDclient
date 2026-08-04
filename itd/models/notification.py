@@ -18,14 +18,14 @@ from itd.api.notifications import (
     stream_notifications,
     update_notifications_settings
 )
-from itd.base import ITDBaseModel, ITDList
-from itd.client import Client
+from itd.core.base import ITDBaseModel, ITDList
+from itd.core.client import Client
 from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
-from itd.logger import get_logger
-from itd.user import User
+from itd.core.logger import get_logger
+from itd.models.user import User
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 l = get_logger('notifications')  # noqa: E741
@@ -82,8 +82,26 @@ class NotificationsSettings(ITDBaseModel):
             self.mentions = mentions
         self.update_from_fields(client, old=old, new=new)
 
+    def _dump(self, *, old: bool = True, new: bool = True) -> dict:
+        """Собрать тело запроса: апи какое то время принимает и старый, и новый формат"""
+        data = {}
+        if old:
+            data.update(_NotificationsSettingsOld.model_validate(self, from_attributes=True).model_dump(mode='json', by_alias=True))
+
+        if new:
+            data.update(
+                _NotificationsSettingsNew(
+                    web_enabled=self.web_enabled,
+                    sound_enabled=self.sound,
+                    preferences=_NotificationsSettingsNewPreferences.model_validate(self, from_attributes=True),
+                    enabled=self.enabled
+                ).model_dump(mode='json', by_alias=True)
+            )
+
+        return data
+
     def update_from_fields(self, client: Client | None = None, *, old: bool = True, new: bool = True):
-        update_notifications_settings(client or self.client, self, old=old, new=new)
+        update_notifications_settings(client or self.client, self._dump(old=old, new=new))
 
 
 class _NotificationsSettingsOld(BaseModel):

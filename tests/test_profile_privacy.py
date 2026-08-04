@@ -1,6 +1,6 @@
 import pytest
 
-from itd.user import Me
+from itd.models.user import Me
 from itd.enums import AccessType
 
 

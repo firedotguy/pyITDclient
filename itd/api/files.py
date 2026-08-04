@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from itd.exceptions import InvalidFileTypeError, ModerationFailedError, TooLargeError, UploadError
-from itd.request import Payload, endpoint
+from itd.core.request import Payload, endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 @endpoint('post', 'files/upload', UploadError(), ModerationFailedError(), InvalidFileTypeError(), TooLargeError('File', 413))

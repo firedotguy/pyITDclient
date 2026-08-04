@@ -8,16 +8,17 @@ from uuid import UUID
 from pydantic import BeforeValidator, Field
 
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
-from itd.base import ITDBaseModel, ITDList
+from itd.core.base import ITDBaseModel, ITDList
 from itd.enums import CommentSorting, ReportReason, ReportTargetType
-from itd.file import CommentAttach
-from itd.report import Report
-from itd.user import User
-from itd.utils import ATTACHMENTS, format_attachments, parse_datetime, to_nullable_uuid
+from itd.models.file import CommentAttach
+from itd.models.report import Report
+from itd.models.user import User
+from itd.core.utils import parse_datetime, to_nullable_uuid
+from itd.models.utils import ATTACHMENTS, format_attachments
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import Post
+    from itd.core.client import Client
+    from itd.models.post import Post
 
 
 class Comment(ITDBaseModel):
@@ -42,9 +43,14 @@ class Comment(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict = {}, client: Client | None = None
+        cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict | None = None, client: Client | None = None
     ) -> Comment:
-        return super().from_dict(data, client=client, context={'post': post, 'base_comment': base_comment, 'client': client})
+        context = dict(context or {})  # контекст родителя не выбрасываем, иначе комментарий потеряет его клиента
+        if post is not None:
+            context['post'] = post
+        if base_comment is not None:
+            context['base_comment'] = base_comment
+        return super().from_dict(data, client=client, context=context)
 
     @cached_property
     def replies(self) -> Replies:

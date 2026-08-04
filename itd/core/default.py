@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from itd._limiter import IPRateLimiter, RateLimiter
+from itd.core.limiter import IPRateLimiter, RateLimiter
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 _default_client: Client | None = None
 limiters: dict[int, RateLimiter] = {}

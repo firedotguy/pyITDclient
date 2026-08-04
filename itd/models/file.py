@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 from requests import get
 
 from itd.api.files import delete_file, upload_file
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 from itd.enums import AttachType
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import Post
+    from itd.core.client import Client
+    from itd.models.post import Post
 
 
 class File(ITDBaseModel):

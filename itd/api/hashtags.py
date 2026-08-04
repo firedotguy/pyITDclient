@@ -5,10 +5,10 @@ from uuid import UUID
 
 from itd.enums import AuthLevel
 from itd.exceptions import NotFoundError, TooLargeError, ValidationError
-from itd.request import endpoint
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 @endpoint('get', 'hashtags', ValidationError(), level=AuthLevel.NO)

@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 
 from itd.api.etc import get_top_clans
-from itd.base import ITDBaseModel
-from itd.logger import get_logger
+from itd.core.base import ITDBaseModel
+from itd.core.logger import get_logger
 
 l = get_logger('clan')  # noqa: E741
 

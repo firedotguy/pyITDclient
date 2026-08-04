@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from itd.exceptions import NotFoundError
-from itd.request import endpoint
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.notification import NotificationsSettings
+    from itd.core.client import Client
 
 
 @endpoint('get', 'notifications')
@@ -33,24 +32,8 @@ def get_notifications_settings(client: Client): ...
 
 
 @endpoint('put', 'notifications/settings')
-def update_notifications_settings(client: Client, settings: NotificationsSettings, *, old: bool = True, new: bool = True):
-    from itd.notification import _NotificationsSettingsNew, _NotificationsSettingsNewPreferences, _NotificationsSettingsOld  # жду фикс circular import день 67
-
-    data = {}
-    if old:
-        data.update(_NotificationsSettingsOld.model_validate(settings, from_attributes=True).model_dump(mode='json', by_alias=True))
-
-    if new:
-        data.update(
-            _NotificationsSettingsNew(
-                web_enabled=settings.web_enabled,
-                sound_enabled=settings.sound,
-                preferences=_NotificationsSettingsNewPreferences.model_validate(settings, from_attributes=True),
-                enabled=settings.enabled
-            ).model_dump(mode='json', by_alias=True)
-        )
-
-    return data
+def update_notifications_settings(client: Client, settings: dict):
+    return settings
 
 
 def stream_notifications(client: Client):

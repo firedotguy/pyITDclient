@@ -7,11 +7,11 @@ from uuid import UUID
 from pydantic import Field
 
 from itd.api.reports import report
-from itd.base import ITDBaseModel
+from itd.core.base import ITDBaseModel
 from itd.enums import ReportReason, ReportTargetType
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 class Report(ITDBaseModel):

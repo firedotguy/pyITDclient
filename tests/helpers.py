@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from requests import Response
 
-from itd.client import Client, Config
+from itd.core.client import Client, Config
 
 
 def make_token(expires_in: float) -> str:

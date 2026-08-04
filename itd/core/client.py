@@ -1,32 +1,32 @@
+from __future__ import annotations
+
 from _io import BufferedReader
-from atexit import register
 from datetime import datetime, timedelta
 from functools import cached_property
 from os import getenv
-from threading import RLock, Thread
-from time import sleep
-from typing import overload
+from threading import RLock
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 
-from itd._credfile import Credfile
-from itd._default import _default_client, set_default_client
 from itd.api.auth import change_password, logout, refresh_token
-from itd.api.posts import get_stats
-from itd.api.search import search
-from itd.config import Config
-from itd.enums import AuthLevel, Role, ViewReason
-from itd.exceptions import InsufficientAuthLevelError, NotFoundError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
-from itd.hashtag import Hashtag, Hashtags
-from itd.logger import get_logger
-from itd.post import Post
-from itd.post_dwell import DwellTracker
-from itd.request import decode_jwt_payload, fetch, fetch_stream
-from itd.user import Me, User, Users, get_follow_status
-from itd.utils import get_credfile, shorten_token
+from itd.core.config import Config
+from itd.core.credfile import Credfile
+from itd.core.default import _default_client, set_default_client
+from itd.core.dwell import DwellTracker
+from itd.core.logger import get_logger
+from itd.core.request import decode_jwt_payload, fetch, fetch_stream
+from itd.core.utils import get_credfile, shorten_token
+from itd.core.visibility import VisibilityTracker
+from itd.enums import AuthLevel, Role
+from itd.exceptions import InsufficientAuthLevelError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
+
+if TYPE_CHECKING:
+    from itd.models.post import Post
+    from itd.models.user import Me
 
 l = get_logger('client')
 
@@ -56,11 +56,8 @@ class Client:
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
-        self.visible_posts: list[Post] = []
-        self._visible_posts_buffer: list[Post] = []
-        self.last_active = datetime.now()
         self._credfile: Credfile | None = None
-        self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously
+        self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously # еба он мой стиль коментов спиздил
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
@@ -74,19 +71,15 @@ class Client:
             self.session.cookies.set(config.refresh_token_cookie_name, refresh, path='/')
             self.auth_level = AuthLevel.REFRESH
             self.refresh_token = refresh
-            # if access is None:
-            #     self.refresh_auth()
 
         if _default_client is None or config.is_default:
             set_default_client(self)
 
         self.dwell_tracker = DwellTracker(self)
-        self.dwell_tracker._start_timer()
+        self.dwell_tracker.start()
 
-        if self.config._post_update_stats:
-            self._start_update_timer()
-        if self.config._dwell_check_active:
-            self._start_check_active_timer()
+        self.visibility = VisibilityTracker(self)
+        self.visibility.start()
 
     @classmethod
     def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
@@ -134,22 +127,15 @@ class Client:
         self._credfile.valid = valid
         self._credfile.flush()
 
-    def is_token_expired(self, margin: float | None = None) -> bool:
-        """Истёк ли (или вот-вот истечет) access token
-
-        Args:
-            margin (float | None, optional): Запас в секундах (None - config.token_expiry_margin). Defaults to None.
-
-        Returns:
-            bool: Истёк ли токен (True если токена нет вообще)
-        """
+    @property
+    def is_token_expired(self) -> bool:
+        """Истёк ли (или вот-вот истечет) access token"""
         if self.access_token is None:
             return True
         if self.access_token_data is None:  # failed to parse jwt - assume valid, let server decide
             return False
 
-        margin = self.config.token_expiry_margin if margin is None else margin
-        return self.access_token_data.expired_at - timedelta(seconds=margin) <= datetime.now()
+        return self.access_token_data.expired_at - timedelta(seconds=self.config.token_expiry_margin) <= datetime.now()
 
     @property
     def can_refresh_auth(self) -> bool:
@@ -167,7 +153,7 @@ class Client:
         """
 
         with self._refresh_lock:
-            if not force and not self.is_token_expired():  # refreshed by another thread while we were waiting for the lock
+            if not force and not self.is_token_expired:  # refreshed by another thread while we were waiting for the lock
                 l.debug('access_token is already fresh')
                 return self.token
 
@@ -177,7 +163,7 @@ class Client:
                 self.refresh_token = self._credfile.refresh
 
                 if self.access_token:
-                    if not self.is_token_expired():
+                    if not self.is_token_expired:
                         l.debug('update access_token from credfile')
                         return self.access_token
                     else:
@@ -200,59 +186,22 @@ class Client:
 
             return self.token
 
-    def _start_check_active_timer(self):
-        l.debug('start check active timer')
-        if not self.config.dwell_check_active_interval:
-            return
+    @property
+    def visible_posts(self) -> list[Post]:
+        """Посты, видимые прямо сейчас"""
+        return self.visibility.posts
 
-        def loop():
-            while True:
-                sleep(self.config.dwell_check_active_interval)
-                is_active = self.last_active + timedelta(seconds=self.config.dwell_inactive_timeout) > datetime.now()
-
-                if not self._visible_posts_buffer and not is_active:
-                    self._visible_posts_buffer = self.visible_posts.copy()
-                    for post in self._visible_posts_buffer:
-                        post._entered_at = datetime.now() - timedelta(seconds=self.config.dwell_inactive_timeout)
-                        post.set_invisible(reason=ViewReason.INACTIVE)
-
-                elif self._visible_posts_buffer and is_active:
-                    for post in self._visible_posts_buffer:
-                        post.set_visible()
-                    self._visible_posts_buffer.clear()
-
-        self._check_active_thread = Thread(target=loop)
-        self._check_active_thread.daemon = True
-        self._check_active_thread.start()
-
-        def on_exit():
-            if self._check_active_thread:
-                self._check_active_thread.join(timeout=0)
-
-        register(on_exit)
+    @property
+    def last_active(self) -> datetime:
+        return self.visibility.last_active
 
     def set_active(self):  # call when user is active (scroll, move etc)
-        self.last_active = datetime.now()
+        """Отметить активность пользователя"""
+        self.visibility.set_active()
 
-    def _start_update_timer(self):
-        l.debug('start update timer')
-        if not self.config.post_update_stats_interval:
-            return
-
-        def loop():
-            while True:
-                sleep(self.config.post_update_stats_interval)
-                self.update_post_stats()
-
-        self._update_thread = Thread(target=loop)
-        self._update_thread.daemon = True
-        self._update_thread.start()
-
-        def on_exit():
-            if self._update_thread:
-                self._update_thread.join(timeout=0)
-
-        register(on_exit)
+    def update_post_stats(self):
+        """Обновить статистику видимых постов"""
+        self.visibility.update_stats()
 
     def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
         """Сделать запрос
@@ -271,7 +220,7 @@ class Client:
         send_token = True
         # access token is attached to every request (including AuthLevel.NO endpoints), so it must be refreshed regardless of level:
         # otherwise such requests fail with AccessTokenExpiredError forever once the token expires
-        if url != 'v1/auth/refresh' and self.is_token_expired():
+        if url != 'v1/auth/refresh' and self.is_token_expired:
             if level >= AuthLevel.ACCESS or self.can_refresh_auth:
                 self.refresh_auth()
             elif self.access_token is not None:
@@ -283,22 +232,10 @@ class Client:
     def request_sse(self, url: str):
         l.debug('sse %s', url)
 
-        if self.is_token_expired():
+        if self.is_token_expired:
             self.refresh_auth()
 
         return fetch_stream(self, url)
-
-    def update_post_stats(self):
-        if len(self.visible_posts) == 0:
-            return
-
-        l.debug('update post stats count=%s', len(self.visible_posts))
-        stats: list[dict] = get_stats(self, [post.id for post in self.visible_posts]).json().get('posts', [])
-        if len(stats) != len(self.visible_posts):
-            raise NotFoundError('Post(s)')
-
-        for post in self.visible_posts:
-            post._set_stats(next((stat for stat in stats if stat['id'] == str(post.id))))
 
     @property
     def token(self) -> str:
@@ -320,6 +257,8 @@ class Client:
 
     @cached_property
     def user(self) -> Me:
+        from itd.models.user import Me
+
         return Me(client=self)
 
     def _process_exc_callbacks(self, exception: Exception):
@@ -349,94 +288,6 @@ class Client:
         # raise InsufficientAuthLevelError()
 
         change_password(self, old, new)
-
-    def search(self, query: str, hashtags_limit: int = 20, users_limit: int = 20) -> tuple[list[User], list[Hashtag]]:
-        """Поиск пользователей и хэштэгов
-
-        Args:
-            query (str): Запрос
-            hashtags_limit (int, optional): Лимит хэштэгов. Defaults to 20.
-            users_limit (int, optional): Лимит пользователей. Defaults to 20.
-
-        Returns:
-            tuple[list[User], list[Hashtag]]: Результат поиска
-        """
-        res = search(self, query, users_limit, hashtags_limit).json()['data']
-        return [User.from_dict(user, client=self) for user in res['users']], [Hashtag.from_dict(hashtag, client=self) for hashtag in res['hashtags']]
-
-    def search_users(self, query: str, limit: int = 10) -> list[User]:
-        """Поиск пользователей
-
-        Args:
-            query (str): Запрос
-            limit (int, optional): Лимит. Defaults to 10.
-
-        Returns:
-            list[User]: Список пользователей
-        """
-        l.warning('Client.search_users is deprecated. Please use Users.search.')
-        return Users.search(query, limit)
-
-    def search_hashtags(self, query: str, limit: int = 10) -> list[Hashtag]:
-        """Поиск хэштэгов
-
-        Args:
-            query (str): Запрос
-            limit (int, optional): Лимит. Defaults to 10.
-
-        Returns:
-            list[Hashtag]: Список хэштэгов
-        """
-        l.warning('Client.search_hashtags is deprecated. Please use Hashtags.search.')
-        return Hashtags.search(query, limit)
-
-    def search_user(self, query: str) -> User | None:
-        """Поиск пользователя
-
-        Args:
-            query (str): Запрос
-
-        Returns:
-            User | None: Пользователь
-        """
-        l.warning('Client.search_user is deprecated. Please use User.search.')
-        try:
-            return User.search(query)
-        except NotFoundError:
-            return None
-
-    def search_hashtag(self, query: str) -> Hashtag | None:
-        """Поиск хэштэга
-
-        Args:
-            query (str): Запрос
-
-        Returns:
-            Hashtag | None: Хэштэг
-        """
-        l.warning('Client.search_hashtag is deprecated. Please use Hashtag.search.')
-        try:
-            return Hashtag.search(query)
-        except NotFoundError:
-            return None
-
-    @overload
-    def get_follow_status(self, users: list[User | UUID | str]) -> dict[UUID, bool]: ...
-
-    @overload
-    def get_follow_status(self, users: User | UUID | str) -> bool: ...
-
-    def get_follow_status(self, users: list[User | UUID | str] | User | UUID | str) -> dict[UUID, bool] | bool:
-        """Получить статус подписки
-
-        Args:
-            users (list[User | UUID | str] | User | UUID | str): Пользователи для проверки (можно как и списком, так и как одиночным объектом)
-
-        Returns:
-            dict[UUID, bool] | bool: Результат
-        """
-        l.warning('Client.get_follow_status is deprecated. Please use get_follow_status.')
-        return get_follow_status(users)
 
 
 def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()) -> Client:
