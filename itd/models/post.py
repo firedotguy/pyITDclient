@@ -64,7 +64,7 @@ class Post(ITDBaseModel):
     reposts_count: int = Field(0, alias='repostsCount')
     views_count: int = Field(0, alias='viewsCount')
 
-    edited_at: datetime | None = Field(None, alias='editedAt')
+    edited_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='editedAt')
 
     is_liked: bool = Field(False, alias='isLiked')
     is_reposted: bool = Field(False, alias='isReposted')
@@ -147,7 +147,13 @@ class Post(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict | None = None, client: Client | None = None
+        cls,
+        data: dict,
+        source: ViewSource = ViewSource.POST_PAGE,
+        source_context: str | None = None,
+        *,
+        context: dict | None = None,
+        client: Client | None = None
     ) -> 'Post':
         context = dict(context or {})
         context.update({'source': source, 'source_context': source_context})

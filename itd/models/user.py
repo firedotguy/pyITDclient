@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Annotated, overload
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
-from itd.core.default import get_default_client
 from itd.api.etc import get_who_to_follow
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
@@ -30,13 +29,14 @@ from itd.api.users import (
 )
 from itd.api.users import get_follow_status as _get_follow_status
 from itd.core.base import ITDBaseModel, ITDList
+from itd.core.default import get_default_client
+from itd.core.utils import parse_datetime, to_uuid
 from itd.enums import AccessType, LastSeenUnit, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
 from itd.models.pin import Pin
 from itd.models.poll import NewPoll
 from itd.models.report import Report
 from itd.models.span import Span
-from itd.core.utils import parse_datetime, to_uuid
 from itd.models.utils import ATTACHMENTS
 
 if TYPE_CHECKING:
@@ -124,7 +124,7 @@ class Subscription(ITDBaseModel):
     _refreshable = False
 
     active: bool = Field(False, alias='isActive')
-    expires_at: datetime | None = Field(None, alias='expiresAt')
+    expires_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='expiresAt')
     auto_renewal: bool = Field(True, alias='autoRenewal')
 
     def _refresh(self, *, client: Client):  # refreshes only is_active
@@ -231,7 +231,7 @@ class User(_UserBase):
         False, alias='isBlockedByThem'
     )  # not 100% true, server returns value only if isBlockedByThem is True and isBlockedByMe is False
     is_blocking: bool = Field(False, alias='isBlockedByMe')
-    blocked_at: datetime | None = Field(None, alias='blockedAt')
+    blocked_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='blockedAt')
 
     followers_count: int | None = Field(None, alias='followersCount')
     following_count: int | None = Field(None, alias='followingCount')
@@ -242,12 +242,12 @@ class User(_UserBase):
     is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
-    last_seen: datetime | LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
+    last_seen: Annotated[datetime, BeforeValidator(parse_datetime)] | LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
     online: bool = False
 
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
 
-    created_at: datetime | None = Field(None, alias='createdAt')  # none if blocked
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='createdAt')  # none if blocked
 
     def _post_refresh(self, context: dict = {}):
         if 'id' in self.__dict__:
@@ -396,7 +396,7 @@ class Me(_UserBase):
     following_count: int = Field(alias='followingCount')
     posts_count: int = Field(alias='postsCount')
 
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)

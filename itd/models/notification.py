@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from json import loads
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Iterator, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 from sseclient import SSEClient
 
 from itd.api.notifications import (
@@ -20,8 +20,9 @@ from itd.api.notifications import (
 )
 from itd.core.base import ITDBaseModel, ITDList
 from itd.core.client import Client
-from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
 from itd.core.logger import get_logger
+from itd.core.utils import parse_datetime
+from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
 from itd.models.user import User
 
 if TYPE_CHECKING:
@@ -150,8 +151,8 @@ class Notification(ITDBaseModel):
     )
 
     is_read: bool = Field(False, alias='read')
-    read_at: datetime | None = Field(None, alias='readAt')
-    created_at: datetime = Field(alias='createdAt')
+    read_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='readAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     actor: User
     sound: bool = False  # for notifications from stream

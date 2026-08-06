@@ -1,12 +1,14 @@
 from datetime import datetime
 from ipaddress import IPv4Address
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import BeforeValidator, Field
 
 from itd.api.sessions import get_sessions, revoke, revoke_all
 from itd.core.base import ITDBaseModel
 from itd.core.client import Client
+from itd.core.utils import parse_datetime
 from itd.enums import DeviceType
 
 
@@ -16,9 +18,9 @@ class Session(ITDBaseModel):
     id: UUID
     is_current: bool = Field(alias='isCurrent')
 
-    created_at: datetime = Field(alias='createdAt')
-    last_used_at: datetime = Field(alias='lastUsedAt')
-    expires_at: datetime = Field(alias='expiresAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
+    last_used_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='lastUsedAt')
+    expires_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='expiresAt')
 
     ip: IPv4Address = Field(alias='ipAddress')
     country: str | None = Field(None, alias='ipCountry')  # country code

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import BeforeValidator, Field
 
 from itd.api.reports import report
 from itd.core.base import ITDBaseModel
+from itd.core.utils import parse_datetime
 from itd.enums import ReportReason, ReportTargetType
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ class Report(ITDBaseModel):
     _refreshable = False
 
     id: UUID
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     def __init__(self, target_id: UUID, target_type: ReportTargetType, reason: ReportReason, description: str | None = None, client: Client | None = None):
         super().__init__(client)
