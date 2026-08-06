@@ -194,6 +194,7 @@ class ITDList(ITDBaseModel, list[T]):
     has_more = True
     idx = 0
     _is_page_pagination: bool = False
+    cursor = None
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return {}
