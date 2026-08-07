@@ -242,7 +242,7 @@ class User(_UserBase):
     is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
-    last_seen: Annotated[datetime, BeforeValidator(parse_datetime)] | LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
+    last_seen: LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
     online: bool = False
 
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
