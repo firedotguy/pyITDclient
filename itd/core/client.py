@@ -14,12 +14,12 @@ from requests.adapters import HTTPAdapter
 
 from itd.api.auth import change_password, logout, refresh_token
 from itd.core.config import Config
-from itd.core.credfile import Credfile
 from itd.core.default import _default_client, set_default_client
 from itd.core.dwell import DwellTracker
 from itd.core.logger import get_logger
 from itd.core.request import decode_jwt_payload, fetch, fetch_stream
-from itd.core.utils import get_credfile, shorten_token
+from itd.core.session_file import SessionFile
+from itd.core.utils import get_session_file, shorten_token
 from itd.core.visibility import VisibilityTracker
 from itd.enums import AuthLevel, Role
 from itd.exceptions import InsufficientAuthLevelError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
@@ -56,7 +56,7 @@ class Client:
         self.access_token: str | None = None
         self.access_token_data: AccessToken | None = None
         self.refresh_token: str | None = None
-        self._credfile: Credfile | None = None
+        self._session_file: SessionFile | None = None
         self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously # еба он мой стиль коментов спиздил
 
         self.session = Session()
@@ -83,31 +83,31 @@ class Client:
 
     @classmethod
     def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
-        credfile = get_credfile(name)
-        l.debug('get credentials file refresh=%s access=%s', shorten_token(credfile.refresh), shorten_token(credfile.access))
-        if not credfile.valid:
+        session_file = get_session_file(name)
+        l.debug('get credentials file refresh=%s access=%s', shorten_token(session_file.refresh), shorten_token(session_file.access))
+        if not session_file.valid:
             l.warning('last refresh token was expired or not found. Please enter a new one:')
             update = True
         else:
-            update = credfile.refresh is None
+            update = session_file.refresh is None
 
         if update:
             if initial_refresh is not None:
-                credfile.refresh = initial_refresh
+                session_file.refresh = initial_refresh
             elif getenv('ITD_REFRESH_TOKEN') is not None:
-                credfile.refresh = getenv('ITD_REFRESH_TOKEN')
+                session_file.refresh = getenv('ITD_REFRESH_TOKEN')
             else:
                 try:
                     from rich.prompt import Prompt
                 except ImportError:
-                    credfile.refresh = input('refresh token: ')
+                    session_file.refresh = input('refresh token: ')
                 else:
-                    credfile.refresh = Prompt.ask('[cyan]refresh token[/]')
+                    session_file.refresh = Prompt.ask('[cyan]refresh token[/]')
 
-        instance = cls(credfile.refresh, credfile.access, config=config)
+        instance = cls(session_file.refresh, session_file.access, config=config)
         if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
             instance.access_token = instance.access_token_data = None
-        instance._credfile = credfile
+        instance._session_file = session_file
         if verify_refresh and initial_refresh is not None:
             instance.refresh_auth(force=True)
         elif update:
@@ -115,17 +115,17 @@ class Client:
         return instance
 
     def _update_file(self, valid: bool = True):
-        if self._credfile is None:
+        if self._session_file is None:
             return
 
         l.debug('update credentials file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
         if not valid:
             l.warning('mark %s as not valid', shorten_token(self.refresh_token))
 
-        self._credfile.access = self.access_token
-        self._credfile.refresh = self.refresh_token
-        self._credfile.valid = valid
-        self._credfile.flush()
+        self._session_file.access = self.access_token
+        self._session_file.refresh = self.refresh_token
+        self._session_file.valid = valid
+        self._session_file.flush()
 
     @property
     def is_token_expired(self) -> bool:
@@ -158,16 +158,16 @@ class Client:
                 return self.token
 
             l.debug('refresh access_token')
-            if not force and self._credfile and self._credfile.update():
-                self.token = self._credfile.access
-                self.refresh_token = self._credfile.refresh
+            if not force and self._session_file and self._session_file.update():
+                self.token = self._session_file.access
+                self.refresh_token = self._session_file.refresh
 
                 if self.access_token:
                     if not self.is_token_expired:
-                        l.debug('update access_token from credfile')
+                        l.debug('update access_token from session_file')
                         return self.access_token
                     else:
-                        l.info('credfile access_token expired')
+                        l.info('session_file access_token expired')
                 else:
                     l.info('crefile access_token is none')
 

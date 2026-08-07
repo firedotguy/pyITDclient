@@ -4,9 +4,9 @@ from typing import Callable, Literal
 from requests.exceptions import RequestException
 from requests.utils import default_user_agent
 
+from itd.core.utils import get_sdk_user_agent
 from itd.enums import BATCH, All, Batch, DebugResponseMode, ParseMode, UserAgent
 from itd.exceptions import RateLimitError
-from itd.core.utils import get_sdk_user_agent
 
 
 @dataclass
@@ -54,8 +54,6 @@ class Config:
     # для одноразовых скриптов стандартное поведение, отловов ошибок нет, включен логгер на дебаг.
     # ^ это если что просто мысли, не обращайте внимания
     client_type: Literal['client', 'bot', 'onetime'] = 'onetime'
-
-    auto_acquire: bool | None = None
 
     # enable_logging: bool | None = None
     # logging_level = 'DEBUG'

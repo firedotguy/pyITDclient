@@ -34,7 +34,7 @@ class ViewReason(Enum):
     HIDDEN = 2  # тоже страница скрыта (listener visibilitychange и доп.проверка что document.hidden)
     PAGE_HIDE = 3  # и это тоже страница скрыта (listener pagehiden)
     UNOBSERVE = 4  # что то заумное на фронтедерском, пост удалили из дома
-    THRESHOLD_MET = INACTIVE = 5  # юзер перестал активить
+    INACTIVE = 5  # юзер перестал активить
 
 
 class AuthLevel(Enum):
@@ -57,13 +57,6 @@ class AuthLevel(Enum):
 
 
 _AUTH_LEVEL_HIERARCHY = [AuthLevel.NO, AuthLevel.ACCESS, AuthLevel.REFRESH]
-
-
-class RateLimitMode(Enum):
-    NO = 'no'
-    MIN = 'min'  # for one-time actions (eg script just to like post)
-    MID = 'mid'  # for client apps / basic scripts
-    MAX = 'max'  # for advanced scripts / userbots
 
 
 class DebugResponseMode(Enum):

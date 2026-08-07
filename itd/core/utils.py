@@ -5,7 +5,7 @@ from uuid import UUID
 
 from platformdirs import user_data_path
 
-from itd.core.credfile import Credfile
+from itd.core.session_file import SessionFile
 
 
 def get_sdk_user_agent():
@@ -14,13 +14,13 @@ def get_sdk_user_agent():
     return f'itd-sdk/{__version__} (Python/{version})'
 
 
-def get_credfile(name: str) -> Credfile:
+def get_session_file(name: str) -> SessionFile:
     file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
     if not file.exists():
-        model = Credfile(_file=file)
+        model = SessionFile(_file=file)
         file.write_text(dumps(model.model_dump(mode='json')))
     else:
-        model = Credfile.model_validate(loads(file.read_text()))
+        model = SessionFile.model_validate(loads(file.read_text()))
     model._file = file
     return model
 
