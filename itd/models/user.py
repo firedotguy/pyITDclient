@@ -7,7 +7,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from itd.api.etc import get_who_to_follow
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
 from itd.api.users import (
@@ -20,6 +19,7 @@ from itd.api.users import (
     get_privacy,
     get_profile,
     get_user,
+    get_who_to_follow,
     restore_account,
     search_users,
     unblock,

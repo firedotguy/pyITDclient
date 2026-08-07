@@ -1,10 +1,7 @@
 from pydantic import BaseModel, Field
 
-from itd.api.etc import get_top_clans
+from itd.api.users import get_top_clans
 from itd.core.base import ITDBaseModel
-from itd.core.logger import get_logger
-
-l = get_logger('clan')  # noqa: E741
 
 
 class Clan(BaseModel):
@@ -26,10 +23,6 @@ class TopClans(ITDBaseModel, list[Clan]):
         self.clear()
         self.extend([Clan.model_validate(clan) for clan in get_top_clans(self.client).json()['clans']])
         return self
-
-    def refresh(self, *, client=None):
-        l.warning('TopClans.refresh is deprecated and will be removed in 2.6.0. Please use TopClans.load')
-        self.load()
 
     @classmethod
     def empty(cls):

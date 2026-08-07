@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from itd.core.request import endpoint
 from itd.enums import UNSET, AccessType, AuthLevel, Unset
 from itd.exceptions import (
     AlreadyBlockedError,
@@ -20,7 +21,6 @@ from itd.exceptions import (
     UsernameTakenError,
     ValidationError
 )
-from itd.core.request import endpoint
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -136,3 +136,11 @@ def get_follow_status(client: Client, user_ids: list[UUID]):
 @endpoint('get', 'users/search')
 def search_users(client: Client, query: str, limit: int = 10):
     return {'q': query, 'limit': limit}
+
+
+@endpoint('get', 'users/stats/top-clans')
+def get_top_clans(client: Client): ...
+
+
+@endpoint('get', 'users/suggestions/who-to-follow')
+def get_who_to_follow(client: Client): ...
