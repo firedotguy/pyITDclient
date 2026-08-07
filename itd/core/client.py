@@ -84,7 +84,7 @@ class Client:
     @classmethod
     def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
         session_file = get_session_file(name)
-        l.debug('get credentials file refresh=%s access=%s', shorten_token(session_file.refresh), shorten_token(session_file.access))
+        l.debug('get session file refresh=%s access=%s', shorten_token(session_file.refresh), shorten_token(session_file.access))
         if not session_file.valid:
             l.warning('last refresh token was expired or not found. Please enter a new one:')
             update = True
@@ -118,7 +118,7 @@ class Client:
         if self._session_file is None:
             return
 
-        l.debug('update credentials file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
+        l.debug('update session file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
         if not valid:
             l.warning('mark %s as not valid', shorten_token(self.refresh_token))
 

@@ -2,6 +2,16 @@ from enum import Enum
 from typing import Literal
 
 
+class AnnouncementButtonStyle(Enum):
+    PRIMARY = 'primary'
+    SECONDARY = 'secondary'
+
+
+class AnnouncementButtonType(Enum):
+    DISMISS = 'dismiss'
+    LINK = 'link'
+
+
 class InteractionType(Enum):
     PHOTO_OPEN = 1
     VIDEO_PROGRESS = 2
