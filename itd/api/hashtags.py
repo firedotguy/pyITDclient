@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from itd.core.request import endpoint
 from itd.enums import AuthLevel
 from itd.exceptions import NotFoundError, TooLargeError, ValidationError
-from itd.core.request import endpoint
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -30,4 +30,7 @@ def get_hashtags(client: Client, limit: int = 10):
     level=AuthLevel.NO
 )
 def get_posts_by_hashtag(client: Client, hashtag: str, cursor: UUID | None = None, limit: int = 20):
-    return {'limit': limit, 'cursor': cursor}
+    query: dict = {'limit': limit}
+    if cursor:
+        query['cursor'] = cursor
+    return query
