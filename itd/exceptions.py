@@ -41,16 +41,6 @@ class ITDException(Exception):
         )
 
     def prepare(self, json: dict) -> 'ITDException':
-        """Собрать ошибку для выброса - копию декларации, дополненную данными из ответа
-
-        Args:
-            json (dict): Тело ответа
-
-        Returns:
-            ITDException: Ошибка
-        """
-        # именно копию: декларации переиспользуются между запросами и потоками, мутировать их нельзя.
-        # __init__ не вызываем - у наследников он с разными аргументами (NotFoundError('Post') и тд)
         exception = self.__class__.__new__(self.__class__)
         BaseException.__init__(exception, *self.args)
         exception.__dict__.update(self.__dict__)
@@ -58,7 +48,7 @@ class ITDException(Exception):
         return exception
 
     def _fill(self, error: dict) -> None:
-        """Дополнить ошибку данными из ['error'] (пустой dict если там не объект)"""
+        pass
 
 
 class ValidateError(ITDException):

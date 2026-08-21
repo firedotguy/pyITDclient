@@ -240,6 +240,7 @@ class User(_UserBase):
     wall_access: AccessType | None = Field(None, alias='wallAccess')  # none if blocked
     likes_visibility: AccessType | None = Field(None, alias='likesVisibility')  # none if blocked
     is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
+    can_message: bool = Field(False, alias='canMessage')
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
     last_seen: LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
@@ -370,7 +371,7 @@ class User(_UserBase):
     def following(self) -> list[User]:
         return [User.from_dict(user, client=self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
 
-    @property
+    @cached_property
     def followers(self) -> list[User]:
         return [User.from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
 
