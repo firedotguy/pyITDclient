@@ -44,6 +44,7 @@ from itd.core.default import set_config as set_limiter_config
 from itd.core.limiter import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, RateLimiter
 from itd.models.announcement import Announcement, Announcements
 from itd.models.clan import Clan, TopClans
+from itd.models.comment import Comment
 from itd.models.file import File
 from itd.models.hashtag import Hashtag, Hashtags
 from itd.models.notification import Notification, Notifications, Ntf, Ntfs
@@ -70,6 +71,7 @@ __all__ = [
     'ITDClient',
     'ITDConfig',
     'init_client',
+    'Comment',
     'Clan',
     'TopClans',
     'File',

@@ -9,11 +9,11 @@ from pydantic import BeforeValidator, Field
 
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.core.base import ITDBaseModel, ITDList
+from itd.core.utils import parse_datetime, to_nullable_uuid, to_uuid
 from itd.enums import CommentSorting, ReportReason, ReportTargetType
 from itd.models.file import CommentAttach
 from itd.models.report import Report
 from itd.models.user import User
-from itd.core.utils import parse_datetime, to_nullable_uuid
 from itd.models.utils import ATTACHMENTS, format_attachments
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class Comment(ITDBaseModel):
-    _refreshable = False
+    _refreshable = True
 
     id: UUID
     content: str
@@ -40,6 +40,12 @@ class Comment(ITDBaseModel):
 
     _post: Post | None = None
     _base_comment: Comment | None = None
+    _init_from_id: bool = False
+
+    def __init__(self, id: UUID | str, *, client: Client | None = None) -> None:
+        super().__init__(client=client)
+        self.id = to_uuid(id)
+        self._init_from_id = True
 
     @classmethod
     def from_dict(
@@ -51,6 +57,12 @@ class Comment(ITDBaseModel):
         if base_comment is not None:
             context['base_comment'] = base_comment
         return super().from_dict(data, client=client, context=context)
+
+    def _refresh(self, *, client: Client):
+        if self._init_from_id:
+            raise RuntimeError('Unable to refresh comment that initialized by id. Please load comment from post')
+        else:
+            super()._refresh(client=client)
 
     @cached_property
     def replies(self) -> Replies:
