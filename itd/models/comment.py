@@ -105,6 +105,7 @@ class Comment(ITDBaseModel):
             base_comment=self._base_comment if self.is_reply else self,
             client=client or self.client
         )
+        comment.reply_to = User(user_id) if user_id else self.author  # manual patch stupid api
         if self.is_reply:
             assert self._base_comment is not None
             self._base_comment.replies.append(comment)
