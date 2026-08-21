@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable
+from typing import Callable, cast
 
 from requests import Response
 
@@ -30,7 +30,7 @@ class ITDException(Exception):
         Returns:
             bool: Совпадение
         """
-        error = json.get('error') if isinstance(json.get('error'), dict) else {}
+        error = cast(dict, json.get('error')) if isinstance(json.get('error'), dict) else {}
         return bool(
             (self.res_check and self.res_check(res))
             or (self.text_check and self.text_check(res.text))
@@ -208,7 +208,7 @@ class InsufficientAuthLevelError(NoRightsError):
 
 
 class PinNotOwnedError(NoRightsError):
-    code = "PIN_NOT_OWNED"
+    code = 'PIN_NOT_OWNED'
     text = 'You do not own this pin'
 
 
