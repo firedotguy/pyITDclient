@@ -102,7 +102,7 @@ class Comment(ITDBaseModel):
                 format_attachments(attachments)
             ).json(),
             post=self._post,
-            base_comment=self,
+            base_comment=self._base_comment if self.is_reply else self,
             client=client or self.client
         )
         if self.is_reply:
