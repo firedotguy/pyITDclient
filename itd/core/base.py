@@ -114,7 +114,8 @@ class ITDBaseModel:
 
         context.setdefault('client', instance.client)
         instance._fill_from_data(data, context=context)
-        instance.load_status = LoadStatus.PARTIALLY
+        if instance.load_status == LoadStatus.NO:
+            instance.load_status = LoadStatus.PARTIALLY
         return instance
 
     @classmethod

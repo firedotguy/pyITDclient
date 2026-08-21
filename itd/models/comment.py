@@ -10,7 +10,7 @@ from pydantic import BeforeValidator, Field
 from itd.api.comments import add_comment, add_reply_comment, delete_comment, edit_comment, get_comments, get_replies, like_comment, unlike_comment
 from itd.core.base import ITDBaseModel, ITDList
 from itd.core.utils import parse_datetime, to_nullable_uuid, to_uuid
-from itd.enums import CommentSorting, ReportReason, ReportTargetType
+from itd.enums import CommentSorting, LoadStatus, ReportReason, ReportTargetType
 from itd.models.file import CommentAttach
 from itd.models.report import Report
 from itd.models.user import User
@@ -51,7 +51,7 @@ class Comment(ITDBaseModel):
     def from_dict(
         cls, data: dict, post: Post | None = None, base_comment: Comment | None = None, *, context: dict | None = None, client: Client | None = None
     ) -> Comment:
-        context = dict(context or {})  # контекст родителя не выбрасываем, иначе комментарий потеряет его клиента
+        context = dict(context or {})
         if post is not None:
             context['post'] = post
         if base_comment is not None:
@@ -107,11 +107,11 @@ class Comment(ITDBaseModel):
         )
         if self.is_reply:
             assert self._base_comment is not None
-            self._base_comment.replies.insert(0, comment)
+            self._base_comment.replies.append(comment)
             self._base_comment.replies.total += 1
             self._base_comment.replies_count += 1
         else:
-            self.replies.insert(0, comment)
+            self.replies.append(comment)
             self.replies.total += 1
             self.replies_count += 1
 
@@ -209,6 +209,7 @@ class Comment(ITDBaseModel):
         return not self.is_owner
 
     def _post_refresh(self, context: dict = {}):
+        self.load_status = LoadStatus.FULL
         self._base_comment = context.get('base_comment')
         self._post = context.get('post')
         for reply in self.first_replies:
@@ -269,7 +270,7 @@ class Replies(ITDList[Comment]):
     _base_comment: 'Comment'
 
     _post: Post
-    total: int
+    total: int = 0
     cursor: int = 1
     _is_page_pagination = True
 
