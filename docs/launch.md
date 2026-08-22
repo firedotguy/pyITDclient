@@ -47,7 +47,7 @@
 ### Логгер
 Если вы дополнительно хотите видеть логи itd-sdk, можете добавить вызов `setup_logging` перед инициализацией клиента.
 ```python
-from itd.logger import setup_logging
+from itd.core.logger import setup_logging
 from itd import ITDClient
 
 setup_logging('INFO')

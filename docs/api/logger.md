@@ -1,3 +1,3 @@
 # Логгер
 
-::: itd.logger
+::: itd.core.logger

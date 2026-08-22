@@ -58,26 +58,40 @@ nav:
         - Комментарии: ref/comments.md
         - Пользователи: ref/users.md
         - Уведомления: ref/notifications.md
+        - Анонсы: ref/announcements.md
+        - Хэштэги: ref/hashtags.md
+        - Файлы и вложения: ref/file.md
+        - Сессии: ref/sessions.md
+        - Прочее: ref/etc.md
         - ref/enums.md
-        - WIP: ref/wip.md
     - API:
         - api/client.md
-        - api/user.md
+        - api/config.md
+        - api/request.md
+        - api/base.md
+        - api/logger.md
+        - api/dwell.md
+        - api/visibility.md
+        - api/timer.md
+        - api/limiter.md
         - api/post.md
         - api/comment.md
-        - api/notification.md
+        - api/user.md
         - api/file.md
-        - api/exceptions.md
         - api/hashtag.md
-        - api/logger.md
         - api/pin.md
         - api/poll.md
         - api/clan.md
         - api/report.md
         - api/span.md
-        - api/request.md
-        - api/enums.md
+        - api/notification.md
+        - api/announcement.md
+        - api/session.md
+        - api/portal.md
+        - api/version.md
         - api/utils.md
+        - api/enums.md
+        - api/exceptions.md
     - migration.md
 
 extra:

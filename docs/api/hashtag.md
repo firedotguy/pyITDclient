@@ -1,3 +1,3 @@
 # Хэштэг
 
-::: itd.hashtag
+::: itd.models.hashtag

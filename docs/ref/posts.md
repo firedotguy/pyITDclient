@@ -61,6 +61,9 @@ ID поста.
 #### dominant <span class="mdx-badge"><span class="mdx-badge__icon">:material-emoticon:</span><span class="mdx-badge__text">str</span></span>
 Эмоджи клан, который чаще всего лайкал пост. `None`, если никто пока еще не лайкнул пост.
 
+#### original_post <span class="mdx-badge"><span class="mdx-badge__icon">:material-post:</span><span class="mdx-badge__text">[Post](#post)</span></span>
+Оригинальный пост, если этот - репост. `None`, если пост обычный.
+
 #### wall_recipient_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
 ID получателя поста. `None`, если пост создан не на чужой стене.
 
@@ -126,7 +129,7 @@ post = Post.new(
 !!! example
 
     ```python
-    from itd.poll import NewPoll
+    from itd import NewPoll
 
     Post.new(
         poll=NewPoll(
@@ -237,6 +240,26 @@ post = post.repost(
  - `BannedWordError` - в посте есть [запрещенные слова](https://itdsdk.qzz.io/banned-words).
 
 <a id="view"></a>
+## :material-account-switch: Для другого клиента
+```py
+post = post.for_client(client2)
+```
+Тот же пост, но привязанный к другому клиенту - все действия (лайк, просмотр, комментарий) пойдут от него. Свои данные новый объект загрузит сам, потому что у другого аккаунта и `is_liked`, и [vs](#vs-str) будут свои.
+
+## :material-chart-line: Обновить статистику
+```py
+post.update_stats()
+```
+Обновляет только счетчики (лайки, комментарии, репосты, просмотры) - это дешевле, чем `refresh()`. Тем же запросом ходит [автообновление статистики видимых постов](../config.md#post_update_stats-bool).
+
+После обновления вызывается `on_stats_update` - переопределите его, если надо на это реагировать:
+
+```py
+class MyPost(Post):
+    def on_stats_update(self):
+        print('лайков стало', self.likes_count)
+```
+
 ## :material-eye: Просмотреть
 ```python
 post.view()
@@ -325,7 +348,7 @@ edited_at = post.edit(
 
 === "Через `Comment`"
     ```python
-    from itd.comment import Comment
+    from itd import Comment
     
     Comment.new(
         post.id,
@@ -508,8 +531,17 @@ poll = NewPoll(
 
 ---
 
+## :material-content-copy: Из существующего опроса
+```py
+poll = NewPoll.from_poll(post.poll)
+```
+Копирует вопрос, варианты и режим множественного выбора у [Poll](#poll) - удобно, чтобы пересоздать опрос в своем посте.
+
 # :material-code-brackets: :material-post: Posts
 Лента постов.
+
+!!! note "source и source_context"
+    У каждого списка постов есть `source` ([ViewSource](enums.md#viewsource)) и `source_context` - откуда посты попали к вам. Они проставляются сами (лента, профиль, хэштэг итд) и уходят в статистику [просмотров](#view), так что менять их обычно не нужно.
 
 - [x] has_more
 - [ ] total
@@ -666,12 +698,12 @@ post = posts.wait_for_post(
 
 ### :octicons-clock-16: Ожидание поста
 ```py
-post = posts.wait_for_post(
+new_posts = posts.wait_for_posts(
     delay=5,
     find_post=True
 )
 ```
-Ждет пока появится новый пост и возвращает его.
+Ждет, пока по хэштэгу появятся новые посты, и возвращает их списком (`None`, если `find_post=False`). Проверяет через [posts_count](hashtags.md#posts_count-int) у хэштэга, так что за один раз может появиться сразу несколько постов.
 
 #### delay <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка при проверке (без учета anti-ratelimit). По умолчанию `5`.

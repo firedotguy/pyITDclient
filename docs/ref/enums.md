@@ -1,13 +1,5 @@
 # Enums
 
-### RateLimitMode
-Режим анти-рейтлимита.
-
- - `RateLimitMode.NO`: 0 сек - для простых скриптов.
- - `RateLimitMode.MIN`: Небольшие задержки (0 сек для обычных запросов) - для кастомных клиентов или маленьких скриптов.
- - `RateLimitMode.MID`: Средние задержки (0.2 сек для обычных запросов) - для обычных скриптов.
- - `RateLimitMode.MAX`: Большие задержки (0.4 сек для обычных запросов) - для больших ботов, парсеров.
-
 ### DebugResponseMode
 Режим показа ответов сервера.
 
@@ -50,6 +42,13 @@
  - `AccessType.MUTUAL`: Взаимные подписки (вы подписаны на пользователя и он подписан на вас).
  - `AccessType.FOLLOWERS`: Подписчики.
  - `AccessType.EVERYONE`: Все.
+
+### ReportTargetType
+Тип объекта, на который жалуетесь.
+
+ - `ReportTargetType.POST`: Пост.
+ - `ReportTargetType.USER`: Пользователь.
+ - `ReportTargetType.COMMENT`: Комментарий.
 
 ### ReportReason
 Причина жалобы.
@@ -124,6 +123,12 @@
 !!! note
     Если цель - пользователь (например при подписке), значение будет `None`.
 
+### NotificationSubjectType
+Тип объекта, о котором уведомление.
+
+ - `NotificationSubjectType.COMMENT`: Комментарий.
+ - `NotificationSubjectType.POST`: Пост.
+
 ### CommentSorting
 Сортировка комментариев.
 
@@ -136,3 +141,65 @@
 
 ### UserAgent
 User-Agent заголовок.
+
+### AttachType
+Тип вложения.
+
+ - `AttachType.IMAGE`: Картинка.
+ - `AttachType.VIDEO`: Видео.
+ - `AttachType.AUDIO`: Аудио.
+ - `AttachType.MEDIA`: Медиа (картинка или видео).
+
+### DeviceType
+Тип устройства в [сессии](sessions.md#session).
+
+ - `DeviceType.DESKTOP`: Компьютер.
+ - `DeviceType.MOBILE`: Телефон.
+
+### ViewSource
+Откуда пост попал в поле зрения - уходит в статистику просмотров (см. [dwell](../features.md)).
+
+ - `ViewSource.FEED_GLOBAL`: Общая лента.
+ - `ViewSource.FEED_FOLLOWING`: Лента подписок.
+ - `ViewSource.FEED_CLAN`: Лента клана.
+ - `ViewSource.PROFILE`: Профиль.
+ - `ViewSource.HASHTAG`: Страница хэштэга.
+ - `ViewSource.POST_PAGE`: Страница поста.
+ - `ViewSource.LINK`: Переход по ссылке.
+ - `ViewSource.SEARCH`: Поиск.
+
+### ViewReason
+Почему просмотр закончился.
+
+ - `ViewReason.NORMAL`: Пост просто ушел из зоны видимости.
+ - `ViewReason.BLUR`: Страница потеряла фокус.
+ - `ViewReason.HIDDEN`: Вкладка скрыта.
+ - `ViewReason.PAGE_HIDE`: Страница закрывается.
+ - `ViewReason.UNOBSERVE`: Пост удален из DOM.
+ - `ViewReason.INACTIVE`: Пользователь перестал что-либо делать (см. [dwell_inactive_timeout](../config.md)).
+
+### InteractionType
+Тип взаимодействия с вложением.
+
+ - `InteractionType.PHOTO_OPEN`: Открытие фото.
+ - `InteractionType.VIDEO_PROGRESS`: Просмотр видео.
+
+### LoadStatus
+Насколько загружена модель.
+
+ - `LoadStatus.NO`: Данных нет, было только создание.
+ - `LoadStatus.LOADING`: Данные загружаются прямо сейчас.
+ - `LoadStatus.PARTIALLY`: Часть данных есть (модель пришла в списке или вложенной в другую).
+ - `LoadStatus.FULL`: Загружена целиком.
+
+### AnnouncementButtonStyle
+Стиль кнопки [анонса](announcements.md#announcementbutton).
+
+ - `AnnouncementButtonStyle.PRIMARY`: Основная кнопка.
+ - `AnnouncementButtonStyle.SECONDARY`: Второстепенная.
+
+### AnnouncementButtonType
+Что делает кнопка [анонса](announcements.md#announcementbutton).
+
+ - `AnnouncementButtonType.DISMISS`: Закрыть анонс.
+ - `AnnouncementButtonType.LINK`: Открыть ссылку (`action.url`).

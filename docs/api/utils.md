@@ -1,4 +1,5 @@
 # Утилиты
 
-::: itd.utils
+::: itd.core.utils
 
+::: itd.models.utils

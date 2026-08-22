@@ -10,7 +10,7 @@ config = ITDConfig()
 ITDClient('xxx', config=config)
 ```
 
-## Параметры
+## Общее
 
 #### client_type <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 Тип клиента. По умолчанию `onetime`.
@@ -19,76 +19,10 @@ ITDClient('xxx', config=config)
  - `client`: Реальный клиент
  - `bot`: Бот
 
+От него зависят значения по умолчанию: [timeout](#timeout-float), [retry_enabled](#retry_enabled-bool), [retry_exceptions](#retry_exceptions-tupletypeexception), [post_update_stats](#post_update_stats-bool) и [dwell_check_active](#dwell_check_active-bool).
+
 !!! question "Почему не enum?"
     ~~Лень было.~~ Чтобы было меньше импортов. Я вообще хочу постепенно отказать от enum в пользу `Literal`, как это сделали [textual](https://textualize.io) например.
-
-#### rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[RateLimitMode](ref/enums.md#ratelimitmode)</span></span>
-Устанавливает дефолтные значения задержек.
-<!-- Также планируется режим `SMART`, который будет выставлять динамическую задержку (например при первых трех комментариях не делать задержку). -->
-По умолчанию `RateLimitMode.MID`.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0.
-
-#### rate_limit_default <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Задержка для обычных запросов (overrides rate_limit_mode). Значение по умолчанию зависит от [rate_limit](#rate_limit-ratelimitmode).
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0.
-
-#### rate_limit_actions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: :material-text:: :octicons-number-16:</span><span class="mdx-badge__text">dict[str, float]</span></span>
-Кастомная задержка для каждого вида запроса (например `get_user`). Названия фукнций можно посмотреть в `itd.api`. Можно использовать, если ваш скрипт повторяет одно и тоже действие (например, постоянно комментирует).
-
-!!! example
-    ```python
-    {'get_me': 5, 'get_followers': 6, 'add_comment': 15.4}
-    ```
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0.
-
-#### anti_rate_limit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Включен ли анти-рейт лимит. По умолчанию `True` для ботов, `False` для остальных.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(limiter=HalfRateLimiter)`.
-
-#### burst_requests <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Можно ли отправлять запросы без задержек (ожидает все 60сек 1 раз, без задержек между запросами). По умолчанию `False` для ботов, `True` для остальных.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(limiter=BurstRateLimiter)`.
-
-#### anti_ip_ban <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Включена ли защита от [бана по IP](limits.md#ip). По умолчанию `True`.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(ip_limiter=IPRateLimiter())`.
-
-#### limit_coefficient <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-numbers-16:</span><span class="mdx-badge__text">float</span></span>
-Коэффициент лимита (можно уменьшить, чтобы был меньше шанс на рейт лимит). По умолчанию `0.75` для ботов, `0.9` для клиентов и `1` для однозразовых скриптов.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0.
-
-#### auto_acquire <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли ждать перед запросом (acquire). Если выключено, нужно вызвать функцию `acquire_limiters` вручную. Полезно для ботов, которые делает запросы по кругу. По умолчанию `False`.
-
-!!! example
-    ```py
-    from itd import acquire_limiters
-    
-    for post in UserPosts('rice_4'):
-        post.refresh()
-        post.like()
-        post.add_comment('test')
-        acquire_limiters()
-    ```
-`acquire_limiters` берет самый большой лимит из вызванных функций и ждет только его (оптимизация).
-
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0. Используйте `set_limiter_config(auto_acquire=True)`.
 
 #### is_default <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Сделать ли клиент дефолтным по умолчанию. По умолчанию дефолтным становится первый инициализированный клиент.
@@ -96,8 +30,25 @@ ITDClient('xxx', config=config)
 #### userposts_add_pinned_post <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Добавлять ли закрепленный пост при получении постов пользователя (`UserPosts`). Для этого потребуется отдельный запрос. По умолчанию `True`.
 
+## Загрузка данных
+
+#### load_on_init <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Загружать ли модель сразу при создании (`Post('...')` тут же сходит в API). По умолчанию `False` - модель загрузится, когда у нее что-нибудь спросят.
+
+#### load_on_getattr <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Нужно ли автоматически загружать данные при попытке получения (перехват в `__getattribute__`, см. [авто-загрузку](features.md#_1)). Если выключено, то перед получением придется писать `obj.refresh()`. По умолчанию `True`.
+
+Узнать, загружено ли поле, не вызывая догрузку, можно через [is_loaded](ref/base.md):
+
+```python
+post.is_loaded('content')
+```
+
 #### auto_load <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли автоматически загружать данные при попытке получение (перехват в `__getattribute__`). Если выключено, то для получения данных придется перед получением писать `obj.refresh()`. По умолчанию `True`.
+Старое имя [load_on_getattr](#load_on_getattr-bool).
+
+!!! danger "Deprecated"
+    Параметр устарел и будет удален в 2.8.0. Используйте `load_on_getattr`.
 
 #### load_on_getitem <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | ALL | BATCH</span><span class="mdx-badge__text">int | All | Batch</span></span>
 Количество загружаемых объектов при попытке получить еще не загруженный элемент списка (например `Posts()[10]`). Может выдать `AttributeError`, если даже после загрузки всех объектов количество меньше желаемого индекса, или если известно общее количество объектов и индекс будет больше него. По умолчанию `1`. `All` - загрузить все. `Batch` - загрузить следующий батч (следующий по курсору). `None` - выключить авто загрузку.
@@ -127,6 +78,32 @@ ITDClient('xxx', config=config)
 #### force_load_lists <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Загружать список, даже если `has_more = False`. Может уйти в бесконечный цикл при итерации. По умолчанию `False`.
 
+#### batch_sizes <span class="mdx-badge"><span class="mdx-badge__icon">:material-tune:</span><span class="mdx-badge__text">BatchSizes</span></span>
+Размеры батчей - сколько объектов запрашивать за раз у каждого списка.
+
+```python
+from itd import ITDConfig
+from itd.core.config import BatchSizes
+
+config = ITDConfig(batch_sizes=BatchSizes(preset='max', comments=100))
+```
+
+Пресет задается через `preset` (`decreased`, `default`, `increased`, `max`), а любой список можно переопределить отдельно: `comments`, `replies`, `hashtags`, `notifications`, `posts`, `user_posts`, `liked_posts`, `hashtag_posts`, `followers`, `following`, `blocked`.
+
+| список | decreased | default | increased | max |
+| --- | --- | --- | --- | --- |
+| comments | 50 | 100 | 200 | 500 |
+| replies | 20 | 100 | 100 | 100 |
+| hashtags | 5 | 10 | 20 | 50 |
+| notifications | 10 | 20 | 50 | 1000 |
+| posts, user_posts, liked_posts, hashtag_posts | 10 | 20 | 30 | 50 |
+| followers, following, blocked | 10 | 20 | 50 | 100 |
+
+!!! warning
+    Слишком большой батч ИТД не примет - будет `ValidationError`.
+
+## Запросы
+
 #### debug_response <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[DebugResponseMode](ref/enums.md#debugresponsemode)</span></span>
 Режим показа сырых данных ответа API (response). Для работы должен быть установлен логгер с режимом `DEBUG`.
 
@@ -135,16 +112,16 @@ ITDClient('xxx', config=config)
 По умолчанию `DebugResponseMode.NO`.
 
 #### timeout <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Таймаут обычного запроса. По умолчанию `30`.
+Таймаут обычного запроса. По умолчанию зависит от [client_type](#client_type-str): `5` для `onetime`, `20` для `client` и `60` для `bot`.
 
 #### timeout_file <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Таймаут при загрузке файла. По умолчанию `120`.
+Таймаут при загрузке файла.
+
+#### timeout_file_download <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
+Таймаут при скачивании файла или вложения ([download](ref/file.md)).
 
 #### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Базовый URL ИТД (`xn--d1ah4a.com`).
-
-#### url_api <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-URL к API ИТД (`https://xn--d1ah4a.com/api`). Если не указан, берется из [url](#url-str).
+URL к API ИТД. По умолчанию `https://xn--d1ah4a.com/api`.
 
 #### user_agent <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str | [UserAgent](ref/enums.md#useragent)</span></span>
 User-Agent, под которым обращатся к API ИТД. Если вы делаете свой клиент, можете поставить агент как его имя. По умолчанию стоит дефолтный браузерный user-agent.
@@ -152,26 +129,46 @@ User-Agent, под которым обращатся к API ИТД. Если в�
 #### solve_challenge <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли проходить JS-challenge (защита от скриптов). Иногда включается при запросах к API. Если выключена, скрипт может упасть с ошибкой `fail to parse json`.
 
-#### load_comments_from_post <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли брать комментарии из уже полученного поста (ИТД дает 3-4 комментария при получении поста). При загрузке следующего батча комментарии могут дублироваться. По умолчанию `False`.
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.7.0. Используйте `post.first_comments` для получения комменатриев сразу с поста и  `post.comments` для отдельной загрузки.
-
 #### parse_mode <span class="mdx-badge"><span class="mdx-badge__icon">:simple-markdown:</span><span class="mdx-badge__text">[ParseMode](ref/enums.md#parsemode)</span></span>
 Режим парсинга (автоматически генерирует `spans` при создании или редактировании постов). По умолчанию `ParseMode.NO`.
 
+#### token_expiry_margin <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
+За сколько секунд до истечения access токен считается протухшим. Запас нужен, чтобы токен не истек, пока запрос идет по сети, и на случай, если часы на машине немного расходятся с серверными. По умолчанию `60`.
+
+#### refresh_token_cookie_name <span class="mdx-badge"><span class="mdx-badge__icon">:material-cookie:</span><span class="mdx-badge__text">str</span></span>
+Имя куки, в которой лежит refresh токен. По умолчанию `refresh_token`.
+
+## Повторы запросов
+
 #### retry_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию `True`.
+Нужно ли повторять запрос при ошибке сети или рейт лимите. По умолчанию `True` для ботов, `False` для остальных.
 
 #### retry_delay <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Задержка перед следующим повтором запроса.
+Задержка перед следующим повтором запроса, если ИТД не прислал свою (`retryAfter`). По умолчанию `10`.
+
+#### retry_max_retry_after <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Максимальное время ожидания, которое SDK готов принять от ИТД. Если рейт лимит просит ждать дольше - ошибка выбрасывается, а не проглатывается. По умолчанию `500`.
 
 #### retry_max_retries <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
-Максимальное количество попыток повторов запроса. По умолчанию `None`. `None` - без лимита.
+Максимальное количество попыток повтора запроса. `None` - без лимита. По умолчанию `10`.
 
-#### retry_exceptions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-close-circle:</span><span class="mdx-badge__text">list[type[Exception]] | tuple[type[Exception]]</span></span>
-Список ошибок, при которых нужно повторить запрос. По умолчанию `RateLimitError`, `InternalError` и стандартные ошибки из `requests` (`RequestException`).
+!!! warning
+    В 2.8.0 параметр пока не применяется - повторы не ограничены по количеству.
+
+#### retry_exceptions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-close-circle:</span><span class="mdx-badge__text">tuple[type[Exception], ...]</span></span>
+Список ошибок, при которых нужно повторить запрос. По умолчанию для ботов - `RateLimitError` и стандартные ошибки из `requests` (`RequestException`), для остальных повторов нет.
+
+#### on_exceptions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-braces: :material-close-circle:: :material-function:</span><span class="mdx-badge__text">dict[type[Exception], Callable]</span></span>
+Колбэки на ошибки: вызываются перед тем, как ошибка будет выброшена. Удобно, чтобы, например, слать их в телеграм.
+
+!!! example
+    ```python
+    config.on_exceptions = {RateLimitError: lambda e: print('поймали лимит', e.retry_after)}
+    ```
+
+Колбэк подберется и для наследников - если указать `ITDException`, будут ловиться все ошибки SDK.
+
+## Авторизация
 
 #### bypass_auth_level <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Bypass пре-валидации на проверку уровня авторизации. По умолчанию `False`.
@@ -188,20 +185,58 @@ Bypass пре-валидации на проверку уровня автори
 !!! warning
     При вызове ошибок `RefreshTokenMissingError` и `UnauthorizedError` может попросить оставить Issue на github. Если у вас включен `bypass_auth_level`, игнорируйте эту просьбу.
 
+## Просмотры (dwell)
+
 #### dwell_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли включать dwell tracker для просмотров. По умолчанию `True`.
+
+!!! warning
+    В 2.8.0 параметр не применяется - трекер запускается всегда. Чтобы он ничего не отправлял, поставьте `dwell_send_interval = 0`.
 
 #### dwell_max_buffer <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Максимальный буффер dwell tracker`а. После переполнения буффер автоматически отпарвится на сервер и очистится. По умолчанию 20 (в точности как у оф клиента).
 
 #### dwell_send_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Задержка между запросами dwell tracker`а (через сколько секунд повторять проверку на наличие новых записей, и если есть то отправлять их на сервер). По умолчанию 2 (в точности как у оф клиента).
+Задержка между запросами dwell tracker`а (через сколько секунд повторять проверку на наличие новых записей, и если есть то отправлять их на сервер). По умолчанию 2 (в точности как у оф клиента). `0` - не запускать таймер вообще.
 
 #### dwell_save_on_quit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Отправлять ли несохраненные записи перед закрытием скрипта (делается через atexit). По умолчанию `True`.
 
+#### dwell_wait_durations <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Ждать ли просмотр по-настоящему: перед отправкой просмотра скрипт поспит столько, сколько по расчетам человек читал бы этот пост ([view_read_speed](#view_read_speed-int) и [view_images_speed](#view_images_speed-int)). По умолчанию `False`.
+
+!!! warning
+    Ожидание блокирует поток, из которого вызвали просмотр.
+
+#### dwell_min_duration <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Минимальная длительность просмотра (мс). Если пост увидели быстрее, просмотр не отправится. По умолчанию `250`.
+
+#### dwell_max_duration <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Максимальная длительность просмотра (мс) - больше нее время не рассчитывается. По умолчанию `30000`.
+
+#### dwell_check_active <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Следить ли за активностью: если пользователь ничего не делает, видимые посты скрываются (как будто он ушел со страницы), а когда возвращается - показываются снова. По умолчанию `True` для `client`, `False` для остальных.
+
+Активность отмечается вручную:
+
+```python
+client.set_active()  # скролл, движение мыши итд
+```
+
+#### dwell_check_active_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
+Как часто проверять активность (сек). По умолчанию `5`.
+
+#### dwell_inactive_timeout <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Через сколько секунд без активности пользователь считается ушедшим. По умолчанию `30`.
+
+#### post_auto_view <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Отправлять ли просмотр автоматически при `post.set_invisible()`. По умолчанию `True`.
+
+#### post_view_increment <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Увеличивать ли `post.views_count` локально после просмотра. По умолчанию `False`.
+
 #### post_update_stats <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Нужно ли обновлять статистику видимых постов. По умолчанию `False`.
+Нужно ли обновлять статистику видимых постов. По умолчанию `True` для `client`, `False` для остальных.
 
 #### post_update_stats_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
 Задержка между обнолвением статистики видимых постов. По умолчанию `3`.
@@ -211,3 +246,6 @@ Bypass пре-валидации на проверку уровня автори
 
 #### view_images_speed <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Скорость понимания картинок. Используется для более правдоподобного времени просмотра поста. По умолчанию `130`.
+
+## Рейт лимиты
+Задержки между запросами настраиваются не здесь, а через `set_limiter_config` - см. [Рейт лимиты](limits.md#_5).

@@ -103,6 +103,21 @@ ID закрепленного поста. `None`, если у пользоват
 #### link <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Тоже самое, что и [url](#url-str-property).
 
+#### can_message <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
+Можно ли писать пользователю. Личных сообщений в ИТД пока нет, поле пришло на будущее.
+
+#### can_post_on_wall <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Можете ли вы [написать на стену](#_6) - считается из [wall_access](#wall_access-accesstype) и ваших подписок. Если не хватает подписки, ее можно оформить через [complete_actions_for_wall_access](#_10).
+
+#### can_see_liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Можете ли вы смотреть [лайки](#liked_posts-likedposts-property) - считается из [likes_visibility](#likes_visibility-accesstype) и ваших подписок.
+
+## :material-account-switch: Для другого клиента
+```python
+user = user.for_client(client2)
+```
+Тот же пользователь, но от лица другого клиента - подписки, блокировки и права (`is_following`, `can_post_on_wall` итд) у него свои, поэтому данные загрузятся заново.
+
 ## Получить пользователя
 ```python
 user = User('itd_sdk')
@@ -510,6 +525,9 @@ me.remove_pin()
 
 !!! tip "Интересный факт"
     Изначально в ИТД хотели сделать свою полноценную платежную систему (видно по тому, что в базе есть такие поля как номер банковской карты, CVC, срок годности и тд), но что-то не получилось (наверное юридическое), и в итоге они просто сделали интеграцию с Юкасса, которая хэндлит все эти данные сама (в том числе auto renewal). Поэтому auto_renewal сейчас ничего не делает, а также он убран с фронтенда.
+
+#### payment_methods <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-credit-card:</span><span class="mdx-badge__text">list[dict]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Привязанные способы оплаты - так, как их отдает ИТД. Каждый раз ходит в API.
 
 ## :material-credit-card: Оплатить попдиску
 ```py

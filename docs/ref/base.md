@@ -7,6 +7,21 @@
 
 Почти ко всем функциям можно передать `client` как именованный параметр. Если он не задан, берется дефолтный `self.client`.
 
+#### load_status <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[LoadStatus](enums.md#loadstatus)</span></span>
+Насколько модель загружена: только создана (`NO`), загружается (`LOADING`), частично (`PARTIALLY` - пришла в списке или вложенной в другую модель) или целиком (`FULL`).
+
+## Проверить, загружено ли поле
+```py
+post.is_loaded('content')
+```
+Возвращает `True`, если поле пришло в данных. В отличие от обычного обращения (`post.content`), ничего не загружает - это важно для полей, которых в списках нет: например [first_comments](posts.md) приходят только при получении одного поста, и обращение к ним у поста из ленты вызвало бы полную загрузку.
+
+## Создать из словаря
+```py
+post = Post.from_dict(data, client=client)
+```
+Собрать модель из ответа API - тем же способом, каким SDK собирает вложенные модели. Клиент можно не передавать, тогда возьмется клиент родителя (из контекста) или дефолтный.
+
 <a id="refresh"></a>
 ## Обновить
 ```py
@@ -31,6 +46,9 @@ base.refresh()
 
 #### cursor <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | :material-text: | :material-calendar: | None</span><span class="mdx-badge__text">int | str | datetime | None</span></span>
 Следующий курсор (или страница). Тип зависит от модели (например у `LikedPosts` - `datetime`). По умолчанию обычно `0` или `None`.
+
+#### all <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets:</span><span class="mdx-badge__text">list</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Все объекты - то же самое, что и [load_all()](#_4).
 
 ## Перезагрузить
 ```py

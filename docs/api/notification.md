@@ -1,3 +1,3 @@
-# Уведомление
+# Уведомления
 
-::: itd.notification
+::: itd.models.notification

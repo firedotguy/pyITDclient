@@ -1,3 +1,3 @@
 # Опрос
 
-::: itd.poll
+::: itd.models.poll

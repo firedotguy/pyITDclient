@@ -1,3 +1,3 @@
 # Пользователь
 
-::: itd.user
+::: itd.models.user

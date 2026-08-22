@@ -1,3 +1,3 @@
 # Клиент
 
-::: itd.client
+::: itd.core.client

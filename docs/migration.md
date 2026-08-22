@@ -1,5 +1,76 @@
 # Migration Guide
 
+## 2.7.1 -> 2.8.0
+
+### Пакет разделен на слои
+`itd/core` (клиент, конфиг, запросы, базовая моделька), `itd/api` (эндпоинты) и `itd/models` (модели). Если вы импортируете из самого `itd`, ничего не меняется:
+
+```py
+from itd import ITDClient, Post, User, Notifications  # работает как раньше
+```
+
+Изменились только прямые импорты внутренних модулей:
+
+=== "2.7.1"
+
+    ```py
+    from itd.post import Post
+    from itd.client import Config
+    from itd.logger import setup_logging
+    ```
+
+=== "2.8.0"
+
+    ```py
+    from itd.models.post import Post
+    from itd.core.config import Config
+    from itd.core.logger import setup_logging
+    ```
+
+`itd.enums` и `itd.exceptions` остались на месте.
+
+### Методы поиска убраны из клиента
+
+=== "2.7.1"
+
+    ```py
+    users, hashtags = client.search('итд')
+    users = client.search_users('итд')
+    is_following = client.get_follow_status(user_id)
+    ```
+
+=== "2.8.0"
+
+    ```py
+    from itd import Users, Hashtags, get_follow_status
+
+    users = Users.search('итд')
+    hashtags = Hashtags.search('итд')
+    is_following = get_follow_status(user_id)
+    ```
+
+### is_token_expired стал property
+
+=== "2.7.1"
+
+    ```py
+    client.is_token_expired()
+    ```
+
+=== "2.8.0"
+
+    ```py
+    client.is_token_expired
+    ```
+
+### Видимые посты живут в трекере
+`client.visible_posts`, `client.set_active()` и `client.update_post_stats()` работают как раньше, но само состояние и таймеры теперь в `client.visibility` - их можно останавливать (`client.visibility.stop()`).
+
+### Удалено устаревшее
+ - `base.rate_limit` - вместо него `set_limiter_config` (см. [рейт лимиты](limits.md#_5))
+ - `config.load_comments_from_post` - вместо него `post.first_comments` и `post.comments`
+ - `config.rate_limit`, `rate_limit_default`, `rate_limit_actions`, `anti_rate_limit`, `burst_requests`, `anti_ip_ban`, `limit_coefficient`, `auto_acquire` - все настройки задержек переехали в `set_limiter_config`
+
 ## 2.3.0 -> 2.4.4
 !!! warning
     В версиях 2.4.0 - 2.4.3 есть критические ошибки. Используйте 2.4.4.

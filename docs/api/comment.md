@@ -1,3 +1,3 @@
 # Комментарий
 
-::: itd.comment
+::: itd.models.comment

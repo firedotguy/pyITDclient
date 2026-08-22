@@ -1,3 +1,3 @@
 # Пост
 
-::: itd.post
+::: itd.models.post

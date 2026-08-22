@@ -40,6 +40,24 @@ ID комментария.
 #### link <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Тоже самое, что и [url](#url-str-property).
 
+#### is_reply <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Является ли комментарий ответом на другой (то есть заполнен ли [reply_to](#reply_to-user)).
+
+#### is_owner <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Ваш ли это комментарий.
+
+#### can_edit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Можно ли [отредактировать](#_4) - только свой комментарий.
+
+#### can_delete <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Можно ли [удалить](#_3) - свой комментарий или любой комментарий под своим постом.
+
+#### can_report <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Можно ли пожаловаться - на свой комментарий нельзя.
+
+!!! note
+    `can_delete` знает про пост, только если комментарий получен через пост (`post.comments`). У отдельно созданного комментария будет `AssertionError`.
+
 ## :material-reply: Ответить
 ```py
 reply = comment.reply(

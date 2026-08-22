@@ -1,3 +1,3 @@
-# Request
+# Запросы
 
-::: itd.request
+::: itd.core.request

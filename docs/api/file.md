@@ -1,3 +1,3 @@
-# Файл
+# Файлы
 
-::: itd.file
+::: itd.models.file
