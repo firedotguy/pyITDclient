@@ -47,7 +47,9 @@ def to_nullable_uuid(value: str | UUID | None) -> UUID | None:
     return to_uuid(value)
 
 
-def parse_datetime(value: str) -> datetime:
+def parse_datetime(value: str | datetime) -> datetime:
+    if isinstance(value, datetime):
+        return value
     v = value.replace('Z', '+00:00')
     try:
         return datetime.strptime(v + '00', '%Y-%m-%d %H:%M:%S.%f%z')

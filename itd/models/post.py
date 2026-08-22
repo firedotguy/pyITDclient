@@ -405,7 +405,7 @@ class Post(ITDBaseModel):
         self._set_stats(stats[0])
 
     def _set_stats(self, stats: dict):
-        fields = {value.alias or name: name for name, value in self._validator.model_fields.items()}
+        fields = {value.alias or name: name for name, value in self._pydantic_model.model_fields.items()}
         for name, value in stats.items():
             if name in fields:
                 setattr(self, fields[name], value)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import cache
-from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l
 
 
 @cache
-def validator_for(cls: type) -> type[BaseModel]:
+def get_pydantic_model(cls: type) -> type[BaseModel]:
     """Класс-валидатор модели: собирается один раз на модель при первой валидации"""
     # __module__ for correct forward refs in annotations
     return type(f'_{cls.__name__}Validate', (BaseModel, cls), {'__module__': cls.__module__})
@@ -96,12 +96,12 @@ class ITDBaseModel:
         return self
 
     def _fill_from_data(self, data: dict, *, context: dict | None = None):
-        assert self._validator, 'Unable to use fill_from_data without a validator'
-        context = dict(context or {})  # копия: дефолт {} общий на все вызовы, его нельзя мутировать
+        assert self._pydantic_model, 'Unable to use fill_from_data without a validator'
+        context = dict(context or {})
         context.update(self._extra_context)
-        validated = self._validator.model_validate(data, context=context)  # вложенные модели строятся с клиентом родителя
-        self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
-        for name, value in validated.__dict__.items():
+        model = self._pydantic_model.model_validate(data, context=context)  # вложенные модели строятся с клиентом родителя
+        self._loaded_attrs = model.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
+        for name, value in model.__dict__.items():
             object.__setattr__(self, name, value)
 
         self._post_refresh(context=context)
@@ -118,6 +118,14 @@ class ITDBaseModel:
             instance.load_status = LoadStatus.PARTIALLY
         return instance
 
+    def to_dict(self, *, mode: Literal['python', 'json'] = 'python', by_alias: bool = False):
+        model = self._pydantic_model.model_validate(self, from_attributes=True, by_alias=False, by_name=True)
+        # for name, value in model.__dict__.items():
+        #     object.__setattr__(model, name, value)
+        return {
+            k: v.to_dict() if isinstance(v, ITDBaseModel) else v for k, v in model.model_dump(exclude={'load_status'}, mode=mode, by_alias=by_alias).items()
+        }
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler):
         if issubclass(source, BaseModel):
@@ -127,9 +135,11 @@ class ITDBaseModel:
             lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
         )
 
+    # def __pydantic_serializer__
+
     @property
-    def _validator(self) -> type[BaseModel]:
-        return validator_for(type(self))  # один класс на модель, а не на объект
+    def _pydantic_model(self) -> type[BaseModel]:
+        return get_pydantic_model(type(self))  # один класс на модель, а не на объект
 
     if not TYPE_CHECKING:
 
