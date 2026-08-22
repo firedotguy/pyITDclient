@@ -76,11 +76,8 @@ Username.
 #### is_subscribed <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Есть ли у пользователя подписка ИТД НУСКТА.
 
-#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-clock-time-two-outline: | :material-calendar:</span><span class="mdx-badge__text">[LastSeen](#lastseen) | datetime</span></span>
-Дата последней активности. Может быть как и точным временем `datetime`, так и относительным объектом `LastSeen` (`недавно`, `несколько минут назад` и тд). `None`, если пользователь заблокирован, приватный аккаунт или показ скрыт в настройках приватности пользователя.
-
-!!! info
-    Тип `datetime` уже больше не встречается, но был в некоторых версиях ИТД. Оставлен для совместимости (может, еще попадется?).
+#### last_seen <span class="mdx-badge"><span class="mdx-badge__icon">:material-clock-time-two-outline:</span><span class="mdx-badge__text">[LastSeen](#lastseen)</span></span>
+Относительная дата последней активности (`недавно`, `несколько минут назад` и тд). `None`, если пользователь заблокирован, приватный аккаунт или показ скрыт в настройках приватности пользователя.
 
 #### online <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Находится ли пользователь в онлайне.
@@ -104,13 +101,13 @@ ID закрепленного поста. `None`, если у пользоват
 Тоже самое, что и [url](#url-str-property).
 
 #### can_message <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Можно ли писать пользователю. Личных сообщений в ИТД пока нет, поле пришло на будущее.
+Можно ли писать пользователю. Хоть и ЛС в ИТД пока нет, на бэкенде это поле уже есть (но поменять его сейчас нельзя).
 
 #### can_post_on_wall <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Можете ли вы [написать на стену](#_6) - считается из [wall_access](#wall_access-accesstype) и ваших подписок. Если не хватает подписки, ее можно оформить через [complete_actions_for_wall_access](#_10).
+Можете ли вы [написать на стену](#_6) пользователю (считается из [wall_access](#wall_access-accesstype) и статуса подписки).
 
 #### can_see_liked_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Можете ли вы смотреть [лайки](#liked_posts-likedposts-property) - считается из [likes_visibility](#likes_visibility-accesstype) и ваших подписок.
+Можно ли смотреть [лайки](#liked_posts-likedposts-property) пользователя (считается из [likes_visibility](#likes_visibility-accesstype) и статуса подписки).
 
 ## :material-account-switch: Для другого клиента
 ```python
@@ -156,7 +153,7 @@ user = Me()
 Username или ID пользователя.
 
 !!! note
-    Для проверки на существование (`NotFoundError`) вызовите [`user.refresh()`](#_9) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
+    Для проверки на существование (`NotFoundError`) вызовите [`user.refresh()`](#_9) или любой аттрибут (если не включен [`config.load_on_getattr`](../config.md#load_on_getattr-bool))
 
 ## :octicons-report-16: Пожаловаться
 ```py
@@ -258,7 +255,7 @@ user.post(
 Получатель поста (для постов на стене). Может быть объектом пользователя или UUID.  
 Для поста на стене также можно использовать `user.post()`.
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[[File](files.md#file) | UUID] | [File](files.md#file) | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения. Может быть списком, объектом файла или UUID.
 
 #### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">NewPoll</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>

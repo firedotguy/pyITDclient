@@ -8,9 +8,9 @@
 Почти ко всем функциям можно передать `client` как именованный параметр. Если он не задан, берется дефолтный `self.client`.
 
 #### load_status <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[LoadStatus](enums.md#loadstatus)</span></span>
-Насколько модель загружена: только создана (`NO`), загружается (`LOADING`), частично (`PARTIALLY` - пришла в списке или вложенной в другую модель) или целиком (`FULL`).
+Статус загрузки модели.
 
-## Проверить, загружено ли поле
+## Загружено ли поле
 ```py
 post.is_loaded('content')
 ```
@@ -18,7 +18,7 @@ post.is_loaded('content')
 
 ## Создать из словаря
 ```py
-post = Post.from_dict(data, client=client)
+post = Post.from_dict(data, context={}, client=client)
 ```
 Собрать модель из ответа API - тем же способом, каким SDK собирает вложенные модели. Клиент можно не передавать, тогда возьмется клиент родителя (из контекста) или дефолтный.
 
@@ -44,7 +44,7 @@ base.refresh()
 #### total <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Общее количество объектов. Работает, только если дочерний класс переопределил `_get_total`.
 
-#### cursor <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | :material-text: | :material-calendar: | None</span><span class="mdx-badge__text">int | str | datetime | None</span></span>
+#### cursor <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | :material-text: | :material-calendar:</span><span class="mdx-badge__text">int | str | datetime | None</span></span>
 Следующий курсор (или страница). Тип зависит от модели (например у `LikedPosts` - `datetime`). По умолчанию обычно `0` или `None`.
 
 #### all <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets:</span><span class="mdx-badge__text">list</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
@@ -57,7 +57,7 @@ objects = base.refresh(
     limit=5
 )
 ```
-Удаляет текущие объекты и загружает их заново.
+Удаляет текущие объекты и загружает столько же заново.
 
 ### Параметры
 #### count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | Batch | All</span><span class="mdx-badge__text">int | BATCH | ALL</span></span>

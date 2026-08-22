@@ -28,7 +28,7 @@
     !!! note
         `init_client` - это обертка над `ITDClient.from_file` с теми же параметрами.
 
-    Токены лежат в файле сессии - там же SDK хранит и [прочитанные анонсы](announcements.md). Обновленный access токен пишется в файл сам, так что при следующем запуске скрипт не будет ходить за ним заново.
+    Токены лежат в файле сессии - там же SDK хранит и [прочитанные анонсы](announcements.md). Обновленный access токен пишется в файл сам, так что при следующем запуске скрипт не будет обновлять его заново.
 
 === "Без сохранения"
     ```py
@@ -51,31 +51,31 @@
 
 ## Аттрибуты
 #### user <span class="mdx-badge"><span class="mdx-badge__icon">:fontawesome-solid-user:</span><span class="mdx-badge__text">[Me](users.md#me)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Вы. Создается один раз при первом обращении.
+Пользователь этого клиента (тоже самое, что и `Me()`). Создается один раз при первом обращении.
 
 #### user_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Ваш ID - берется прямо из access токена, без запроса.
+ID пользователя. Берется из access токена.
 
-#### token <span class="mdx-badge"><span class="mdx-badge__icon">:material-key:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Access токен. При присваивании нового токена SDK сам разберет из него [access_token_data](#access_token_data-accesstoken).
+#### token <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
+Access токен.
 
 #### access_token_data <span class="mdx-badge"><span class="mdx-badge__icon">:material-key:</span><span class="mdx-badge__text">AccessToken</span></span>
-Раскодированный access токен: `session_id`, `subject_id` (ваш ID), `issued_at`, `expired_at`, `roles`, `is_active`, `issuer` и `jwt_id`.
+Раскодированный access токен: `session_id`, `subject_id`, `issued_at`, `expired_at`, `roles`, `is_active`, `issuer` и `jwt_id`.
 
 #### is_token_expired <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Истек ли access токен - с запасом [token_expiry_margin](../config.md#token_expiry_margin-float), чтобы токен не протух прямо во время запроса.
+Истек ли access токен (с запасом [token_expiry_margin](../config.md#token_expiry_margin-float), чтобы токен не протух прямо во время запроса).
 
 #### can_refresh_auth <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Есть ли refresh токен, то есть сможет ли клиент обновить access токен сам.
 
 #### auth_level <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AuthLevel](enums.md#authlevel)</span></span>
-Текущий уровень авторизации - зависит от того, что вы передали в клиент.
+Текущий уровень авторизации, зависит от того, что есть у клиента.
 
 #### visible_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-post:</span><span class="mdx-badge__text">list[[Post](posts.md#post)]</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
 Посты, видимые прямо сейчас (те, для которых вызвали `post.set_visible()`).
 
 #### last_active <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
-Когда последний раз отмечали активность через [set_active](#_5).
+Когда последний раз отмечалась активность через [set_active](#set_active).
 
 #### dwell_tracker <span class="mdx-badge"><span class="mdx-badge__icon">:material-eye:</span><span class="mdx-badge__text">DwellTracker</span></span>
 Трекер просмотров - копит события и отправляет их батчами.
@@ -83,11 +83,13 @@ Access токен. При присваивании нового токена SDK
 #### visibility <span class="mdx-badge"><span class="mdx-badge__icon">:material-eye-check:</span><span class="mdx-badge__text">VisibilityTracker</span></span>
 Видимые посты и их таймеры: обновление статистики и скрытие постов, пока вас нет. Таймеры можно останавливать и запускать: `c.visibility.stop()` / `c.visibility.start()`.
 
+<span id="set_active"></span>
+
 ## :material-cursor-default-click: Отметить активность
 ```py
 c.set_active()
 ```
-Говорит SDK, что вы что-то делаете (скролл, движение мыши итд). Если активности нет дольше [dwell_inactive_timeout](../config.md#dwell_inactive_timeout-int), видимые посты скрываются, а при возвращении показываются снова - как в официальном клиенте. Работает только при [dwell_check_active](../config.md#dwell_check_active-bool).
+Вызывать при активностях клиента (скролл, движение мыши итд). Если активности нет дольше [dwell_inactive_timeout](../config.md#dwell_inactive_timeout-int), видимые посты скрываются, а при возвращении показываются снова (если пользователь не активен, посты считаются прочитанными). Работает только при [dwell_check_active](../config.md#dwell_check_active-bool).
 
 ## Сделать запрос
 ```py
@@ -127,46 +129,10 @@ res = c.request(
 ```py
 c.update_post_stats()
 ```
-Обновить статистики (лайки, комментарии, репосты итд) просмотров в зоне видимости.  
-Для добавления поста в зону видимости используйте `post.set_visible()`.
+Обновить статистики (лайки, комментарии, репосты итд) просмотров в зоне видимости. Для добавления поста в зону видимости используйте `post.set_visible()`.
 
 ### Ошибки
  - `NotFoundError` - пост(ы) не найден(ы)
-
-## Поиск
-```py
-from itd import Hashtags, Users
-
-users = Users.search('itd_sdk')
-hashtags = Hashtags.search('итд')
-```
-
-!!! danger "Удалено в 2.8.0"
-    `ITDClient.search`, `.search_users`, `.search_hashtags`, `.search_user` и `.search_hashtag` убраны. Используйте [Users.search](users.md), [Hashtags.search](hashtags.md#hashtags), [User.search](users.md) и [Hashtag.search](hashtags.md#hashtag).
-
-## Получить статус подписок
-
-=== "один пользователь"
-    ```py
-    from itd import get_follow_status
-
-    is_following = get_follow_status('14040bb6-5359-455e-a9b6-86b033bc33be')
-    ```
-
-=== "несколько пользователей"
-    ```py
-    from itd import get_follow_status
-
-    follow_dict = get_follow_status(['549bf2fa-7648-43a7-97aa-b49e9baf5814', '2ddc1460-bdf2-4e5d-82f4-0eca0186bc91'])
-    ```
-Проверить статус подписки на пользователей. В ответе выдается `dict[UUID, bool]` (если было запрошено несколько пользователей) или `bool` (если один).
-
-### Параметры
-#### users <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets:[:material-identifier: | :fontawesome-solid-user:] | :material-identifier: | :fontawesome-solid-user:</span><span class="mdx-badge__text">list[UUID | User] | UUID | User</span></span>
-Пользователь(и) для проверки.
-
-!!! danger "Удалено в 2.8.0"
-    `ITDClient.get_follow_status` убран, теперь это функция `itd.get_follow_status`.
 
 ## Изменить пароль
 ```python
@@ -176,7 +142,6 @@ c.change_password(
 )
 ```
 !!! warning
-
     После сброса пароля `refresh token` сбросится. Нужно входить заново.
 
 ### Параметры

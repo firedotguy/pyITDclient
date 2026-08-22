@@ -63,7 +63,7 @@ from itd import ITDClient, Post, User, Notifications  # работает как 
     client.is_token_expired
     ```
 
-### Видимые посты живут в трекере
+### Видимые посты перенесны в трекер
 `client.visible_posts`, `client.set_active()` и `client.update_post_stats()` работают как раньше, но само состояние и таймеры теперь в `client.visibility` - их можно останавливать (`client.visibility.stop()`).
 
 ### Удалено устаревшее

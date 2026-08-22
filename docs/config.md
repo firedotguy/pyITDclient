@@ -44,12 +44,6 @@ ITDClient('xxx', config=config)
 post.is_loaded('content')
 ```
 
-#### auto_load <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Старое имя [load_on_getattr](#load_on_getattr-bool).
-
-!!! danger "Deprecated"
-    Параметр устарел и будет удален в 2.8.0. Используйте `load_on_getattr`.
-
 #### load_on_getitem <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16: | ALL | BATCH</span><span class="mdx-badge__text">int | All | Batch</span></span>
 Количество загружаемых объектов при попытке получить еще не загруженный элемент списка (например `Posts()[10]`). Может выдать `AttributeError`, если даже после загрузки всех объектов количество меньше желаемого индекса, или если известно общее количество объектов и индекс будет больше него. По умолчанию `1`. `All` - загрузить все. `Batch` - загрузить следующий батч (следующий по курсору). `None` - выключить авто загрузку.
 
@@ -79,7 +73,7 @@ post.is_loaded('content')
 Загружать список, даже если `has_more = False`. Может уйти в бесконечный цикл при итерации. По умолчанию `False`.
 
 #### batch_sizes <span class="mdx-badge"><span class="mdx-badge__icon">:material-tune:</span><span class="mdx-badge__text">BatchSizes</span></span>
-Размеры батчей - сколько объектов запрашивать за раз у каждого списка.
+Сколько объектов запрашивать за раз у каждого списка.
 
 ```python
 from itd import ITDConfig
@@ -88,19 +82,19 @@ from itd.core.config import BatchSizes
 config = ITDConfig(batch_sizes=BatchSizes(preset='max', comments=100))
 ```
 
-Пресет задается через `preset` (`decreased`, `default`, `increased`, `max`), а любой список можно переопределить отдельно: `comments`, `replies`, `hashtags`, `notifications`, `posts`, `user_posts`, `liked_posts`, `hashtag_posts`, `followers`, `following`, `blocked`.
+Пресет задается через `preset` (`decreased`, `default`, `increased`, `max`), а также любой список можно переопределить отдельно вручную (`comments`, `replies`, `hashtags`, `notifications`, `posts`, `user_posts`, `liked_posts`, `hashtag_posts`, `followers`, `following`, `blocked`).
 
-| список | decreased | default | increased | max |
-| --- | --- | --- | --- | --- |
-| comments | 50 | 100 | 200 | 500 |
-| replies | 20 | 100 | 100 | 100 |
-| hashtags | 5 | 10 | 20 | 50 |
-| notifications | 10 | 20 | 50 | 1000 |
-| posts, user_posts, liked_posts, hashtag_posts | 10 | 20 | 30 | 50 |
-| followers, following, blocked | 10 | 20 | 50 | 100 |
+| список                                        | decreased | default | increased | max  |
+| --------------------------------------------- | --------- | ------- | --------- | ---- |
+| comments                                      | 50        | 100     | 200       | 500  |
+| replies                                       | 20        | 100     | 100       | 100  |
+| hashtags                                      | 5         | 10      | 20        | 50   |
+| notifications                                 | 10        | 20      | 50        | 1000 |
+| posts, user_posts, liked_posts, hashtag_posts | 10        | 20      | 30        | 50   |
+| followers, following, blocked                 | 10        | 20      | 50        | 100  |
 
-!!! warning
-    Слишком большой батч ИТД не примет - будет `ValidationError`.
+!!! info
+    У уведомлений неограниченный лимит. В `max` пресете он задан в `1000`.
 
 ## Запросы
 
@@ -118,7 +112,7 @@ config = ITDConfig(batch_sizes=BatchSizes(preset='max', comments=100))
 Таймаут при загрузке файла.
 
 #### timeout_file_download <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Таймаут при скачивании файла или вложения ([download](ref/file.md)).
+Таймаут при скачивании файла или вложения ([download](ref/files.md)).
 
 #### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
 URL к API ИТД. По умолчанию `https://xn--d1ah4a.com/api`.
@@ -151,9 +145,6 @@ User-Agent, под которым обращатся к API ИТД. Если в�
 
 #### retry_max_retries <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Максимальное количество попыток повтора запроса. `None` - без лимита. По умолчанию `10`.
-
-!!! warning
-    В 2.8.0 параметр пока не применяется - повторы не ограничены по количеству.
 
 #### retry_exceptions <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-close-circle:</span><span class="mdx-badge__text">tuple[type[Exception], ...]</span></span>
 Список ошибок, при которых нужно повторить запрос. По умолчанию для ботов - `RateLimitError` и стандартные ошибки из `requests` (`RequestException`), для остальных повторов нет.
@@ -190,14 +181,11 @@ Bypass пре-валидации на проверку уровня автори
 #### dwell_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Нужно ли включать dwell tracker для просмотров. По умолчанию `True`.
 
-!!! warning
-    В 2.8.0 параметр не применяется - трекер запускается всегда. Чтобы он ничего не отправлял, поставьте `dwell_send_interval = 0`.
-
 #### dwell_max_buffer <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Максимальный буффер dwell tracker`а. После переполнения буффер автоматически отпарвится на сервер и очистится. По умолчанию 20 (в точности как у оф клиента).
 
 #### dwell_send_interval <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">float</span></span>
-Задержка между запросами dwell tracker`а (через сколько секунд повторять проверку на наличие новых записей, и если есть то отправлять их на сервер). По умолчанию 2 (в точности как у оф клиента). `0` - не запускать таймер вообще.
+Задержка между запросами dwell tracker'а (через сколько секунд повторять проверку на наличие новых записей, и если есть то отправлять их на сервер). По умолчанию 2 (в точности как у оф клиента). `0` - не запускать таймер вообще.
 
 #### dwell_save_on_quit <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Отправлять ли несохраненные записи перед закрытием скрипта (делается через atexit). По умолчанию `True`.
@@ -248,4 +236,4 @@ client.set_active()  # скролл, движение мыши итд
 Скорость понимания картинок. Используется для более правдоподобного времени просмотра поста. По умолчанию `130`.
 
 ## Рейт лимиты
-Задержки между запросами настраиваются не здесь, а через `set_limiter_config` - см. [Рейт лимиты](limits.md#_5).
+Задержки между запросами настраиваются через `set_limiter_config` (см. [Рейт лимиты](limits.md#_5)), потому что ITDConfig настраивает конкретного клиента, а лимиты работают на весь сркипт.

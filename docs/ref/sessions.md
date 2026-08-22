@@ -1,12 +1,12 @@
 # :material-cellphone-link: Session
-Сессия аккаунта - то, что видно в настройках в списке устройств. Отдельно не создается, приходит из [Sessions](#sessions).
+Сессия аккаунта. Отдельно не создается, приходит из [Sessions](#sessions).
 
 ## Аттрибуты
 #### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
 ID сессии.
 
 #### is_current <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Текущая ли это сессия (та, под которой работает клиент).
+Текущая ли это сессия (та, под которой работает этот клиент).
 
 #### created_at <span class="mdx-badge"><span class="mdx-badge__icon">:material-calendar:</span><span class="mdx-badge__text">datetime</span></span>
 Дата входа.
@@ -55,9 +55,6 @@ session.revoke()
 ```python
 session.delete()
 ```
-
-!!! warning "Осторожно"
-    Завершив текущую сессию (`is_current`), вы отзовете свой же refresh токен - клиент больше не сможет обновить access токен.
 
 ---
 

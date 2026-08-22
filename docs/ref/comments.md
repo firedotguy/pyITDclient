@@ -22,7 +22,7 @@ ID комментария.
 #### is_liked <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Лайкнут ли комментарий.
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[CommentAttach](file.md#commentattach)]</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[CommentAttach](files.md#commentattach)]</span></span>
 Вложения комментария.
 
 #### replies <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-comment:</span><span class="mdx-badge__text">[Replies](#replies)</span></span> <span class="mdx-badge mdx-badge_alias"><span class="mdx-badge__icon">property</span></span>
@@ -71,7 +71,7 @@ reply = comment.reply(
 #### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Содержание ответа.
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[[File](file.md#file) | UUID] | [File](file.md#file) | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file: | :material-identifier: || :material-file: | :material-identifier:</span><span class="mdx-badge__text">list[[File](files.md#file) | UUID] | [File](files.md#file) | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения.
 
 #### user_id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
@@ -100,7 +100,7 @@ ID поста.
 #### content <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Содержание комментария.
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-file: || :material-identifier: | :material-file:</span><span class="mdx-badge__text">list[UUID | File] | File | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-identifier: | :material-file: || :material-identifier: | :material-file:</span><span class="mdx-badge__text">list[[File](files.md#file) | UUID] | [File](files.md#file) | UUID</span></span> <span class="mdx-badge mdx-badge_one_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">One of required</span></span>
 Вложения.
 
 ### Ошибки

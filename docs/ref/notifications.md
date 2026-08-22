@@ -1,7 +1,7 @@
 # :material-bell: Notification
 
 !!! note
-    В билиотеке есть пока еще нерабочие типы уведомлений, такие как `follow_request`, `mention`, `comment_like` и др. Все эти типы взяты из [декомпилированного фронтенда](https://github.com/itd-sdk/itd-frontend), то есть на оф. клиенте они также работают. Ождиается только появление на бэкенде.
+    В билиотеке есть пока еще нерабочие типы уведомлений, такие как `follow_request`, `mention` и др. Все эти типы взяты из [декомпилированного фронтенда](https://github.com/itd-sdk/itd-frontend), то есть на оф. клиенте они также работают. Ождиается только появление на бэкенде.
 
 ## Аттрибуты
 
@@ -82,16 +82,14 @@ color = notification.get_color()
  - [x] has_more
  - [ ] total
 
+## Аттрибуты
+### unread_count <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Количество непрочитанных уведомлений. Запрашивается один раз, дальше само пересчитывается - уменьшается при [прочтении](#_1) и увеличивается при новых уведомлениях из стрима.
+
 ## Получить
 ```py
 notifications = Notifications()
 ```
-
-## :material-counter: Непрочитанные
-```py
-notifications.unread_count
-```
-Количество непрочитанных уведомлений. Запрашивается один раз, дальше SDK сам его пересчитывает - уменьшает при [прочтении](#_1) и увеличивает при новом уведомлении из стрима.
 
 ## :material-email-open: Прочитать все
 ```py
@@ -272,7 +270,7 @@ notifications.stop_stream()
 ---
 
 # :material-cog: NotificationsSettings
-Настройки уведомлений - те же, что в официальном клиенте.
+Настройки уведомлений.
 
 ## Получить
 ```py
@@ -281,13 +279,13 @@ settings = NotificationsSettings()
 
 ## Аттрибуты
 #### enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Включены ли уведомления вообще.
+Включены ли уведомления .
 
 #### web_enabled <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
-Включены ли пуш-уведомления в браузере.
+Включены ли уведомления в браузере (пока точно непонятно что это значит).
 
 #### sound <span class="mdx-badge"><span class="mdx-badge__icon">:material-volume-high:</span><span class="mdx-badge__text">bool</span></span>
-Проигрывать ли звук. Именно из-за этой настройки у [уведомления](#notification) появляется [sound](#sound-bool).
+Проигрывать ли звук. Именно на основе этой настройки у [уведомления](#notification) проставляется [sound](#sound-bool).
 
 #### follows <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Уведомлять о новых подписчиках.
@@ -307,18 +305,9 @@ settings = NotificationsSettings()
 #### wall_posts <span class="mdx-badge"><span class="mdx-badge__icon">:material-toggle-switch:</span><span class="mdx-badge__text">bool</span></span>
 Уведомлять о постах на вашей стене.
 
-## :material-content-save: Изменить
+## :material-pencil: Обновить
 ```py
 settings.update(likes=False, mentions=False)
-```
-
-Принимает те же имена, что и аттрибуты - меняются только переданные. Если настройки еще не загружены, они сначала подгрузятся, чтобы не затереть остальные.
-
-Можно и по-другому - выставить аттрибуты руками, а потом отправить:
-
-```py
-settings.likes = False
-settings.update_from_fields()
 ```
 
 ### Параметры
@@ -329,4 +318,12 @@ settings.update_from_fields()
 Отправлять ли настройки в новом формате. По умолчанию `True`.
 
 !!! note
-    ИТД пока принимает оба формата, поэтому SDK по умолчанию шлет сразу оба - так настройки применяются и на старых, и на новых клиентах.
+    ИТД пока принимает оба формата, поэтому SDK по умолчанию шлет сразу оба - так настройки применятся и на старом, и на новом бэкенде.
+
+
+## :material-pencil: Обновить из аттрибутов
+
+```py
+settings.likes = False
+settings.update_from_fields()
+```

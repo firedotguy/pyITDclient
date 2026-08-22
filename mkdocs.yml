@@ -60,9 +60,13 @@ nav:
         - Уведомления: ref/notifications.md
         - Анонсы: ref/announcements.md
         - Хэштэги: ref/hashtags.md
-        - Файлы и вложения: ref/file.md
+        - Файлы и вложения: ref/files.md
         - Сессии: ref/sessions.md
-        - Прочее: ref/etc.md
+        - Портал: ref/portal.md
+        - Кланы: ref/clans.md
+        - Репорты: ref/reports.md
+        - Оф. приложения: ref/apps.md
+        - Ченжлог оф. сайта: ref/changelog.md
         - ref/enums.md
     - API:
         - api/client.md

@@ -1,6 +1,23 @@
 # :material-file: File
 Загруженный файл. Загружается отдельно, а потом прикрепляется к посту или комментарию (в `attachments`).
 
+## Аттрибуты
+#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
+ID файла. Именно его надо передавать в `attachments` (или сам объект).
+
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-link:</span><span class="mdx-badge__text">str</span></span>
+Ссылка на файл.
+
+#### filename <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Имя файла, под которым он был загружен.
+
+#### mime_type <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+MIME-тип (`image/png`, `video/mp4` итд).
+
+#### size <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Размер в байтах.
+
+
 ## :material-upload: Загрузка
 ```python
 file = File.from_path('picture.png')
@@ -19,29 +36,13 @@ file = File.from_bytes(data, 'picture.png')
 Содержимое файла.
 
 #### name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Имя файла. Если не указать, тип определится по содержимому - для этого нужен экстра `filetype`:
+Имя файла. Если не указать, тип определится по содержимому, для этого нужен `filetype`:
 
 ```
 uv add itd-sdk[filetype]
 ```
 
 Без него будет `ImportError`. Если тип определить не удалось, файл загрузится как `file.0`.
-
-## Аттрибуты
-#### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
-ID файла. Именно его надо передавать в `attachments` (или сам объект).
-
-#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-link:</span><span class="mdx-badge__text">str</span></span>
-Ссылка на файл.
-
-#### filename <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Имя файла, под которым он был загружен.
-
-#### mime_type <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-MIME-тип (`image/png`, `video/mp4` итд).
-
-#### size <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
-Размер в байтах.
 
 ## :material-download: Скачать
 ```python
@@ -65,7 +66,7 @@ file.delete()
 ---
 
 # :material-image: PostAttach
-Вложение поста - то, что лежит в [post.attachments](posts.md#attachments-listpostattach). Отдельно не создается.
+Вложение поста (из [post.attachments](posts.md#attachments-listpostattach)). Отдельно не создается.
 
 ## Аттрибуты
 #### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">UUID</span></span>
@@ -78,7 +79,7 @@ ID вложения.
 Ссылка на вложение.
 
 #### thumbnail_url <span class="mdx-badge"><span class="mdx-badge__icon">:material-link:</span><span class="mdx-badge__text">str</span></span>
-Ссылка на превью. `None`, если превью нет.
+Ссылка на превью. Всегда `None`.
 
 #### width <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
 Ширина. `None` для аудио.
@@ -95,7 +96,7 @@ attach.download('picture.jpg')
 ```
 
 #### name <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span> <span class="mdx-badge mdx-badge_required"><span class="mdx-badge__icon">:material-information:</span><span class="mdx-badge__text">Required</span></span>
-Куда сохранить. У вложения поста нет своего имени, поэтому его надо указать (можно взять [extension](#extension-str-property)).
+Куда сохранить. У вложения поста нет своего имени, поэтому его надо указать.
 
 ## :material-image-search: Записать открытие фото
 ```python
@@ -119,8 +120,8 @@ attach.record_progress(duration=30000, played=12000)
 
 ---
 
-# :material-paperclip: CommentAttach
-Вложение комментария - то, что лежит в [comment.attachments](comments.md#attachments-listcommentattach). Наследует [PostAttach](#postattach), но у него есть имя и размер, а вот события просмотра записывать нельзя - `record_open` и `record_progress` выбрасывают `AttributeError`.
+# :material-image: CommentAttach
+Вложение комментария (и) [comment.attachments](comments.md#attachments-listcommentattach)). Наследует [PostAttach](#postattach), но у него есть имя и размер. События просмотра записывать нельзя - `record_open` и `record_progress` выбрасывают `AttributeError`.
 
 ## Аттрибуты
 Все из [PostAttach](#postattach), плюс:

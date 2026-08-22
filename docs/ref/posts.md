@@ -16,7 +16,7 @@ ID поста.
 #### spans <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-text-short:</span><span class="mdx-badge__text">list[[Span](#span)]</span></span>
 Стилизация (жирный, курсив, подчеркивание итд).
 
-#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[PostAttach](file.md#postattach)]</span></span>
+#### attachments <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-file:</span><span class="mdx-badge__text">list[[PostAttach](files.md#postattach)]</span></span>
 Вложения.
 
 #### poll <span class="mdx-badge"><span class="mdx-badge__icon">:material-poll:</span><span class="mdx-badge__text">[Poll](#poll)</span></span>
@@ -92,7 +92,7 @@ post = Post(
 ID поста.
 
 !!! note
-    Для проверки на существование (`NotFoundError`) вызовите [`post.refresh()`](base.md#refresh) или любой аттрибут (если не включен [`config.auto_load`](../config.md#auto_load-bool))
+    Для проверки на существование (`NotFoundError`) вызовите [`post.refresh()`](base.md#refresh) или любой аттрибут (если не включен [`config.load_on_getattr`](../config.md#load_on_getattr-bool))
 
 ## :fontawesome-solid-add: Создать
 ```python
@@ -250,14 +250,11 @@ post = post.for_client(client2)
 ```py
 post.update_stats()
 ```
-Обновляет только счетчики (лайки, комментарии, репосты, просмотры) - это дешевле, чем `refresh()`. Тем же запросом ходит [автообновление статистики видимых постов](../config.md#post_update_stats-bool).
+Обновляет только счетчики (лайки, комментарии, репосты, просмотры) (быстрее, чем полный `refresh()`). Эту же фукнцию использует [автообновление статистики видимых постов](../config.md#post_update_stats-bool).
 
 После обновления вызывается `on_stats_update` - переопределите его, если надо на это реагировать:
-
 ```py
-class MyPost(Post):
-    def on_stats_update(self):
-        print('лайков стало', self.likes_count)
+post.on_stats_update = lambda: print('новый лайк')
 ```
 
 ## :material-eye: Просмотреть
@@ -531,17 +528,17 @@ poll = NewPoll(
 
 ---
 
-## :material-content-copy: Из существующего опроса
+## :material-content-copy: СОздать из существующего опроса
 ```py
 poll = NewPoll.from_poll(post.poll)
 ```
-Копирует вопрос, варианты и режим множественного выбора у [Poll](#poll) - удобно, чтобы пересоздать опрос в своем посте.
+Копирует вопрос, варианты и режим у [Poll](#poll) (можно склонировать чужой опрос в своем посте).
 
 # :material-code-brackets: :material-post: Posts
 Лента постов.
 
 !!! note "source и source_context"
-    У каждого списка постов есть `source` ([ViewSource](enums.md#viewsource)) и `source_context` - откуда посты попали к вам. Они проставляются сами (лента, профиль, хэштэг итд) и уходят в статистику [просмотров](#view), так что менять их обычно не нужно.
+    У каждого списка постов есть `source` ([ViewSource](enums.md#viewsource)) и `source_context` - откуда взялись посты. Они проставляются сами (лента, профиль, хэштэг итд) и уходят в статистику [просмотров](#view), так что менять их обычно не нужно.
 
 - [x] has_more
 - [ ] total

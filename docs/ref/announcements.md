@@ -3,19 +3,19 @@
 
 ## Аттрибуты
 #### id <span class="mdx-badge"><span class="mdx-badge__icon">:material-identifier:</span><span class="mdx-badge__text">str</span></span>
-ID анонса. Тут не UUID, а строка вроде `update-2-8`.
+ID анонса (не UUID, а строка типа `new-feed-2026-06-15`).
 
 #### title <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Заголовок. `str(announcement)` вернет его же.
+Заголовок.
 
 #### description <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Описание. `None`, если его нет.
+Описание. `None`, если не установлено.
 
 #### additional_text <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Дополнительный текст под описанием. `None`, если его нет.
+Дополнительный текст под описанием. `None`, если не установлено.
 
-#### image <span class="mdx-badge"><span class="mdx-badge__icon">:material-image:</span><span class="mdx-badge__text">AnnouncementImage</span></span>
-Картинка анонса: `url`, `width` и `height`. `None`, если картинки нет.
+#### image <span class="mdx-badge"><span class="mdx-badge__icon">:material-image:</span><span class="mdx-badge__text">[AnnouncementImage](#announcementimage)</span></span>
+Картинка анонса. `None`, если картинки нет.
 
 #### buttons <span class="mdx-badge"><span class="mdx-badge__icon">:material-code-brackets: :material-gesture-tap-button:</span><span class="mdx-badge__text">list[[AnnouncementButton](#announcementbutton)]</span></span>
 Кнопки анонса.
@@ -28,23 +28,50 @@ announcement.read()
 
 ---
 
+# :material-image: AnnouncementImage
+Картинка анонса.
+
+## Аттрибуты
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Ссылка на изображение.
+
+#### width <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Ширина изображения (может быть `None`).
+
+#### height <span class="mdx-badge"><span class="mdx-badge__icon">:octicons-number-16:</span><span class="mdx-badge__text">int</span></span>
+Высота изображения (может быть `None`).
+
+---
+
 # :material-gesture-tap-button: AnnouncementButton
 Кнопка анонса.
 
 ## Аттрибуты
 #### title <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
-Текст кнопки. `str(button)` вернет его же.
+Текст кнопки.
 
 #### style <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AnnouncementButtonStyle](enums.md#announcementbuttonstyle)</span></span>
 Стиль кнопки.
 
-#### action <span class="mdx-badge"><span class="mdx-badge__icon">:material-gesture-tap:</span><span class="mdx-badge__text">AnnouncementButtonAction</span></span>
-Что кнопка делает: `type` ([AnnouncementButtonType](enums.md#announcementbuttontype)) и `url` (`None` для `DISMISS`).
+#### action <span class="mdx-badge"><span class="mdx-badge__icon">:material-gesture-tap:</span><span class="mdx-badge__text">[AnnouncementButtonAction](#announcementbuttonaction)</span></span>
+Действие при нажатии.
+
+---
+
+# :material-gesture-tap-button: AnnouncementButtonAction
+Действие при нажатии на кнопку.
+
+## Аттрибуты
+#### type <span class="mdx-badge"><span class="mdx-badge__icon">:material-form-select:</span><span class="mdx-badge__text">[AnnouncementButtonType](enums.md#announcementbuttontype)</span></span>
+Тип действия при нажатии.
+
+#### url <span class="mdx-badge"><span class="mdx-badge__icon">:material-text:</span><span class="mdx-badge__text">str</span></span>
+Ссылка, на которую редиректить после нажатия. `None`, если [тип](#type-announcementbuttontype) не `LINK`.
 
 ---
 
 # :material-code-brackets: :material-bullhorn: Announcements
-Список актуальных анонсов.
+Список анонсов.
 
 ## Получить
 ```python

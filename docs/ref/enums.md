@@ -142,6 +142,11 @@
 ### UserAgent
 User-Agent заголовок.
 
+ - `UserAgent.BROWSER`: Браузерный агент (`Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0`).
+ - `UserAgent.SDK`: Агент SDK (`itd-sdk/{} (Python/{})`).
+ - `UserAgent.DEFAULT`: Дефолтный агент от `requests`.
+ - `UserAgent.EMPTY`: Пустой.
+
 ### AttachType
 Тип вложения.
 
@@ -199,7 +204,7 @@ User-Agent заголовок.
  - `AnnouncementButtonStyle.SECONDARY`: Второстепенная.
 
 ### AnnouncementButtonType
-Что делает кнопка [анонса](announcements.md#announcementbutton).
+Тип кнопки [анонса](announcements.md#announcementbutton).
 
  - `AnnouncementButtonType.DISMISS`: Закрыть анонс.
  - `AnnouncementButtonType.LINK`: Открыть ссылку (`action.url`).
