@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, Field
 
 from itd.api.polls import vote
-from itd.base import ITDBaseModel
-from itd.utils import parse_datetime
+from itd.core.base import ITDBaseModel
+from itd.core.utils import parse_datetime
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 class PollOption(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _PollOptionValidate
 
     id: UUID
     text: str
@@ -34,17 +33,12 @@ class PollOption(ITDBaseModel):
         vote(client or self.client, self._post_id, [self.id])
 
 
-class _PollOptionValidate(BaseModel, PollOption):
-    pass
-
-
 class Poll(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _PollValidate
 
     id: UUID
     post_id: UUID = Field(alias='postId')
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     question: str
     options: list[PollOption]
@@ -54,6 +48,10 @@ class Poll(ITDBaseModel):
     voted_option_ids: list[UUID] = Field([], alias='votedOptionIds')
     total_votes: int = Field(0, alias='totalVotes')
 
+    def _post_refresh(self, context: dict = {}):
+        for option in self.options:  # опция знает только свой id, а голосовать надо в пост
+            option._post_id = self.post_id
+
     def __str__(self) -> str:
         return self.question
 
@@ -62,6 +60,10 @@ class Poll(ITDBaseModel):
 
     def __int__(self) -> int:
         return self.total_votes
+
+    def _post_refresh(self, context: dict = {}):
+        for option in self.options:
+            option._post_id = self.post_id
 
     def vote(self, options: list[str | UUID | PollOption] | str | UUID | PollOption, client: Client | None = None) -> None:
         uuid_options = []
@@ -95,25 +97,6 @@ class Poll(ITDBaseModel):
                 raise TypeError(f'Invalid option type (should be str, PollOption or UUID), got "{type(option)}"')
 
         vote(client or self.client, self.post_id, uuid_options)
-
-
-class _PollValidate(BaseModel, Poll):
-    @field_validator('options', mode='plain')
-    @classmethod
-    def validate_options(cls, options: list[dict], info: ValidationInfo):
-        assert info.context
-        return [PollOption.from_dict(option, client=info.context.get('client')) for option in options]
-
-    @model_validator(mode='after')
-    def validate_model(self) -> '_PollValidate':
-        for option in self.options:
-            option._post_id = self.post_id
-        return self
-
-    @field_validator('created_at', mode='plain')
-    @classmethod
-    def validate_created_at(cls, created_at: str):
-        return parse_datetime(created_at)
 
 
 class _NewPollOption(BaseModel):

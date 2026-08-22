@@ -36,21 +36,24 @@ from time import sleep
 
 __version__ = version('itd-sdk')
 
-from itd._default import LimiterConfig, limiters
-from itd._default import set_config as set_limiter_config
-from itd._limiter import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, RateLimiter
-from itd.clan import Clan, TopClans
-from itd.client import Client as ITDClient
-from itd.client import Config as ITDConfig
-from itd.client import init_client
-from itd.file import File
-from itd.hashtag import Hashtag, Hashtags
-from itd.notification import Notifications
-from itd.poll import NewPoll
-from itd.post import HashtagPosts, LikedPosts, Post, Posts, UserPosts
-from itd.session import Sessions
-from itd.user import Me, User, Users, get_follow_status
-from itd.version import Apps, Changelog
+from itd.core.client import Client as ITDClient
+from itd.core.client import init_client
+from itd.core.config import Config as ITDConfig
+from itd.core.default import LimiterConfig, limiters
+from itd.core.default import set_config as set_limiter_config
+from itd.core.limiter import BurstRateLimiter, HalfRateLimiter, IPRateLimiter, RateLimiter
+from itd.models.announcement import Announcement, Announcements
+from itd.models.clan import Clan, TopClans
+from itd.models.comment import Comment
+from itd.models.file import File
+from itd.models.hashtag import Hashtag, Hashtags
+from itd.models.notification import Notification, Notifications, Ntf, Ntfs
+from itd.models.poll import NewPoll
+from itd.models.portal import Portal
+from itd.models.post import HashtagPosts, LikedPosts, Post, Posts, UserPosts
+from itd.models.session import Sessions
+from itd.models.user import Me, User, Users, get_follow_status
+from itd.models.version import Apps, Changelog
 
 
 # call if you set auto_acquire=False in the end of cycle
@@ -68,12 +71,18 @@ __all__ = [
     'ITDClient',
     'ITDConfig',
     'init_client',
+    'Comment',
     'Clan',
     'TopClans',
     'File',
+    'Announcement',
+    'Announcements',
     'Hashtag',
     'Hashtags',
     'Notifications',
+    'Notification',
+    'Ntfs',
+    'Ntf',
     'Post',
     'Posts',
     'UserPosts',
@@ -84,6 +93,7 @@ __all__ = [
     'User',
     'Me',
     'Users',
+    'Portal',
     'get_follow_status',
     'set_limiter_config',
     'LimiterConfig',

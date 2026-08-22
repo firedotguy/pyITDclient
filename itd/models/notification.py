@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from json import loads
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Iterator, Literal, cast
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field
 from sseclient import SSEClient
 
 from itd.api.notifications import (
@@ -18,21 +18,21 @@ from itd.api.notifications import (
     stream_notifications,
     update_notifications_settings
 )
-from itd.base import ITDBaseModel, ITDList
-from itd.client import Client
+from itd.core.base import ITDBaseModel, ITDList
+from itd.core.client import Client
+from itd.core.logger import get_logger
+from itd.core.utils import parse_datetime
 from itd.enums import DebugResponseMode, LoadStatus, NotificationSubjectType, NotificationTargetType, NotificationType
-from itd.logger import get_logger
-from itd.user import User
+from itd.models.user import User
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 l = get_logger('notifications')  # noqa: E741
 
 
 class NotificationsSettings(ITDBaseModel):
-    _validator = lambda _: _NotificationsSettingsValidate
     enabled: bool
     web_enabled: bool = Field(True, alias='webEnabled')
     sound: bool = Field(alias='sound')
@@ -83,12 +83,26 @@ class NotificationsSettings(ITDBaseModel):
             self.mentions = mentions
         self.update_from_fields(client, old=old, new=new)
 
+    def _dump(self, *, old: bool = True, new: bool = True) -> dict:
+        """Собрать тело запроса: апи какое то время принимает и старый, и новый формат"""
+        data = {}
+        if old:
+            data.update(_NotificationsSettingsOld.model_validate(self, from_attributes=True).model_dump(mode='json', by_alias=True))
+
+        if new:
+            data.update(
+                _NotificationsSettingsNew(
+                    web_enabled=self.web_enabled,
+                    sound_enabled=self.sound,
+                    preferences=_NotificationsSettingsNewPreferences.model_validate(self, from_attributes=True),
+                    enabled=self.enabled
+                ).model_dump(mode='json', by_alias=True)
+            )
+
+        return data
+
     def update_from_fields(self, client: Client | None = None, *, old: bool = True, new: bool = True):
-        update_notifications_settings(client or self.client, self, old=old, new=new)
-
-
-class _NotificationsSettingsValidate(BaseModel, NotificationsSettings):
-    pass
+        update_notifications_settings(client or self.client, self._dump(old=old, new=new))
 
 
 class _NotificationsSettingsOld(BaseModel):
@@ -120,7 +134,6 @@ class _NotificationsSettingsNew(BaseModel):
 class Notification(ITDBaseModel):
     _refreshable = False
     _notifications: Notifications
-    _validator = lambda _: _NotificationValidate
 
     id: UUID
     type: NotificationType
@@ -138,8 +151,8 @@ class Notification(ITDBaseModel):
     )
 
     is_read: bool = Field(False, alias='read')
-    read_at: datetime | None = Field(None, alias='readAt')
-    created_at: datetime = Field(alias='createdAt')
+    read_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='readAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     actor: User
     sound: bool = False  # for notifications from stream
@@ -211,13 +224,6 @@ class Notification(ITDBaseModel):
 
     def __str__(self):
         return self.get_text()
-
-
-class _NotificationValidate(BaseModel, Notification):
-    @field_validator('actor', mode='plain')
-    @classmethod
-    def validate_actor(cls, actor: dict):
-        return User.from_dict(actor)
 
 
 class Notifications(ITDList[Notification]):

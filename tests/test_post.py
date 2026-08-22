@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from itd.post import Post
+from itd.models.post import Post
 from itd.exceptions import NotFoundError
 
 

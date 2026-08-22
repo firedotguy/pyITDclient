@@ -1,4 +1,4 @@
-from itd.hashtag import Hashtag
+from itd.models.hashtag import Hashtag
 
 
 def test_hashtag_strips_hash(client):

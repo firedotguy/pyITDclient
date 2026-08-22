@@ -1,26 +1,30 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from functools import wraps
-from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Iterator, SupportsIndex, TypeVar, cast, overload
+from functools import cache
+from typing import TYPE_CHECKING, Any, Iterator, SupportsIndex, TypeVar, cast, overload
 from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from requests import Response
-from requests.exceptions import JSONDecodeError
+from pydantic_core.core_schema import with_info_plain_validator_function
 
-from itd._default import get_config, get_default_client, limiters, limits
-from itd.enums import ALL, BATCH, All, Batch, DebugResponseMode, LoadStatus
-from itd.exceptions import DEFAULT_ERRORS, AccountDeletedError, ITDException, RateLimitError, ValidationError
-from itd.logger import get_logger
+from itd.core.default import get_default_client
+from itd.core.logger import get_logger
+from itd.enums import ALL, BATCH, All, Batch, LoadStatus
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
 l = get_logger('base')  # noqa: E741 # seriously, whats wrong that i am using "l" for logger? not willing to use full "logger", so, shut up
+
+
+@cache
+def validator_for(cls: type) -> type[BaseModel]:
+    """Класс-валидатор модели: собирается один раз на модель при первой валидации"""
+    # __module__ for correct forward refs in annotations
+    return type(f'_{cls.__name__}Validate', (BaseModel, cls), {'__module__': cls.__module__})
 
 
 def _getattr(self: object, name: str, default: Any | None = None) -> Any:
@@ -30,39 +34,49 @@ def _getattr(self: object, name: str, default: Any | None = None) -> Any:
         return default
 
 
-# def _field_has_default(cls: type, name: str) -> bool:
-#     """Returns True if the field is declared as Field(...) with a default value."""
-#     for klass in cls.__mro__:
-#         val = klass.__dict__.get(name)
-#         if isinstance(val, FieldInfo):
-#             return not isinstance(val.default, PydanticUndefinedType) or val.default_factory is not None
-#     return False
-
-
 class ITDBaseModel:
     """Базовый класс модельки"""
 
     _refreshable: bool = True
     load_status: LoadStatus = LoadStatus.NO
     _load_with_parent: bool = True  # load parent model if model called
-    _validator: Callable[[Any], type[BaseModel]] | None = (
-        None  # callable (pls use lambda), becuase we havent validator at that moment (it depends on this class)
-    )
 
     def __init__(self, client: Client | None = None) -> None:
         self._client = client or get_default_client()
 
-        self._loaded_attrs: set[str] = set()
+        if '_loaded_attrs' not in self.__dict__:  # model could set attributes before calling super().__init__() (eg User sets username)
+            self._loaded_attrs: set[str] = set()
         self._extra_context = {}
 
+    def _init_refresh(self):
+        if self.client.config.load_on_init and self._refreshable:
+            self.refresh()
+
     def __setattr__(self, name: str, value: Any) -> None:
-        if isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
+        # клиент раздается только настоящим полям (post.author = user), но не обратным ссылкам:
+        # comment._post = post отдал бы клиента комментария посту, а не наоборот
+        if not name.startswith('_') and isinstance(value, ITDBaseModel) and (client := _getattr(self, '_client')):  # ai
             value._client = client
-        if '_loaded_attrs' in self.__dict__:
-            self._loaded_attrs.add(name)
+        if '_loaded_attrs' not in self.__dict__:  # attribute is set before __init__, remember it anyway - otherwise getattr will refresh loaded value
+            object.__setattr__(self, '_loaded_attrs', set())
+        self._loaded_attrs.add(name)
         object.__setattr__(self, name, value)
 
-    def _post_refresh(self): ...
+    def _post_refresh(self, context: dict = {}): ...
+
+    def is_loaded(self, name: str) -> bool:  # claudes idea
+        """Пришло ли поле в данных
+
+        Не трогает API, в отличие от обычного обращения к полю: `post.is_loaded('first_comments')` вместо `post.first_comments`,
+        когда надо просто узнать, есть ли значение (в списках приходит не все, что есть в одиночном ответе).
+
+        Args:
+            name (str): Имя поля
+
+        Returns:
+            bool: Загружено ли поле
+        """
+        return name in self._loaded_attrs
 
     @property
     def client(self) -> Client:
@@ -81,25 +95,41 @@ class ITDBaseModel:
         self.load_status = LoadStatus.FULL
         return self
 
-    def _fill_from_data(self, data: dict, *, context: dict = {}):
+    def _fill_from_data(self, data: dict, *, context: dict | None = None):
         assert self._validator, 'Unable to use fill_from_data without a validator'
+        context = dict(context or {})  # копия: дефолт {} общий на все вызовы, его нельзя мутировать
         context.update(self._extra_context)
-        validated = self._validator().model_validate(data, context=context)  # ty: ignore[missing-argument]
+        validated = self._validator.model_validate(data, context=context)  # вложенные модели строятся с клиентом родителя
         self._loaded_attrs = validated.model_fields_set  # значения автоматом добавляются через setattr # так значит это же тогда надо закоментить? # хз наверн
         for name, value in validated.__dict__.items():
             object.__setattr__(self, name, value)
 
-        self._post_refresh()
+        self._post_refresh(context=context)
 
     @classmethod
-    def from_dict(cls, data: dict, *, context: dict = {}, client: Client | None = None):
+    def from_dict(cls, data: dict, *, context: dict | None = None, client: Client | None = None):
+        context = dict(context or {})
         instance = cls.__new__(cls)
-        ITDBaseModel.__init__(instance, client)
+        ITDBaseModel.__init__(instance, client or context.get('client'))  # клиент из контекста - так вложенные модели попадают к клиенту родителя
 
-        context.setdefault('client', client or instance.client)
+        context.setdefault('client', instance.client)
         instance._fill_from_data(data, context=context)
-        instance.load_status = LoadStatus.PARTIALLY
+        if instance.load_status == LoadStatus.NO:
+            instance.load_status = LoadStatus.PARTIALLY
         return instance
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source, handler):
+        if issubclass(source, BaseModel):
+            return handler(source)
+        # build like just  simple from_dict
+        return with_info_plain_validator_function(
+            lambda data, info: data if isinstance(data, source) else source.from_dict(data, context=dict(info.context or {}))
+        )
+
+    @property
+    def _validator(self) -> type[BaseModel]:
+        return validator_for(type(self))  # один класс на модель, а не на объект
 
     if not TYPE_CHECKING:
 
@@ -165,12 +195,12 @@ class ITDList(ITDBaseModel, list[T]):
     has_more = True
     idx = 0
     _is_page_pagination: bool = False
+    cursor = None
 
     def _fetch(self, client: Client, limit: int) -> dict:
         return {}
 
     # edited by calude, thats so fucking crazy pagination
-    # ai begin ---
     def load(self, count: int | All | Batch = BATCH, limit: int | Batch = BATCH, client: Client | None = None) -> list[T]:
         """Загрузить объекты
 
@@ -231,8 +261,6 @@ class ITDList(ITDBaseModel, list[T]):
 
         return added
 
-    # --- ai end
-
     @abstractmethod
     def _to_models(self, objects: list, client: Client) -> list[T]: ...
 
@@ -287,7 +315,7 @@ class ITDList(ITDBaseModel, list[T]):
     @overload
     def __getitem__(self, index: slice) -> list[T]: ...
 
-    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: SupportsIndex | slice) -> T | list[T]:
         if isinstance(index, slice):
             value: int | None = index.stop
         else:
@@ -336,149 +364,3 @@ class ITDList(ITDBaseModel, list[T]):
         super().clear()
         self.cursor = None
         self.has_more = True
-
-
-def _filter_bytes(args: tuple):
-    filtered = []
-    for arg in args:
-        if isinstance(arg, bytes):
-            filtered.append('_bytecode_')
-        else:
-            filtered.append(arg)
-    return filtered
-
-
-# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model
-def api_wrapper(*exceptions: ITDException):
-    """Декоратор для отлавливания ошибок
-
-    Args:
-        *exceptions (ITDException): Список ошибок для отлавливания
-    """
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            name = func.__name__
-
-            def exec():
-                l.info('exec %s %s %s', func.__name__, _filter_bytes(args), kwargs)
-
-                config = get_config()
-                is_first = True
-                if name in limits and limits[name] in limiters:
-                    limiter = limiters[limits[name]]
-                    if config.auto_acquire:
-                        limiter.acquire()
-                    is_first = not limiter.used
-                    limiter.request()
-
-                ip_limiter = config.ip_limiter
-                if ip_limiter:
-                    ip_limiter.acquire()
-
-                res: Response = func(client, *args, **kwargs)
-
-                assert isinstance(res, Response)
-                if res.status_code == 204:
-                    if client.config.debug_response != DebugResponseMode.NO:
-                        l.debug('no response')
-                    return res
-
-                remaining = int(res.headers.get('x-ratelimit-remaining', 0))
-                limit = int(res.headers.get('x-ratelimit-limit', 0))
-                limits[name] = limit
-
-                if limit not in limiters and config.limiter is not None:
-                    limiters[limit] = config.limiter(limit)
-
-                if limit in limiters and (config.auto_acquire or is_first):
-                    limiters[limit].sync(remaining)
-
-                if client.config.debug_response == DebugResponseMode.BEFORE:
-                    l.debug('response (raw): %s', res.text)
-
-                try:
-                    json = res.json()
-                except JSONDecodeError:
-                    json = {}
-                    l.warning('failed to parse json: %s', res.text[:1000])
-
-                for exception in DEFAULT_ERRORS + exceptions:
-                    if (
-                        (exception.res_check and exception.res_check(res))
-                        or (exception.text_check and exception.text_check(res.text))
-                        or (exception.json_check and exception.json_check(json))
-                        or exception.status_code is not None
-                        and res.status_code == exception.status_code
-                        or isinstance(json.get('error'), dict)
-                        and (
-                            exception.code is not None
-                            and json['error'].get('code') == exception.code
-                            or exception.message is not None
-                            and json['error'].get('message') == exception.message
-                        )
-                    ):
-                        if isinstance(exception, ValidationError):
-                            exception.text = json.get('error', {}).get('message', 'Failed validation')
-
-                        if isinstance(exception, RateLimitError) and isinstance(json.get('error'), dict):
-                            exception.retry_after = json.get('error', {}).get('retryAfter', 0)
-
-                        # now checks token before request
-                        # if isinstance(exception, (UnauthorizedError, AccessTokenExpiredError)) and client.refresh_token:
-                        #     client.refresh_auth()
-                        #     return wrapper(client, *args, **kwargs)
-
-                        if isinstance(exception, AccountDeletedError):
-                            exception.can_restore = json.get('error', {}).get('canRestore', True)
-
-                        client._process_exc_callbacks(exception)
-                        raise exception
-
-                if client.config.debug_response == DebugResponseMode.AFTER:
-                    l.debug('response: %s', json)
-                if client.config.debug_response == DebugResponseMode.KEYS:
-                    if 'data' in json:
-                        l.debug('response keys: data - %s', list(json['data'].keys()))
-                    else:
-                        l.debug('response keys: %s', list(json.keys()))
-                res.raise_for_status()
-                return res
-
-            if not client.config._retry_enabled:
-                return exec()
-
-            while True:
-                try:
-                    return exec()
-                except client.config._retry_exceptions as e:
-                    if getattr(e, 'retry_after', 0) > client.config.retry_max_retry_after:
-                        l.error('too large rate limit')
-                        raise
-
-                    retry_after = getattr(e, 'retry_after', 0) or client.config.retry_delay
-                    l.warning('%s on %s: wait %ss', e.__class__.__name__, func.__name__, retry_after)
-                    sleep(retry_after)
-                    if name in limits and limits[name] in limiters:
-                        limiters[limits[name]].on_limit()
-
-        return wrapper
-
-    return decorator
-
-
-catch_errors = api_wrapper
-
-
-def rate_limit():
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(client: Client, *args, **kwargs) -> Response | None:
-            l.warning('base.rate_limit is deprecated and will be removed in 2.7.0.')
-            return func(client, *args, **kwargs)
-
-        return wrapper
-
-    return decorator

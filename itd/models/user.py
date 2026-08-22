@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Annotated, overload
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, BeforeValidator, Field
 
-from itd._default import get_default_client
-from itd.api.etc import get_who_to_follow
 from itd.api.pins import get_pins, remove_pin
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
 from itd.api.users import (
@@ -21,6 +19,7 @@ from itd.api.users import (
     get_privacy,
     get_profile,
     get_user,
+    get_who_to_follow,
     restore_account,
     search_users,
     unblock,
@@ -29,18 +28,20 @@ from itd.api.users import (
     update_profile
 )
 from itd.api.users import get_follow_status as _get_follow_status
-from itd.base import ITDBaseModel, ITDList
+from itd.core.base import ITDBaseModel, ITDList
+from itd.core.default import get_default_client
+from itd.core.utils import parse_datetime, to_uuid
 from itd.enums import AccessType, LastSeenUnit, LoadStatus, ReportReason, ReportTargetType, Role, Unset
 from itd.exceptions import AccountDeletedError, NotFoundError, PinNotOwnedError
-from itd.pin import Pin
-from itd.poll import NewPoll
-from itd.report import Report
-from itd.span import Span
-from itd.utils import ATTACHMENTS, parse_datetime, to_uuid
+from itd.models.pin import Pin
+from itd.models.poll import NewPoll
+from itd.models.report import Report
+from itd.models.span import Span
+from itd.models.utils import ATTACHMENTS
 
 if TYPE_CHECKING:
-    from itd.client import Client
-    from itd.post import LikedPosts, Post, UserPosts
+    from itd.core.client import Client
+    from itd.models.post import LikedPosts, Post, UserPosts
 
 
 class ProfileUser(BaseModel):
@@ -58,7 +59,6 @@ class ProfileUser(BaseModel):
 
 
 class Profile(ITDBaseModel):
-    _validator = lambda _: _ProfileValidate
     _load_with_parent = False
 
     authenticated: bool = True
@@ -80,14 +80,10 @@ class Profile(ITDBaseModel):
         return super().__str__()
 
 
-class _ProfileValidate(BaseModel, Profile):
-    pass
-
-
 class Privacy(ITDBaseModel):
-    _validator = lambda _: _PrivacyValidate
     _user: 'Me | None' = None
     _load_with_parent = False
+    _autorefresh_on_init = False
 
     is_private: bool = Field(alias='isPrivate')
     wall_access: AccessType = Field(alias='wallAccess')
@@ -123,26 +119,13 @@ class Privacy(ITDBaseModel):
         self.update(self.is_private, self.wall_access, self.likes_visibility, self.show_last_seen)
 
 
-class _PrivacyValidate(BaseModel, Privacy):
-    pass
-
-
 class Subscription(ITDBaseModel):
-    _validator = lambda _: _SubscriptionValidate
     _payment_methods: list
     _refreshable = False
 
     active: bool = Field(False, alias='isActive')
-    expires_at: datetime | None = Field(None, alias='expiresAt')
+    expires_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='expiresAt')
     auto_renewal: bool = Field(True, alias='autoRenewal')
-
-    def __init__(self, data: dict, client: Client | None = None):
-        super().__init__(client)
-
-        validated = _SubscriptionValidate.model_validate(data)
-        self._fields_from_data = validated.model_fields_set
-        for name, value in validated.__dict__.items():
-            setattr(self, name, value)
 
     def _refresh(self, *, client: Client):  # refreshes only is_active
         return get_subscription(client).json()
@@ -166,10 +149,6 @@ class Subscription(ITDBaseModel):
 
     def __str__(self) -> str:
         return str(self.active)
-
-
-class _SubscriptionValidate(BaseModel, Subscription):
-    pass
 
 
 class LastSeen(BaseModel):
@@ -207,13 +186,12 @@ class _UserBase(ITDBaseModel):
     bio: str | None = None
 
     def __init__(self, username_or_id: str | UUID, client: Client | None = None) -> None:
-        super().__init__(client)
-
         self._identifier = username_or_id
         if isinstance(username_or_id, str) and username_or_id != 'me':
             self.username = username_or_id
         elif isinstance(username_or_id, UUID):
             self.id = username_or_id
+        super().__init__(client)
 
     def __str__(self) -> str:
         return self.display_name
@@ -223,13 +201,13 @@ class _UserBase(ITDBaseModel):
 
     @cached_property
     def posts(self) -> UserPosts:
-        from itd.post import UserPosts
+        from itd.models.post import UserPosts
 
         return UserPosts(self, client=self.client)
 
     @cached_property
     def liked_posts(self) -> LikedPosts:
-        from itd.post import LikedPosts
+        from itd.models.post import LikedPosts
 
         return LikedPosts(self, client=self.client)
 
@@ -246,8 +224,6 @@ class _UserBase(ITDBaseModel):
 
 
 class User(_UserBase):
-    _validator = lambda _: _UserValidate
-
     is_following: bool = Field(False, alias='isFollowing')
     is_followed_by: bool = Field(False, alias='isFollowedBy')
 
@@ -255,7 +231,7 @@ class User(_UserBase):
         False, alias='isBlockedByThem'
     )  # not 100% true, server returns value only if isBlockedByThem is True and isBlockedByMe is False
     is_blocking: bool = Field(False, alias='isBlockedByMe')
-    blocked_at: datetime | None = Field(None, alias='blockedAt')
+    blocked_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='blockedAt')
 
     followers_count: int | None = Field(None, alias='followersCount')
     following_count: int | None = Field(None, alias='followingCount')
@@ -264,16 +240,17 @@ class User(_UserBase):
     wall_access: AccessType | None = Field(None, alias='wallAccess')  # none if blocked
     likes_visibility: AccessType | None = Field(None, alias='likesVisibility')  # none if blocked
     is_private: bool | None = Field(None, alias='isPrivate')  # none if following or blocked
+    can_message: bool = Field(False, alias='canMessage')
 
     is_subscribed: bool = Field(False, alias='hasNuksta')
-    last_seen: datetime | LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
+    last_seen: LastSeen | None = Field(None, alias='lastSeen')  # none if hidden or blocked
     online: bool = False
 
     pinned_post_id: UUID | None = Field(None, alias='pinnedPostId')  # none if no or blocked
 
-    created_at: datetime | None = Field(None, alias='createdAt')  # none if blocked
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='createdAt')  # none if blocked
 
-    def _post_refresh(self):
+    def _post_refresh(self, context: dict = {}):
         if 'id' in self.__dict__:
             self._identifier = self.id
         else:
@@ -386,7 +363,7 @@ class User(_UserBase):
     def post(
         self, content: str | None = None, spans: list[Span] = [], attachments: ATTACHMENTS = [], poll: NewPoll | None = None, client: Client | None = None
     ) -> Post:
-        from itd.post import Post  # stupid circular import
+        from itd.models.post import Post  # stupid circular import
 
         return Post.new(content, spans, attachments, poll, self, client or self.client)
 
@@ -394,7 +371,7 @@ class User(_UserBase):
     def following(self) -> list[User]:
         return [User.from_dict(user, client=self.client) for user in get_following(self.client, self._identifier).json()['data']['users']]
 
-    @property
+    @cached_property
     def followers(self) -> list[User]:
         return [User.from_dict(user, client=self.client) for user in get_followers(self.client, self._identifier).json()['data']['users']]
 
@@ -409,18 +386,7 @@ class User(_UserBase):
         raise NotFoundError('User')
 
 
-class _UserValidate(BaseModel, User):
-    @field_validator('pin', mode='plain')
-    @classmethod
-    def validate_pin(cls, pin: dict | None, info: ValidationInfo):
-        assert info.context
-        if pin:
-            return Pin(pin, client=info.context.get('client'))
-
-
 class Me(_UserBase):
-    _validator = lambda _: _MeValidate
-
     wall_access: AccessType = Field(alias='wallAccess')
     likes_visibility: AccessType = Field(alias='likesVisibility')
     is_private: bool = Field(False, alias='isPrivate')
@@ -431,16 +397,14 @@ class Me(_UserBase):
     following_count: int = Field(alias='followingCount')
     posts_count: int = Field(alias='postsCount')
 
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     def __init__(self, client: Client | None = None) -> None:
         super().__init__('me', client)
+        self.privacy = Privacy(self.client)
+        self._init_refresh()
 
-        self.blocked: Blocked = Blocked()
-        self.privacy: Privacy = Privacy(self.client)
-        self.profile: Profile = Profile(self.client)
-
-    def _post_refresh(self):
+    def _post_refresh(self, context: dict = {}):
         if self.pin:
             self.pin._user = self
         for name in ('is_private', 'wall_access', 'likes_visibility'):
@@ -450,7 +414,7 @@ class Me(_UserBase):
     def to_user(self) -> User:
         instance = User.__new__(User)
         ITDBaseModel.__init__(instance, self._client)
-        for name in _UserValidate.model_fields:
+        for name in instance._validator.model_fields:
             if hasattr(self, name):
                 setattr(instance, name, getattr(self, name))
         instance._identifier = self.id
@@ -521,7 +485,15 @@ class Me(_UserBase):
 
     @cached_property
     def pins(self) -> list[Pin]:
-        return [Pin(pin, self) for pin in get_pins(self.client).json()['data']['pins']]
+        return [Pin.from_dict(pin, context={'user': self}, client=self.client) for pin in get_pins(self.client).json()['data']['pins']]
+
+    @cached_property
+    def blocked(self) -> Blocked:
+        return Blocked()
+
+    @cached_property
+    def profile(self) -> Profile:
+        return Profile(self.client)
 
     def _refresh(self, *, client: Client):
         user = get_user(client, self._identifier).json()
@@ -531,21 +503,6 @@ class Me(_UserBase):
             exc.restore_deadline = parse_datetime(user['restoreDeadline']) if 'restoreDeadline' in user else None
             raise exc
         return user
-
-
-class _MeValidate(BaseModel, Me):
-    @field_validator('pin', mode='plain')
-    @classmethod
-    def validate_pin(cls, pin: dict | None, info: ValidationInfo) -> Pin | None:
-        assert info.context
-        if pin:
-            return Pin(pin, client=info.context.get('client'))
-
-    @field_validator('subscription', mode='plain')
-    @classmethod
-    def validate_subscription(cls, subscription: dict, info: ValidationInfo) -> Subscription:
-        assert info.context
-        return Subscription(subscription, client=info.context.get('client'))
 
 
 class Followers(ITDList[User]):

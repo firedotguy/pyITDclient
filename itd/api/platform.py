@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from itd.client import Client
-from itd.base import api_wrapper
+from itd.core.request import endpoint
 from itd.enums import AuthLevel
 
-
-@api_wrapper()
-def get_apps(client: Client):
-    return client.request('get', 'platform/version', level=AuthLevel.NO)
+if TYPE_CHECKING:
+    from itd.core.client import Client
 
 
-@api_wrapper()
-def get_changelog(client: Client):
-    return client.request('get', 'platform/changelog', level=AuthLevel.NO)
+@endpoint('get', 'platform/version', level=AuthLevel.NO)
+def get_apps(client: Client): ...
+
+
+@endpoint('get', 'platform/changelog', level=AuthLevel.NO)
+def get_changelog(client: Client): ...
+
+
+@endpoint('get', 'platform/announcements', level=AuthLevel.NO)
+def get_announcements(client: Client): ...

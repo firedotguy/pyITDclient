@@ -14,7 +14,7 @@ version_provider = "uv"
 
 [project]
 name = "itd-sdk"
-version = "2.7.1"
+version = "2.8.1"
 description = "ITD client for python"
 readme = "README.md"
 authors = [
@@ -36,6 +36,7 @@ dependencies = [
   "telegramify-markdown>=0.5.4",
   "lxml>=6.1.1",
   "platformdirs>=4.10.0",
+  "websockets>=16.1.1",
 ]
 requires-python = ">=3.10"
 

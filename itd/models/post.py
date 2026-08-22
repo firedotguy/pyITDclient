@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from atexit import register
 from datetime import datetime, timedelta
-from threading import Thread
 from time import sleep
-from typing import TYPE_CHECKING, Literal, overload
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Annotated, Literal, overload
+from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_serializer, field_validator, model_validator
+from pydantic import BeforeValidator, Field
 
-from itd.api.dwell import send_interactions, send_views
 from itd.api.hashtags import get_posts_by_hashtag
 from itd.api.posts import (
     create_post,
@@ -27,218 +24,32 @@ from itd.api.posts import (
     unlike_post,
     unpin_post
 )
-from itd.base import ITDBaseModel, ITDList
-from itd.comment import Comment, Comments
-from itd.enums import ALL, InteractionType, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
+from itd.core.base import ITDBaseModel, ITDList
+from itd.core.logger import get_logger
+from itd.core.utils import parse_datetime, to_uuid
+from itd.enums import ALL, ParseMode, PostsTab, ReportReason, ReportTargetType, UserPostSorting, ViewReason, ViewSource
 from itd.exceptions import NotFoundError
-from itd.file import PostAttach
-from itd.hashtag import Hashtag
-from itd.logger import get_logger
-from itd.poll import NewPoll, Poll, PollOption
-from itd.report import Report
-from itd.span import Span
-from itd.user import Me, User, _UserBase
-from itd.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_datetime, parse_html, parse_md, to_uuid
+from itd.models.comment import Comment, Comments
+from itd.models.file import PostAttach
+from itd.models.hashtag import Hashtag
+from itd.models.poll import NewPoll, Poll, PollOption
+from itd.models.report import Report
+from itd.models.span import Span
+from itd.models.user import Me, User, _UserBase
+from itd.models.utils import ATTACHMENTS, calc_view_duration, format_attachments, parse_html, parse_md
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 l = get_logger('post')  # noqa: E741
 
 
-class DwellEvent(BaseModel):
-    vs: str = Field(alias='v')
-    source: ViewSource = Field(alias='s')
-
-
-class InteractionEvent(DwellEvent):
-    type: InteractionType = Field(alias='t')
-    attachment_id: UUID = Field(alias='ai')
-
-
-class PhotoOpenEvent(InteractionEvent):
-    index: int | None = Field(None, alias='mi')
-
-
-class VideoProgressEvent(InteractionEvent):
-    played: int = Field(alias='pm')
-    duration: int = Field(alias='dm')
-
-
-class ViewEvent(DwellEvent):
-    duration: int = Field(alias='md')
-    entered_at: int = Field(alias='et')
-    exited_at: int = Field(alias='xt')
-    reason: ViewReason = Field(alias='r')
-    source_context: str | None = Field(None, alias='sc')
-    has_seen: bool = Field(False, alias='b')
-
-    @field_serializer('has_seen', mode='plain')
-    @classmethod
-    def serialize_has_seen(cls, value: bool):
-        return int(value)
-
-
-class DwellTracker(ITDBaseModel):
-    _refreshable = False
-
-    def __init__(self, client: Client | None = None) -> None:
-        super().__init__(client)
-        self.views: list[ViewEvent] = []
-        self.interactions: list[InteractionEvent] = []
-        self.seen_posts: set[UUID] = set()
-        self.sid = uuid4()
-        self._thread: Thread | None = None
-
-    def send_views(self) -> bool:  # call on app visibilitychange
-        """Отправить просмотры (api/v1/i) и очистить буффер
-
-        Returns:
-            bool: Статус (False если буффер пустой и ничего не было отправлено)
-        """
-        if not self.views:
-            return False
-        l.info('dwell send view batch')
-        send_views(
-            self.client,
-            [
-                event.model_dump(
-                    mode='json', by_alias=True, exclude_none=True, exclude={'source'} if event.source not in (ViewSource.POST_PAGE, ViewSource.LINK) else {}
-                )  # хз зачем убирать сурс но в оф клиенте так написано
-                for event in self.views
-            ],
-            self.sid
-        )
-        self.views.clear()
-        return True
-
-    def send_interactions(self) -> bool:  # call on app visibilitychange
-        """Отправить события взаимодействий с вложениями (api/v1/x) и очистить буффер
-
-        Returns:
-            bool: Статус (False если буффер пустой и ничего не было отправлено)
-        """
-        if not self.interactions:
-            return False
-        l.info('dwell send interactions batch')
-        send_interactions(self.client, [event.model_dump(mode='json', by_alias=True) for event in self.interactions], self.sid)
-        self.interactions.clear()
-        return True
-
-    def record_view(
-        self,
-        id: UUID,
-        vs: str,
-        duration: int,
-        entered_at: datetime,
-        exited_at: datetime,
-        source: ViewSource,
-        source_context: str | None = None,
-        reason: ViewReason = ViewReason.NORMAL
-    ):
-        """Записать событие просмотра
-
-        Args:
-            id (UUID): ID поста
-            vs (str): VS
-            duration (int): Время на просмотр (сколько времени пользователь читал пост) (мс). Желательно должно быть 250+
-            entered_at (datetime): Дата открытия поста (когда пользователь увидел пост)
-            exited_at (datetime): Дата скрытия поста (когда пост пропал из зоны видимости)
-            source (ViewSource): Страница, с которой произошел просмотр
-            source_context (str | None, optional): Контекст страницы, с которой произошел просмотр. Defaults to None.
-            reason (ViewReason, optional): Причина просмотра. Defaults to ViewReason.NORMAL.
-        """
-        l.info(
-            'dwell add view record id=%s vs=%s duration=%s entered_at=%s exited_at=%s source=%s source_context=%s reason=%s',
-            id,
-            vs,
-            duration,
-            entered_at.strftime('%X.%f'),
-            exited_at.strftime('%X.%f'),
-            source.name.lower(),
-            source_context,
-            reason.name.lower()
-        )
-
-        self.views.append(
-            ViewEvent(  # stupid pydantic i want validate by name
-                v=vs,
-                md=duration,
-                et=round(entered_at.timestamp() * 1000),
-                xt=round(exited_at.timestamp() * 1000),
-                r=reason,
-                s=source,
-                sc=source_context,
-                b=id in self.seen_posts
-            )
-        )
-        self.seen_posts.add(id)
-        if len(self.views) >= self.client.config.dwell_max_buffer:
-            self.send_views()
-
-    def record_photo_open(self, vs: str, source: ViewSource, attachment_id: UUID, index: int):
-        """Записать событие просмотра фото
-
-        Args:
-            vs (str): VS
-            source (ViewSource): Страница, с которой проищошел просмотр
-            attachment_id (UUID): ID вложения
-            index (int): Индекс вложения
-        """
-        l.info('dwell add photo open record vs=%s source=%s id=%s index=%s', vs, source.value, attachment_id, index)
-
-        self.interactions.append(PhotoOpenEvent(v=vs, s=source, t=InteractionType.PHOTO_OPEN, ai=attachment_id, mi=index))
-        if len(self.interactions) >= self.client.config.dwell_max_buffer:
-            self.send_interactions()
-
-    def record_video_progress(self, vs: str, source: ViewSource, attachment_id: UUID, played: int, duration: int):
-        """Записать событие просмотра видео (отправлять каждые 2-3 сек пока запущено видео)
-
-        Args:
-            vs (str): VS
-            source (ViewSource): Страница, с которой произошел просмотр
-            attachment_id (UUID): ID просмотренного вложения
-            played (int): Сколько было просмотренно (мс) с учетом перепросмотров
-            duration (int): Общая длительность видео (константа) (мс)
-        """
-        l.info('dwell add video progress record vs=%s source=%s id=%s played=%s duration=%s', vs, source, attachment_id, played, duration)
-
-        self.interactions.append(VideoProgressEvent(v=vs, s=source, t=InteractionType.VIDEO_PROGRESS, ai=attachment_id, pm=played, dm=duration))
-        if len(self.interactions) >= self.client.config.dwell_max_buffer:
-            self.send_interactions()
-
-    def _start_timer(self):
-        if not self.client.config.dwell_send_interval:
-            return
-        l.debug('start dwell timer')
-
-        def loop():
-            while True:
-                sleep(self.client.config.dwell_send_interval)
-                self.send_views()
-                self.send_interactions()
-
-        self._thread = Thread(target=loop)
-        self._thread.daemon = True
-        self._thread.start()
-
-        def on_exit():
-            if self._thread:
-                self._thread.join(timeout=0)
-            self.send_views()
-            self.send_interactions()
-
-        if self.client.config.dwell_save_on_quit:
-            register(on_exit)
-
-
 class Post(ITDBaseModel):
-    _validator = lambda _: _PostValidate
     _entered_at: datetime | None = None
 
     id: UUID
     author: User
-    created_at: datetime = Field(alias='createdAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
 
     content: str
     spans: list[Span] = []
@@ -253,7 +64,7 @@ class Post(ITDBaseModel):
     reposts_count: int = Field(0, alias='repostsCount')
     views_count: int = Field(0, alias='viewsCount')
 
-    edited_at: datetime | None = Field(None, alias='editedAt')
+    edited_at: Annotated[datetime, BeforeValidator(parse_datetime)] | None = Field(None, alias='editedAt')
 
     is_liked: bool = Field(False, alias='isLiked')
     is_reposted: bool = Field(False, alias='isReposted')
@@ -271,17 +82,26 @@ class Post(ITDBaseModel):
 
     def __init__(self, id: str | UUID, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, client: Client | None = None) -> None:
         super().__init__(client)
-
         self.id = to_uuid(id)
         self.source = source
         self.source_context = source_context
         self.visible = False
-        self.comments = Comments()
+        self.comments = Comments(client=client)
         self.comments._post = self
         self._extra_context = {'source': source, 'source_context': source_context}
+        self._init_refresh()
 
     def for_client(self, client: Client):
         return Post(self.id, client=client)
+
+    def _post_refresh(self, context: dict = {}):
+        self.comments._client = self._client  # comments приходит не из данных, а из default_factory, поэтому про клиент не знает
+        self.comments._post = self
+        if self.is_loaded('first_comments'):  # в списках постов комментариев нет, обычное обращение сходило бы за ними в апи
+            for comment in self.first_comments:
+                comment._post = self
+        for attachment in self.attachments:
+            attachment._post = self
 
     @classmethod
     def new(
@@ -327,8 +147,15 @@ class Post(ITDBaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict, source: ViewSource = ViewSource.POST_PAGE, source_context: str | None = None, *, context: dict = {}, client: Client | None = None
+        cls,
+        data: dict,
+        source: ViewSource = ViewSource.POST_PAGE,
+        source_context: str | None = None,
+        *,
+        context: dict | None = None,
+        client: Client | None = None
     ) -> 'Post':
+        context = dict(context or {})
         context.update({'source': source, 'source_context': source_context})
         instance = super().from_dict(data, context=context, client=client)
         instance._extra_context = {'source': source, 'source_context': source_context}
@@ -578,7 +405,7 @@ class Post(ITDBaseModel):
         self._set_stats(stats[0])
 
     def _set_stats(self, stats: dict):
-        fields = {value.alias or name: name for name, value in _PostValidate.model_fields.items()}
+        fields = {value.alias or name: name for name, value in self._validator.model_fields.items()}
         for name, value in stats.items():
             if name in fields:
                 setattr(self, fields[name], value)
@@ -591,80 +418,6 @@ class Post(ITDBaseModel):
     @property
     def link(self) -> str:
         return self.url
-
-
-class _PostValidate(BaseModel, Post):  # BaseModel MUST be first or you ll have some problems with init
-    @field_validator('attachments', mode='plain')
-    @classmethod
-    def validate_attachments(cls, attachments: list[dict], info: ValidationInfo):
-        assert info.context
-        return [PostAttach(attach, client=info.context.get('client')) for attach in attachments]
-
-    @field_validator('edited_at', mode='plain')
-    @classmethod
-    def validate_edited_at(cls, v: str | None):
-        if v is None:
-            return
-        return parse_datetime(v)
-
-    @field_validator('created_at', mode='plain')
-    @classmethod
-    def validate_created_at(cls, v: str):
-        return parse_datetime(v)
-
-    @field_validator('original_post', mode='plain')
-    @classmethod
-    def validate_original_post(cls, post: dict | None, info: ValidationInfo):
-        if post is None:
-            return
-        assert info.context
-        return Post.from_dict(post, info.context.get('source'), info.context.get('source_context'), client=info.context.get('client'))
-
-    @field_validator('poll', mode='plain')
-    @classmethod
-    def validate_poll(cls, poll: dict | None, info: ValidationInfo):
-        if poll is None:
-            return
-        assert info.context
-        return Poll.from_dict(poll, client=info.context.get('client'))
-
-    @field_validator('first_comments', mode='plain')
-    @classmethod
-    def validate_first_comments(cls, comments: list[dict], info: ValidationInfo):
-        assert info.context
-        return [Comment.from_dict(comment, client=info.context.get('client')) for comment in comments]
-
-    @field_validator('comments', mode='plain')
-    @classmethod
-    def validate_comments(cls, _, info: ValidationInfo):
-        assert info.context
-        return Comments(client=info.context.get('client'))
-
-    @field_validator('author', mode='plain')
-    @classmethod
-    def validate_author(cls, author: dict | _UserBase | None, info: ValidationInfo):
-        if author is None:
-            return None
-        if isinstance(author, _UserBase):
-            return author
-        assert info.context
-        return User.from_dict(author, client=info.context.get('client'))
-
-    @field_validator('wall_recipient', mode='plain')
-    @classmethod
-    def validate_wall_recipient(cls, wall_recipient: dict | None, info: ValidationInfo):
-        assert info.context
-        if wall_recipient is not None:
-            return User.from_dict(wall_recipient, client=info.context.get('client'))
-
-    @model_validator(mode='after')
-    def validate_model(self):
-        self.comments._post = self
-        for comment in self.first_comments:
-            comment._post = self
-        for attachment in self.attachments:
-            attachment._post = self
-        return self
 
 
 class _BasePosts(ITDList[Post]):

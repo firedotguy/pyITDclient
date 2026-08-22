@@ -1,6 +1,6 @@
 import pytest
 
-from itd.notification import Notification, Notifications
+from itd.models.notification import Notification, Notifications
 
 
 @pytest.fixture

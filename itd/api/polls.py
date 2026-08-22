@@ -4,13 +4,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.base import api_wrapper
 from itd.exceptions import NotFoundError, NotMultipleChoiceError, OptionsNotBelongError
+from itd.core.request import endpoint
 
 if TYPE_CHECKING:
-    from itd.client import Client
+    from itd.core.client import Client
 
 
-@api_wrapper(NotFoundError('Post'), NotFoundError('Poll', 'Опрос не найден'), OptionsNotBelongError(), NotMultipleChoiceError())
+@endpoint('post', 'posts/{id}/poll/vote', NotFoundError('Post'), NotFoundError('Poll', 'Опрос не найден'), OptionsNotBelongError(), NotMultipleChoiceError())
 def vote(client: Client, id: UUID, options: list[UUID]):
-    return client.request('post', f'posts/{id}/poll/vote', {'optionIds': [str(option) for option in options]})
+    return {'optionIds': [str(option) for option in options]}

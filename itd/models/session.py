@@ -1,25 +1,26 @@
 from datetime import datetime
 from ipaddress import IPv4Address
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BeforeValidator, Field
 
 from itd.api.sessions import get_sessions, revoke, revoke_all
-from itd.base import ITDBaseModel
-from itd.client import Client
+from itd.core.base import ITDBaseModel
+from itd.core.client import Client
+from itd.core.utils import parse_datetime
 from itd.enums import DeviceType
 
 
 class Session(ITDBaseModel):
     _refreshable = False
-    _validator = lambda _: _SessionValidate
 
     id: UUID
     is_current: bool = Field(alias='isCurrent')
 
-    created_at: datetime = Field(alias='createdAt')
-    last_used_at: datetime = Field(alias='lastUsedAt')
-    expires_at: datetime = Field(alias='expiresAt')
+    created_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='createdAt')
+    last_used_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='lastUsedAt')
+    expires_at: Annotated[datetime, BeforeValidator(parse_datetime)] = Field(alias='expiresAt')
 
     ip: IPv4Address = Field(alias='ipAddress')
     country: str | None = Field(None, alias='ipCountry')  # country code
@@ -39,12 +40,6 @@ class Session(ITDBaseModel):
 
     def delete(self):
         self.revoke()
-
-    def __init__(self, session: dict, client: Client | None = None) -> None:
-        super().__init__(client)
-
-        for name, value in _SessionValidate.model_validate(session).__dict__.items():
-            setattr(self, name, value)
 
     def __str__(self):
         res = self.device_os
@@ -71,10 +66,6 @@ class Session(ITDBaseModel):
         return int(self.id)
 
 
-class _SessionValidate(BaseModel, Session):
-    pass
-
-
 class Sessions(ITDBaseModel, list[Session]):
     _refreshable = False
 
@@ -84,7 +75,7 @@ class Sessions(ITDBaseModel, list[Session]):
 
     def load(self):
         self.clear()
-        self.extend([Session(session) for session in get_sessions(self.client).json()['sessions']])
+        self.extend([Session.from_dict(session) for session in get_sessions(self.client).json()['sessions']])
         return self
 
     def revoke_all(self) -> int:
