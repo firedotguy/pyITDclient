@@ -11,11 +11,6 @@ if TYPE_CHECKING:
     from itd.core.client import Client
 
 
-@endpoint('get', 'hashtags', ValidationError(), level=AuthLevel.NO)
-def search_hashtags(client: Client, query: str, limit: int = 10):
-    return {'q': query, 'limit': limit}
-
-
 @endpoint('get', 'hashtags/trending', ValidationError(), level=AuthLevel.NO)
 def get_hashtags(client: Client, limit: int = 10):
     return {'limit': limit}

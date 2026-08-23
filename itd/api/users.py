@@ -133,11 +133,6 @@ def get_follow_status(client: Client, user_ids: list[UUID]):
     return {'userIds': list(map(str, user_ids))}
 
 
-@endpoint('get', 'users/search')
-def search_users(client: Client, query: str, limit: int = 10):
-    return {'q': query, 'limit': limit}
-
-
 @endpoint('get', 'users/stats/top-clans')
 def get_top_clans(client: Client): ...
 

@@ -6,7 +6,8 @@ from uuid import UUID
 
 from pydantic import Field
 
-from itd.api.hashtags import get_hashtags, get_posts_by_hashtag, search_hashtags
+from itd.api.hashtags import get_hashtags, get_posts_by_hashtag
+from itd.api.search import search
 from itd.core.base import ITDBaseModel
 from itd.exceptions import NotFoundError
 
@@ -62,7 +63,7 @@ class Hashtags(ITDBaseModel, list[Hashtag]):
     def load(self, limit: int = 10):
         self.clear()
         if self.query:
-            self.extend([Hashtag.from_dict(hashtag) for hashtag in search_hashtags(self.client, self.query, limit).json()['data']['hashtags']])
+            self.extend([Hashtag.from_dict(hashtag) for hashtag in search(self.client, self.query, 1, limit).json()['data']['hashtags']])
         else:
             self.extend([Hashtag.from_dict(hashtag) for hashtag in get_hashtags(self.client, limit).json()['data']['hashtags']])
         return self
