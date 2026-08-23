@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, BeforeValidator, Field
 
 from itd.api.pins import get_pins, remove_pin
+from itd.api.search import search
 from itd.api.subscription import get_payment_methods, get_subscription, pay_subscription, toggle_subscription_auto_renewal
 from itd.api.users import (
     block,
@@ -21,7 +22,6 @@ from itd.api.users import (
     get_user,
     get_who_to_follow,
     restore_account,
-    search_users,
     unblock,
     unfollow,
     update_privacy,
@@ -574,7 +574,7 @@ class Users(ITDBaseModel, list[User]):
 
     def load(self, limit: int = 10):
         self.clear()
-        self.extend([User.from_dict(hashtag) for hashtag in search_users(self.client, self.query, limit).json()['data']['users']])
+        self.extend([User.from_dict(hashtag) for hashtag in search(self.client, self.query, limit, 1).json()['data']['users']])
         return self
 
     @classmethod
