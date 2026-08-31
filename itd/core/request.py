@@ -132,10 +132,15 @@ def fetch_stream(client: 'Client', url: str):
     headers = {
         'Accept': 'text/event-stream',
         'Authorization': 'Bearer ' + client.token,
-        'Cache-Control': 'no-cache',
-        'Sec-WebSocket-Extensions': 'permessage-deflate',
-        'Sec-WebSocket-Key': '3tMaiXFWtq34tenKN/+T4Q==',
-        'Sec-WebSocket-Version': '13'
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Referer': 'https://xn--d1ah4a.com/',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'no-cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'TE': 'trailers',
+        'User-Agent': client.config._user_agent
     }
     return client.session.get(base, headers=headers, stream=True, timeout=None)
 
