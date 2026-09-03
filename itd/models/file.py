@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from _io import BufferedReader
+from io import BufferedReader
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID

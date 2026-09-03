@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from _io import BufferedReader
 from datetime import datetime, timedelta
 from functools import cached_property
 from os import getenv
+from io import BufferedReader
 from threading import RLock
 from typing import TYPE_CHECKING
 from uuid import UUID

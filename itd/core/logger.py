@@ -33,10 +33,10 @@ def setup_logging(level: str = "INFO", colorful: bool | None = None) -> logging.
 
     if RichHandler is not None:
         handler = RichHandler(rich_tracebacks=True, markup=True, enable_link_path=False)
-        formatter = ITDFormatter("%(display_name)s%(message)s")
+        formatter = ITDFormatter('%(display_name)s%(message)s')
     else:
         handler = logging.StreamHandler(stream=stdout)
-        formatter = ITDFormatter("%(asctime)s [%(levelname)s] %(display_name)s%(message)s", False)
+        formatter = ITDFormatter('%(asctime)s [%(levelname)s] %(display_name)s%(message)s', False)
 
     handler.setFormatter(formatter)
 

@@ -1,11 +1,10 @@
-from _io import BufferedReader
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import wraps
 from inspect import signature
+from io import BufferedReader
 from json import loads
-from this import d
 from time import sleep, time
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import quote

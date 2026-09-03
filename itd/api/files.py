@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from _io import BufferedReader
+from io import BufferedReader
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.exceptions import InvalidFileTypeError, ModerationFailedError, TooLargeError, UploadError
 from itd.core.request import Payload, endpoint
+from itd.exceptions import InvalidFileTypeError, ModerationFailedError, TooLargeError, UploadError
 
 if TYPE_CHECKING:
     from itd.core.client import Client
