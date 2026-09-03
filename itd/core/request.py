@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import wraps
 from inspect import signature
 from json import loads
+from this import d
 from time import sleep, time
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import quote
@@ -277,7 +278,7 @@ def api_wrapper(*exceptions: ITDException):
             if not client.config._retry_enabled:
                 return exec()
 
-            while True:
+            def _try():
                 try:
                     return exec()
                 except client.config._retry_exceptions as e:
@@ -290,6 +291,15 @@ def api_wrapper(*exceptions: ITDException):
                     sleep(retry_after)
                     if name in limits and limits[name] in limiters:
                         limiters[limits[name]].on_limit()
+
+            if client.config.retry_max_retries:
+                for _ in range(client.config.retry_max_retries):
+                    if res := _try():
+                        return res
+            else:
+                while True:
+                    if res := _try():
+                        return res
 
         return wrapper
 
