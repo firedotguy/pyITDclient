@@ -293,12 +293,13 @@ def api_wrapper(*exceptions: ITDException):
 
             if client.config.retry_max_retries:
                 for _ in range(client.config.retry_max_retries):
-                    if res := _try():
+                    if (res := _try()) is not None:
                         return res
             else:
                 while True:
-                    if res := _try():
+                    if (res := _try()) is not None:
                         return res
+            raise RuntimeError('All retries exceeded')
 
         return wrapper
 
