@@ -5,7 +5,7 @@ from uuid import UUID
 
 from platformdirs import user_data_path
 
-from itd.core.session_file import SessionFile
+from itd.core.profile import Profile
 
 
 def get_sdk_user_agent():
@@ -14,13 +14,13 @@ def get_sdk_user_agent():
     return f'itd-sdk/{__version__} (Python/{version})'
 
 
-def get_session_file(name: str) -> SessionFile:
+def get_profile(name: str) -> Profile:
     file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
     if not file.exists():
-        model = SessionFile(_file=file)
+        model = Profile(_file=file)
         file.write_text(dumps(model.model_dump(mode='json')))
     else:
-        model = SessionFile.model_validate(loads(file.read_text()))
+        model = Profile.model_validate(loads(file.read_text()))
     model._file = file
     return model
 

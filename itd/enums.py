@@ -51,7 +51,7 @@ class AuthLevel(Enum):
     NO = 'no'
     ACCESS = 'access'
     REFRESH = 'refresh'
-    # LOGIN = 'login' # 🤫
+    LOGIN = 'login'
 
     def __gt__(self, other):
         return _AUTH_LEVEL_HIERARCHY.index(self) > _AUTH_LEVEL_HIERARCHY.index(other)
@@ -66,7 +66,7 @@ class AuthLevel(Enum):
         return _AUTH_LEVEL_HIERARCHY.index(self) <= _AUTH_LEVEL_HIERARCHY.index(other)
 
 
-_AUTH_LEVEL_HIERARCHY = [AuthLevel.NO, AuthLevel.ACCESS, AuthLevel.REFRESH]
+_AUTH_LEVEL_HIERARCHY = [AuthLevel.NO, AuthLevel.ACCESS, AuthLevel.REFRESH, AuthLevel.LOGIN]
 
 
 class DebugResponseMode(Enum):

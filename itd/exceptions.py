@@ -155,13 +155,13 @@ class LoginError(AuthError):
 
 
 class InvalidCredentials(LoginError):
-    code = 'ACCOUNT_INVALID_CREDENTIALS'
+    code = 'INVALID_CREDENTIALS'
     text = 'Invalid login credentials'
 
 
 class CaptchaFailedError(LoginError):
     code = 'TURNSTILE_VERIFICATION_FAILED'
-    text = 'Captcha check failed'
+    text = 'Captcha check failed. Please fill issue at https://github.com/itd-sdk/itd-sdk/issues/new'
 
 
 class EmailDomainNotAllowed(LoginError):
@@ -385,6 +385,15 @@ class AccountDeletedError(ITDException):
 
     def _fill(self, error: dict) -> None:
         self.can_restore = error.get('canRestore', True)
+
+
+class QRError(ITDException):
+    pass
+
+
+class QRApproverNotAllowed(QRError):
+    code = 'QR_APPROVER_NOT_ALLOWED'
+    text = 'QR approving allowed only for mobile devices'
 
 
 DEFAULT_ERRORS = (

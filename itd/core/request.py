@@ -1,11 +1,10 @@
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass, field
-from datetime import datetime
 from functools import wraps
 from inspect import signature
 from io import BufferedReader
 from json import loads
-from time import sleep, time
+from time import sleep
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import quote
 
@@ -15,7 +14,15 @@ from requests.exceptions import JSONDecodeError
 from itd.core.default import get_config, limiters, limits
 from itd.core.logger import get_logger
 from itd.enums import AuthLevel, DebugResponseMode
-from itd.exceptions import DEFAULT_ERRORS, AccessTokenExpiredError, InvalidAccessTokenError, ITDException
+from itd.exceptions import (
+    DEFAULT_ERRORS,
+    AccessTokenExpiredError,
+    InvalidAccessTokenError,
+    ITDException,
+    SessionExpiredError,
+    SessionNotFoundError,
+    SessionRevokedError
+)
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -74,28 +81,12 @@ def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:
     return loads(decoded)
 
 
-def is_token_expired(access_token: str) -> bool:
-    """Истёк ли `access_token`.
-
-    Args:
-        access_token: access токен
-
-    Returns:
-        Истёк ли токен
-
-    """
-    payload = decode_jwt_payload(access_token)
-    return time() - 1 >= payload['exp']
-
-
-def fetch(
-    client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, send_token: bool = True
-) -> Response:
-    headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
+def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}) -> Response:
+    headers = {'Accept': 'application/json', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
     if client.config._user_agent:
         headers['User-Agent'] = client.config._user_agent
-    if client.access_token and send_token:
-        headers['Authorization'] = 'Bearer ' + client.access_token
+    if client._profile.access and client._profile.access_valid:
+        headers['Authorization'] = 'Bearer ' + client._profile.access
 
     # ai begin ---
     def _do_request():
@@ -128,13 +119,12 @@ def fetch(
 
 def fetch_stream(client: 'Client', url: str):
     """Fetch для SSE streaming запросов"""
-    base = f'https://xn--d1ah4a.com/api/{url}'
+    base = f'{client.config.url}/api/{url}'
     headers = {
         'Accept': 'text/event-stream',
-        'Authorization': 'Bearer ' + client.token,
+        'Authorization': f'Bearer {client._profile.access}',
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Referer': 'https://xn--d1ah4a.com/',
         'Connection': 'keep-alive',
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'no-cors',
@@ -192,10 +182,11 @@ def api_wrapper(*exceptions: ITDException):
         @wraps(func)
         def wrapper(client: 'Client', *args, **kwargs) -> Response | None:
             name = func.__name__
-            reauthed = False
+            access_reauthed = False
+            refresh_reauthed = False
 
             def exec():
-                nonlocal reauthed
+                nonlocal access_reauthed, refresh_reauthed
                 l.info('exec %s %s %s', name, _filter_bytes(args), kwargs)
 
                 config = get_config()
@@ -219,8 +210,8 @@ def api_wrapper(*exceptions: ITDException):
                         l.debug('no response')
                     return res
 
-                remaining = int(res.headers.get('x-ratelimit-remaining', 0))
-                limit = int(res.headers.get('x-ratelimit-limit', 0))
+                remaining = int(res.headers.get('x-ratelimit-remaining') or 0)
+                limit = int(res.headers.get('x-ratelimit-limit') or 0)
                 limits[name] = limit
 
                 if limit not in limiters and config.limiter is not None:
@@ -240,26 +231,22 @@ def api_wrapper(*exceptions: ITDException):
 
                 exception = _find_error(res, json, exceptions)
                 if exception is not None:
-                    # token is checked before the request, but server still can reject it (clock skew, revoked session,
-                    # token expired while request was in flight) - refresh and repeat the request once, before callbacks and before raising
-                    if (
-                        isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError))
-                        and not reauthed
-                        and name != 'refresh_token'
-                        and client.can_refresh_auth
-                    ):
-                        reauthed = True
-                        expired_at = client.access_token_data.expired_at if client.access_token_data else None
-                        if expired_at and expired_at > datetime.now():  # is_token_expired учитывает запас, тут нужен факт
-                            l.warning(
-                                'server rejected access_token that is not expired by local clock (expires at %s, now is %s): '
-                                'check system time (clock skew) or session was revoked',
-                                expired_at,
-                                datetime.now()
-                            )
-                        l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)
-                        client.refresh_auth(force=True)
-                        return exec()
+                    # token is checked before the request, but server still can reject it (clock skew, revoked session) - refresh and repeat the request once, before callbacks
+                    if isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError)) and not access_reauthed:
+                        client._profile.access_valid = False
+                        if name != 'refresh_token':
+                            access_reauthed = True
+                            l.warning('%s on %s: refresh access_token and retry', exception.__class__.__name__, name)
+                            client.refresh_auth()
+                            return exec()
+
+                    if isinstance(exception, (SessionExpiredError, SessionNotFoundError, SessionRevokedError)) and not refresh_reauthed:
+                        client._profile.refresh_valid = False
+                        if name != 'sign_in':
+                            refresh_reauthed = True
+                            l.warning('%s on %s: refresh refresh_token and retry', exception.__class__.__name__, name)
+                            client.login()
+                            return exec()
 
                     client._process_exc_callbacks(exception)
                     raise exception

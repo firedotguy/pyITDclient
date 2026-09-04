@@ -1,28 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import cached_property
-from os import getenv
 from io import BufferedReader
 from threading import RLock
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 
-from itd.api.auth import change_password, logout, refresh_token
+from itd.api.auth import change_password, logout, refresh_token, sign_in
+from itd.core.auth import auth
+from itd.core.captcha import get_turnstile
 from itd.core.config import Config
-from itd.core.default import _default_client, set_default_client
+from itd.core.default import maybe_get_default_client, set_default_client
 from itd.core.dwell import DwellTracker
 from itd.core.logger import get_logger
-from itd.core.request import decode_jwt_payload, fetch, fetch_stream
-from itd.core.session_file import SessionFile
-from itd.core.utils import get_session_file, shorten_token
+from itd.core.profile import Profile
+from itd.core.request import fetch, fetch_stream
+from itd.core.utils import get_profile
 from itd.core.visibility import VisibilityTracker
-from itd.enums import AuthLevel, Role
-from itd.exceptions import InsufficientAuthLevelError, SessionExpiredError, SessionNotFoundError, SessionRevokedError
+from itd.enums import AuthLevel
+from itd.exceptions import InsufficientAuthLevelError
 
 if TYPE_CHECKING:
     from itd.models.post import Post
@@ -31,49 +31,27 @@ if TYPE_CHECKING:
 l = get_logger('client')
 
 
-class AccessToken(BaseModel):
-    roles: list[Role] = [Role.USER]
-    session_id: UUID = Field(alias='sid')
-    is_active: bool = Field(True, alias='isActive')
-    subject_id: UUID = Field(alias='sub')
-    issued_at: datetime = Field(alias='iat')
-    issuer: str | None = Field(None, alias='iss')  # "auth-service"
-    expired_at: datetime = Field(alias='exp')
-    jwt_id: UUID | None = Field(None, alias='jti')
-
-    @field_validator('issued_at', 'expired_at', mode='plain')
-    @classmethod
-    def validate_datetimes(cls, v):
-        return datetime.fromtimestamp(v)
-
-
 class Client:
-    def __init__(self, refresh: str | None = None, access: str | None = None, config: Config = Config()):
-        l.info('init client refresh=%s access=%s', refresh is not None, access is not None)
-        self.config = config
-        self.last_actions: dict[str, int | float] = {}
+    def __init__(self, name: str, config: Config | None = None):
+        l.info('init client %s', name)
+        self.config = config or Config()
+
         self.auth_level: AuthLevel = AuthLevel.NO
-        self.access_token: str | None = None
-        self.access_token_data: AccessToken | None = None
-        self.refresh_token: str | None = None
-        self._session_file: SessionFile | None = None
+        self._profile: Profile = get_profile(name)
+
         self._refresh_lock = RLock()  # so background timers and main thread dont refresh token simultaneously # еба он мой стиль коментов спиздил
 
         self.session = Session()
         adapter = HTTPAdapter(pool_connections=1, pool_maxsize=10, pool_block=False)  # idk what is this, (claude added) just for better stability
         self.session.mount('https://', adapter)
 
-        if access:
-            self.auth_level = AuthLevel.ACCESS
-            self.token = access.replace('Bearer ', '')
-
-        if refresh:
-            self.session.cookies.set(config.refresh_token_cookie_name, refresh, path='/')
-            self.auth_level = AuthLevel.REFRESH
-            self.refresh_token = refresh
-
-        if _default_client is None or config.is_default:
+        if maybe_get_default_client() is None or self.config.is_default:
             set_default_client(self)
+
+        if not self._profile.access_valid:
+            self._profile = auth(self)
+        self._profile.flush()
+        self._set_from_profile()
 
         self.dwell_tracker = DwellTracker(self)
         self.dwell_tracker.start()
@@ -81,110 +59,69 @@ class Client:
         self.visibility = VisibilityTracker(self)
         self.visibility.start()
 
-    @classmethod
-    def from_file(cls, name: str, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()):
-        session_file = get_session_file(name)
-        l.debug('get session file refresh=%s access=%s', shorten_token(session_file.refresh), shorten_token(session_file.access))
-        if not session_file.valid:
-            l.warning('last refresh token was expired or not found. Please enter a new one:')
-            update = True
-        else:
-            update = session_file.refresh is None
+    def _set_from_profile(self):
+        if self._profile.access:
+            self.auth_level = AuthLevel.ACCESS
 
-        if update:
-            if initial_refresh is not None:
-                session_file.refresh = initial_refresh
-            elif getenv('ITD_REFRESH_TOKEN') is not None:
-                session_file.refresh = getenv('ITD_REFRESH_TOKEN')
-            else:
-                try:
-                    from rich.prompt import Prompt
-                except ImportError:
-                    session_file.refresh = input('refresh token: ')
-                else:
-                    session_file.refresh = Prompt.ask('[cyan]refresh token[/]')
+        if self._profile.refresh:
+            self.session.cookies.set(self.config.refresh_token_cookie_name, self._profile.refresh, path='/')
+            self.auth_level = AuthLevel.REFRESH
 
-        instance = cls(session_file.refresh, session_file.access, config=config)
-        if instance.access_token_data and instance.access_token_data.expired_at < datetime.now():
-            instance.access_token = instance.access_token_data = None
-        instance._session_file = session_file
-        if verify_refresh and initial_refresh is not None:
-            instance.refresh_auth(force=True)
-        elif update:
-            instance._update_file()
-        return instance
+        if self._profile.email and self._profile.password:
+            self.auth_level = AuthLevel.LOGIN
 
-    def _update_file(self, valid: bool = True):
-        if self._session_file is None:
-            return
+    def login(self, turnstile: str | None = None) -> str:
+        """Обновить refresh token
 
-        l.debug('update session file refresh=%s access=%s', shorten_token(self.refresh_token), shorten_token(self.access_token))
-        if not valid:
-            l.warning('mark %s as not valid', shorten_token(self.refresh_token))
+        Returns:
+            str: Токен
+        """
+        with self._refresh_lock:
+            l.debug('refresh refresh_token')
+            if not self._profile.creds_valid:
+                raise RuntimeError('No valid credentials found to re-login')
 
-        self._session_file.access = self.access_token
-        self._session_file.refresh = self.refresh_token
-        self._session_file.valid = valid
-        self._session_file.flush()
+            res = sign_in(
+                self, self._profile.email, self._profile.password, 'turnstileToken', turnstile or get_turnstile(self)[1]
+            )  # 'turnstileToken' пока загулшка, ждем когда вернут капчу от итд
+            self._profile.access = res.json().get('accessToken') or res.json()['token']
+            self._profile.access_valid = True
+            self._profile.access_data = self._profile.refresh_access_data()
 
-    @property
-    def is_token_expired(self) -> bool:
-        """Истёк ли (или вот-вот истечет) access token"""
-        if self.access_token is None:
-            return True
-        if self.access_token_data is None:  # failed to parse jwt - assume valid, let server decide
-            return False
+            self._profile.refresh = res.cookies[self.config.refresh_token_cookie_name]
+            self._profile.refresh_valid = True
+            self._profile.set_refresh_expire()
 
-        return self.access_token_data.expired_at - timedelta(seconds=self.config.token_expiry_margin) <= datetime.now()
+            self._profile.creds_valid = True
+            self._profile.flush()
+            self._set_from_profile()
 
-    @property
-    def can_refresh_auth(self) -> bool:
-        """Есть ли refresh token, чтобы обновить access token"""
-        return self.refresh_token is not None or self.auth_level >= AuthLevel.REFRESH
+            return self._profile.refresh
 
-    def refresh_auth(self, force: bool = False) -> str:
+    def refresh_auth(self) -> str:
         """Обновить access token
-
-        Args:
-            force (bool, optional): Обновить, даже если текущий токен еще валиден. Defaults to False.
 
         Returns:
             str: Токен
         """
 
         with self._refresh_lock:
-            if not force and not self.is_token_expired:  # refreshed by another thread while we were waiting for the lock
-                l.debug('access_token is already fresh')
-                return self.token
-
             l.debug('refresh access_token')
-            if not force and self._session_file and self._session_file.update():
-                self.token = self._session_file.access
-                self.refresh_token = self._session_file.refresh
+            if not self._profile.refresh_valid:
+                raise RuntimeError('No valid refresh_token found to refresh auth')
 
-                if self.access_token:
-                    if not self.is_token_expired:
-                        l.debug('update access_token from session_file')
-                        return self.access_token
-                    else:
-                        l.info('session_file access_token expired')
-                else:
-                    l.info('crefile access_token is none')
+            res = refresh_token(self)
+            self._profile.access = res.json().get('accessToken') or res.json()['token']
+            self._profile.access_valid = True
+            self._profile.access_data = self._profile.refresh_access_data()
 
-            try:
-                res = refresh_token(self)
-            except (SessionExpiredError, SessionNotFoundError, SessionRevokedError):
-                if force:
-                    raise
-                self._update_file(valid=False)
-                raise
+            if self.config.refresh_token_cookie_name in res.cookies:
+                self._profile.refresh = res.cookies[self.config.refresh_token_cookie_name]
+                self._profile.refresh_valid = True
+            self._profile.flush()
+            self._set_from_profile()
 
-            self.token = res.json().get('accessToken') or res.json()['token']
-            if 'refresh_token' in res.cookies:
-                self.refresh_token = res.cookies['refresh_token']
-            self._update_file()
-
-            return self.token
+            return self._profile.access
 
     @property
     def visible_posts(self) -> list[Post]:
@@ -203,6 +140,23 @@ class Client:
         """Обновить статистику видимых постов"""
         self.visibility.update_stats()
 
+    def _before_request(self, url: str, level: AuthLevel = AuthLevel.ACCESS):
+        if url != 'v1/auth/sign-in' and ((self._profile.refresh and self._profile.is_refresh_expired) or not self._profile.refresh_valid):
+            self._profile.access_valid = False
+            if level == AuthLevel.LOGIN:
+                self.login()
+            else:
+                l.warning('not enough level to re-login')
+
+        if url not in ('v1/auth/refresh', 'v1/auth/sign-in') and (
+            (self._profile.access_data and self._profile.access_data.is_expired) or not self._profile.access_valid
+        ):
+            self._profile.access_valid = False
+            if level >= AuthLevel.REFRESH:
+                self.refresh_auth()
+            else:
+                l.warning('not enough level to refresh access_token')
+
     def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
         """Сделать запрос
 
@@ -217,43 +171,19 @@ class Client:
         if level > self.auth_level and not self.config.bypass_auth_level:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
-        send_token = True
-        # access token is attached to every request (including AuthLevel.NO endpoints), so it must be refreshed regardless of level:
-        # otherwise such requests fail with AccessTokenExpiredError forever once the token expires
-        if url != 'v1/auth/refresh' and self.is_token_expired:
-            if level >= AuthLevel.ACCESS or self.can_refresh_auth:
-                self.refresh_auth()
-            elif self.access_token is not None:
-                l.warning('access_token expired and cannot be refreshed, send %s %s without authorization', method.upper(), url)
-                send_token = False
-
-        return fetch(self, method, url, params, files, send_token=send_token)
+        self._before_request(url, level=level)
+        return fetch(self, method, url, params, files)
 
     def request_sse(self, url: str):
         l.debug('sse %s', url)
 
-        if self.is_token_expired:
-            self.refresh_auth()
-
+        self._before_request(url)
         return fetch_stream(self, url)
 
     @property
-    def token(self) -> str:
-        assert self.access_token, 'Access token not refreshed yet'
-        return self.access_token
-
-    @token.setter
-    def token(self, token: str | None):
-        self.access_token = token
-        if token is None:
-            self.access_token_data = None
-        else:
-            self.access_token_data = AccessToken.model_validate(decode_jwt_payload(token))
-
-    @property
     def user_id(self) -> UUID:
-        assert self.access_token_data
-        return self.access_token_data.subject_id
+        assert self._profile.access_data
+        return self._profile.access_data.subject_id
 
     @cached_property
     def user(self) -> Me:
@@ -268,8 +198,7 @@ class Client:
 
     def logout(self):
         """Выход из аккаунта"""
-        res = logout(self)
-        res.raise_for_status()
+        logout(self)
 
     def change_password(self, old: str, new: str) -> None:
         """Смена пароля
@@ -290,5 +219,5 @@ class Client:
         change_password(self, old, new)
 
 
-def init_client(name: str | None = None, initial_refresh: str | None = None, verify_refresh: bool = False, config: Config = Config()) -> Client:
-    return Client.from_file(name or 'default', initial_refresh=initial_refresh, verify_refresh=verify_refresh, config=config)
+def init_client(name: str | None = None, config: Config = Config()) -> Client:
+    return Client(name or 'default', config=config)

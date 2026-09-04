@@ -42,9 +42,9 @@ class Announcement(ITDBaseModel):
         return self.title
 
     def read(self):
-        assert self.client._session_file, 'No session file'
-        self.client._session_file.seen_announcements.append(self.id)
-        self.client._session_file.flush()
+        assert self.client._profile, 'No session file'
+        self.client._profile.seen_announcements.append(self.id)
+        self.client._profile.flush()
 
 
 class Announcements(ITDBaseModel, list[Announcement]):
@@ -56,9 +56,9 @@ class Announcements(ITDBaseModel, list[Announcement]):
         self.clear()
         self.extend([Announcement.from_dict(announcement, client=self.client) for announcement in get_announcements(self.client).json()['announcements']])
 
-        if hide_seen and self.client._session_file:
+        if hide_seen and self.client._profile:
             for announcement in self.copy():
-                if announcement.id in self.client._session_file.seen_announcements:
+                if announcement.id in self.client._profile.seen_announcements:
                     self.remove(announcement)
 
         return self

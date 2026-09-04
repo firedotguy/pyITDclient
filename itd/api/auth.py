@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
+from itd.core.request import endpoint
 from itd.enums import AuthLevel
 from itd.exceptions import (
     CaptchaFailedError,
@@ -14,7 +16,6 @@ from itd.exceptions import (
     SessionNotFoundError,
     SessionRevokedError
 )
-from itd.core.request import endpoint
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -33,6 +34,19 @@ def change_password(client: Client, old: str, new: str):
 def logout(client: Client): ...
 
 
+@endpoint('get', 'v1/auth/captcha/provider', level=AuthLevel.NO)
+def get_captcha_provider(client: Client): ...
+
+
 @endpoint('post', 'v1/auth/sign-in', InvalidCredentials(), CaptchaFailedError(), EmailDomainNotAllowed(), level=AuthLevel.NO)
-def sign_in(client: Client, email: str, password: str, turnstile: str):
-    return {'email': email, 'password': password, 'turnstileToken': turnstile}
+def sign_in(client: Client, email: str, password: str, token_field: str, token: str):  # token field: turnstileToken for клодфлер token for итд
+    return {'email': email, 'password': password, token_field: token}
+
+
+@endpoint('post', 'v1/auth/qr/start', level=AuthLevel.NO)
+def qr_start(cleint: Client): ...
+
+
+@endpoint('post', 'v1/auth/qr/claim', level=AuthLevel.NO)
+def qr_claim(client: Client, qr_id: UUID, claim_token: str):
+    return {'qrId': str(qr_id), 'claimToken': claim_token}

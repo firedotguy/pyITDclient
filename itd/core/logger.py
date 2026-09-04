@@ -4,21 +4,24 @@ from sys import stdout
 
 class ITDFormatter(logging.Formatter):
     def __init__(self, fmt: str | None = None, colorful: bool = True) -> None:
-        super().__init__(fmt, "%Y-%m-%d %H:%M:%S")
+        super().__init__(fmt, '%Y-%m-%d %H:%M:%S')
         self.colorful = colorful
 
     def format(self, record):
         if self.colorful:
-            record.display_name = f"[bold]{record.name}:[/bold] "
+            record.display_name = f'[bold]{record.name}:[/bold] '
         else:
-            record.display_name = f"{record.name}: "
+            record.display_name = f'{record.name}: '
         return super().format(record)
 
 
-def setup_logging(level: str = "INFO", colorful: bool | None = None) -> logging.Logger:
+def setup_logging(level: str = 'INFO', colorful: bool | None = None) -> logging.Logger:
+    from itd.core.default import mark_logging_setupped
+
+    mark_logging_setupped()
     level = level.upper()
 
-    base_logger = logging.getLogger("itd")
+    base_logger = logging.getLogger('itd')
     base_logger.propagate = False
 
     for h in list(base_logger.handlers):
