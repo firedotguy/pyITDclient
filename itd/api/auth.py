@@ -7,8 +7,9 @@ from itd.core.request import endpoint
 from itd.enums import AuthLevel
 from itd.exceptions import (
     CaptchaFailedError,
-    EmailDomainNotAllowed,
-    InvalidCredentials,
+    EmailDomainNotAllowedError,
+    InvalidCredentialsError,
+    InvalidEmailError,
     InvalidOldPasswordError,
     InvalidPasswordError,
     SamePasswordError,
@@ -38,7 +39,7 @@ def logout(client: Client): ...
 def get_captcha_provider(client: Client): ...
 
 
-@endpoint('post', 'v1/auth/sign-in', InvalidCredentials(), CaptchaFailedError(), EmailDomainNotAllowed(), level=AuthLevel.NO)
+@endpoint('post', 'v1/auth/sign-in', InvalidCredentialsError(), CaptchaFailedError(), EmailDomainNotAllowedError(), InvalidEmailError(), level=AuthLevel.NO)
 def sign_in(client: Client, email: str, password: str, token_field: str, token: str):  # token field: turnstileToken for клодфлер token for итд
     return {'email': email, 'password': password, token_field: token}
 

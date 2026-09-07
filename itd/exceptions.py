@@ -126,7 +126,7 @@ class SessionExpiredError(AuthError):
 
 class UnauthorizedError(AuthError):
     code = 'UNAUTHORIZED'
-    text = 'UnauthorizedError (possible SDK issue). If you see this, report problem at https://github.com/itd-sdk/itd-sdk/issues/new'
+    text = 'Unauthorized (access not passed or not valid)'
 
 
 class InvalidAccessTokenError(AuthError):
@@ -154,7 +154,7 @@ class LoginError(AuthError):
     pass
 
 
-class InvalidCredentials(LoginError):
+class InvalidCredentialsError(LoginError):
     code = 'INVALID_CREDENTIALS'
     text = 'Invalid login credentials'
 
@@ -164,9 +164,14 @@ class CaptchaFailedError(LoginError):
     text = 'Captcha check failed. Please fill issue at https://github.com/itd-sdk/itd-sdk/issues/new'
 
 
-class EmailDomainNotAllowed(LoginError):
+class EmailDomainNotAllowedError(LoginError):
     code = 'ACCOUNT_EMAIL_DOMAIN_NOT_ALLOWED'
     text = 'Email domain not allowed'
+
+
+class InvalidEmailError(LoginError):
+    code = 'INVALID_EMAIL'
+    text = 'Invalid email format'
 
 
 class PasswordError(ITDException):

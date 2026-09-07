@@ -3,6 +3,7 @@ from json import dumps, loads
 from pathlib import Path
 from uuid import UUID
 
+from platformdirs import user_data_path
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 from itd.core.request import decode_jwt_payload
@@ -45,7 +46,7 @@ class Profile(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.now)
     seen_announcements: list[str] = []
 
-    _file: Path
+    _file: Path | None = None
 
     def flush(self):
         assert self._file
@@ -67,15 +68,35 @@ class Profile(BaseModel):
             return False
         return datetime.now() > (self.refresh_expires_at - timedelta(minutes=30))
 
-    def set_refresh_expire(self):
-        self.refresh_expires_at = datetime.now() + timedelta(days=30)
-
-    def refresh_access_data(self):
-        if not self.access:
-            return
-        return AccessToken.model_validate(decode_jwt_payload(self.access))
-
     @model_validator(mode='after')
-    def validate_model(self):
-        self.access_data = self.refresh_access_data()
+    def validate_access_data(self):
+        if self.access:
+            self.access_data = AccessToken.model_validate(decode_jwt_payload(self.access))
         return self
+
+    def set_refresh(self, refresh: str, set_expire: bool = False):
+        self.refresh = refresh
+        self.refresh_valid = True
+        if set_expire:
+            self.refresh_expires_at = datetime.now() + timedelta(days=30)
+
+    def set_access(self, access: str):
+        self.access = access
+        self.access_valid = True
+        self.access_data = AccessToken.model_validate(decode_jwt_payload(self.access))
+
+    @classmethod
+    def get(cls, name: str):
+        file = user_data_path('itd_sdk', False, ensure_exists=True) / f'{name}.json'
+        instance = cls(_file=file)
+        if not file.exists():
+            instance = cls(_file=file)
+        else:
+            instance.update()
+
+        return instance
+
+
+def clear_anon_profile():
+    file = user_data_path('itd_sdk', False, ensure_exists=True) / 'anon.json'
+    file.unlink(missing_ok=True)

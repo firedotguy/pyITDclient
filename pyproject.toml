@@ -37,7 +37,6 @@ dependencies = [
   "lxml>=6.1.1",
   "platformdirs>=4.10.0",
   "websockets>=16.1.1",
-  "camoufox[geoip]>=0.4.11",
 ]
 requires-python = ">=3.10"
 
@@ -59,9 +58,8 @@ qrcode = [
     "qrcode>=8.2",
 ]
 captcha = [
-    "camoufox>=0.4.11",
-    "playwright>=1.62.0",
-    "pyautogui>=0.9.54",
+    "camoufox[geoip]>=0.4.11",
+    "playwright>=1.62.0"
 ]
 
 [dependency-groups]

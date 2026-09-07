@@ -1,18 +1,17 @@
-from getpass import getpass
 from typing import TYPE_CHECKING
 
+from itd.api.auth import sign_in
 from itd.core.captcha import get_turnstile
-from itd.core.default import is_logging_setupped
-from itd.core.logger import get_logger
+from itd.core.logger import RICH_SUPPORTED, get_logger, iprint, rich_input
 from itd.core.profile import Profile
 from itd.core.utils import shorten_token
-from itd.enums import AuthLevel
 from itd.exceptions import (
     AccessTokenExpiredError,
     CaptchaFailedError,
-    EmailDomainNotAllowed,
+    EmailDomainNotAllowedError,
     InvalidAccessTokenError,
-    InvalidCredentials,
+    InvalidCredentialsError,
+    InvalidEmailError,
     JWTAlgorithmUnsupportedError,
     SessionExpiredError,
     SessionNotFoundError,
@@ -22,52 +21,16 @@ from itd.exceptions import (
 if TYPE_CHECKING:
     from itd.core.client import Client
 
-try:
-    from rich.prompt import Prompt
+if RICH_SUPPORTED:
     from rich.status import Status
-
-    RICH_SUPPORTED = True
-except ImportError:
-    RICH_SUPPORTED = False
 
 l = get_logger('auth')
 
 
-def _input(prompt: str, color: str, password: bool = False):
-    if RICH_SUPPORTED:
-        return Prompt.ask(f'[{color}]{prompt}[/]', password=password)
-    else:
-        return (getpass if password else input)(f'{prompt}: ')
-
-
-def _cred_login(client: 'Client', profile: Profile):
-    eprint = l.error if is_logging_setupped() else print
-
-    def _sign_in(field: str, turnstile: str):
-        try:
-            client.login(turnstile)
-        except CaptchaFailedError:
-            eprint('Captcha verify failed. Please fill issue at https://github.com/itd-sdk/itd-sdk/issues/new')
-        except InvalidCredentials:
-            eprint('Invalid email or password')
-        except EmailDomainNotAllowed:
-            eprint('Email domain not allowed')
-        else:
-            return True
-
-    if RICH_SUPPORTED:
-        with Status('Solving captcha..') as status:
-            field, turnstile = get_turnstile(client)
-            status.update('Verifying..')
-            if _sign_in(field, turnstile):
-                return profile
-    else:
-        if _sign_in(*get_turnstile(client)):
-            return profile
-
-
-def auth(client: 'Client') -> Profile:
-    profile: Profile = client._profile
+def interactive_auth(client: 'Client') -> Profile:
+    profile: Profile = client._profile or Profile()
+    if profile._file is None:
+        l.debug('create new profile')
 
     if profile.creds_valid or profile.refresh_valid or profile.access_valid:
         # if not profile.access_valid:
@@ -79,98 +42,122 @@ def auth(client: 'Client') -> Profile:
         #     profile.password = None
 
         return profile
-
-    iprint = l.info if is_logging_setupped() else print
-    wprint = l.warning if is_logging_setupped() else print
-    eprint = l.error if is_logging_setupped() else print
+    client._credtest = True
 
     if not profile.refresh_valid and profile.refresh:
-        wprint('Session file refresh token is not valid')
+        l.warning('session file refresh token is not valid')
 
     if not profile.creds_valid and profile.access:
-        wprint('Session file credentials is not valid')
+        l.warning('session file credentials is not valid')
 
-    iprint(f'Session file data: access={shorten_token(profile.access)} refresh={shorten_token(profile.refresh)} email={profile.email}')
-    iprint('Select auth option:')
-    iprint('[1] Login using credentials')
-    iprint('[2] Login via QR code')
-    iprint('[3] Manually auth using refresh token')
-    iprint('[4] Manually auth using access token')
-    iprint('[5] Quit')
+    iprint(l, f'session file data: access={shorten_token(profile.access)} refresh={shorten_token(profile.refresh)} email={profile.email}')
+    iprint(l, 'select auth option:')
+    iprint(l, '[1] Login using credentials')
+    iprint(l, '[2] Login via QR code')
+    iprint(l, '[3] Manually auth using refresh token')
+    iprint(l, '[4] Manually auth using access token')
+    iprint(l, '[5] Quit')
 
     while True:
-        option = _input('option', 'magenta')
+        option = rich_input('option', 'magenta')
 
         if option == '1':
-            profile.email = _input('email', 'green')
-            profile.password = _input('password', 'green', password=True)
-            if _profile := _cred_login(client, profile):
-                iprint('accepted')
-                return _profile
+            profile.email = rich_input('email', 'green')
+            profile.password = rich_input('password', 'green', password=True)
+            profile.creds_valid = True
+            client._profile = profile
+            client._set_from_profile()
+
+            def _sign_in(turnstile):
+                try:
+                    res = sign_in(client, profile.email, profile.password, 'turnstileToken', turnstile)
+                except CaptchaFailedError:
+                    l.error('captcha verify failed. Please fill issue at https://github.com/itd-sdk/itd-sdk/issues/new')
+                except InvalidCredentialsError:
+                    l.error('invalid email or password')
+                except EmailDomainNotAllowedError:
+                    l.error('email domain not allowed')
+                except InvalidEmailError:
+                    l.error('invalid email format')
+                else:
+                    profile.set_refresh(res.cookies['refresh_token'], set_expire=True)
+                    profile.set_access(res.json()['accessToken'])
+                    profile.creds_valid = True
+                    return True
+
+            if RICH_SUPPORTED:
+                with Status('Solving captcha..') as status:
+                    turnstile = get_turnstile(client, status=status)
+                    status.update('Verifying..')
+                    if _sign_in(turnstile):
+                        iprint(l, 'accepted')
+                        return profile
+            else:
+                iprint(l, 'solving captcha..')
+                if _sign_in(get_turnstile(client)):
+                    iprint(l, 'accepted')
+                    return profile
 
         elif option == '2':
-            wprint('QRcode currently is not supported')
+            l.warning('QRcode currently is not supported')
 
         elif option == '3':
-            profile.refresh = _input('refresh token', 'cyan', password=True)
+            profile.set_refresh(rich_input('refresh token', 'cyan', password=True))
             client._profile = profile
+            client._set_from_profile()
 
             def _verify():
-                client.auth_level = AuthLevel.REFRESH
                 try:
-                    profile.access = client.refresh_auth()
+                    client.refresh_auth()
                 except SessionExpiredError:
-                    eprint('refresh token expired')
+                    l.error('refresh token expired')
                 except SessionNotFoundError:
-                    eprint('invalid refresh token')
+                    l.error('invalid refresh token')
                 except SessionRevokedError:
-                    eprint('refresh token revoked')
+                    l.error('refresh token revoked')
                 else:
-                    profile.refresh_valid = True
-                    profile.set_refresh_expire()
-                    profile.access_valid = True
                     return True
 
             if RICH_SUPPORTED:
                 with Status('Verifying..'):
                     if _verify():
-                        iprint('accepted')
+                        iprint(l, 'accepted')
                         return profile
             else:
                 if _verify():
-                    iprint('accepted')
+                    iprint(l, 'accepted')
                     return profile
 
         elif option == '4':
-            wprint('note: authorization will work only for ~15min')
-            profile.access = _input('access token', 'yellow')
+            l.info('note: authorization will work only for ~15min')
+            profile.set_access(rich_input('access token', 'cyan'))
+            client._profile = profile
+            client._set_from_profile()
 
             def _verify():
-                client.auth_level = AuthLevel.ACCESS
                 try:
                     client.user.refresh()
                 except AccessTokenExpiredError:
-                    eprint('access token expired')
+                    l.error('access token expired')
                 except InvalidAccessTokenError:
-                    eprint('invalid access token')
+                    l.error('invalid access token')
                 except JWTAlgorithmUnsupportedError:
-                    eprint('jwt algorithm unsupported')
+                    l.error('jwt algorithm unsupported')
                 else:
-                    profile.access_valid = True
                     return True
 
             if RICH_SUPPORTED:
                 with Status('Verifying..'):
                     if _verify():
-                        iprint('accepted')
+                        iprint(l, 'accepted')
                         return profile
             else:
                 if _verify():
-                    iprint('accepted')
+                    iprint(l, 'accepted')
                     return profile
 
         elif option in ('5', 'q', 'quit'):
             quit()
 
         else:
-            eprint('unknown option')
+            l.error('unknown option')

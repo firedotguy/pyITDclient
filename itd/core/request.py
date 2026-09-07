@@ -119,12 +119,13 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
 
 def fetch_stream(client: 'Client', url: str):
     """Fetch для SSE streaming запросов"""
-    base = f'{client.config.url}/api/{url}'
+    base = f'https://xn--d1ah4a.com/api/{url}'
     headers = {
         'Accept': 'text/event-stream',
         'Authorization': f'Bearer {client._profile.access}',
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Referer': 'https://xn--d1ah4a.com/',
         'Connection': 'keep-alive',
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'no-cors',
@@ -210,8 +211,8 @@ def api_wrapper(*exceptions: ITDException):
                         l.debug('no response')
                     return res
 
-                remaining = int(res.headers.get('x-ratelimit-remaining') or 0)
-                limit = int(res.headers.get('x-ratelimit-limit') or 0)
+                remaining = int(res.headers.get('x-ratelimit-remaining', 0))
+                limit = int(res.headers.get('x-ratelimit-limit', 0))
                 limits[name] = limit
 
                 if limit not in limiters and config.limiter is not None:
@@ -232,7 +233,7 @@ def api_wrapper(*exceptions: ITDException):
                 exception = _find_error(res, json, exceptions)
                 if exception is not None:
                     # token is checked before the request, but server still can reject it (clock skew, revoked session) - refresh and repeat the request once, before callbacks
-                    if isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError)) and not access_reauthed:
+                    if isinstance(exception, (AccessTokenExpiredError, InvalidAccessTokenError)) and not access_reauthed and not client._credtest:
                         client._profile.access_valid = False
                         if name != 'refresh_token':
                             access_reauthed = True
@@ -240,10 +241,14 @@ def api_wrapper(*exceptions: ITDException):
                             client.refresh_auth()
                             return exec()
 
-                    if isinstance(exception, (SessionExpiredError, SessionNotFoundError, SessionRevokedError)) and not refresh_reauthed:
-                        client._profile.refresh_valid = False
+                    if (
+                        isinstance(exception, (SessionExpiredError, SessionNotFoundError, SessionRevokedError))
+                        and not refresh_reauthed
+                        and not client._credtest
+                    ):
+                        refresh_reauthed = True
                         if name != 'sign_in':
-                            refresh_reauthed = True
+                            client._profile.refresh_valid = False
                             l.warning('%s on %s: refresh refresh_token and retry', exception.__class__.__name__, name)
                             client.login()
                             return exec()

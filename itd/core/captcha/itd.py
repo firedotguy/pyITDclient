@@ -1,6 +1,6 @@
 from time import sleep
 
-from itd.core.captcha.base import BaseProvider, providers
+from itd.core.captcha.base import BaseProvider  # , providers
 
 SITEKEY = 'sk_44d64cf7bf8bc8377f5b'
 
@@ -63,4 +63,4 @@ class ItdProvider(BaseProvider):
         return self.page.evaluate('() => window.turnstile')
 
 
-providers['itd'] = ItdProvider
+# providers['itd'] = ItdProvider

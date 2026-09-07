@@ -1,15 +1,20 @@
-from typing import cast
+from typing import Literal, cast
 
-from camoufox.sync_api import Camoufox
-from playwright.sync_api import Browser, ViewportSize
+try:
+    from camoufox.sync_api import Camoufox
+    from playwright.sync_api import Browser, ViewportSize
+except ImportError:
+    CAPTCHA_AVAILABLE = False
+else:
+    CAPTCHA_AVAILABLE = True
 
 
 class BaseProvider:
     url: str
     _init_script: str
 
-    def __init__(self):
-        self.camoufox = Camoufox(headless='virtual', geoip=True, humanize=True)
+    def __init__(self, headless: bool | Literal['virtual'] = 'virtual'):
+        self.camoufox = Camoufox(headless=headless, geoip=True, humanize=True)
         self.browser = None
         self.context = None
 
@@ -35,4 +40,4 @@ class BaseProvider:
         self.camoufox.__exit__(None, None, None)
 
 
-providers: dict[str, type[BaseProvider]] = {}
+# providers: dict[str, type[BaseProvider]] = {}

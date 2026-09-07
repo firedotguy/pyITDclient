@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from atexit import register
 from datetime import datetime
 from functools import cached_property
 from io import BufferedReader
@@ -11,18 +12,18 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 
 from itd.api.auth import change_password, logout, refresh_token, sign_in
-from itd.core.auth import auth
+from itd.core.auth import interactive_auth
 from itd.core.captcha import get_turnstile
 from itd.core.config import Config
 from itd.core.default import maybe_get_default_client, set_default_client
 from itd.core.dwell import DwellTracker
 from itd.core.logger import get_logger
-from itd.core.profile import Profile
+from itd.core.profile import Profile, clear_anon_profile
 from itd.core.request import fetch, fetch_stream
 from itd.core.utils import get_profile
 from itd.core.visibility import VisibilityTracker
 from itd.enums import AuthLevel
-from itd.exceptions import InsufficientAuthLevelError
+from itd.exceptions import AccessTokenExpiredError, InsufficientAuthLevelError, SessionExpiredError
 
 if TYPE_CHECKING:
     from itd.models.post import Post
@@ -48,10 +49,10 @@ class Client:
         if maybe_get_default_client() is None or self.config.is_default:
             set_default_client(self)
 
-        if not self._profile.access_valid:
-            self._profile = auth(self)
-        self._profile.flush()
+        self._profile = interactive_auth(self)
         self._set_from_profile()
+        self._profile.flush()
+        self._credtest = False  # skip all checks and refreshing to test credentials
 
         self.dwell_tracker = DwellTracker(self)
         self.dwell_tracker.start()
@@ -77,25 +78,15 @@ class Client:
             str: Токен
         """
         with self._refresh_lock:
-            l.debug('refresh refresh_token')
-            if not self._profile.creds_valid:
-                raise RuntimeError('No valid credentials found to re-login')
-
             res = sign_in(
                 self, self._profile.email, self._profile.password, 'turnstileToken', turnstile or get_turnstile(self)[1]
             )  # 'turnstileToken' пока загулшка, ждем когда вернут капчу от итд
-            self._profile.access = res.json().get('accessToken') or res.json()['token']
-            self._profile.access_valid = True
-            self._profile.access_data = self._profile.refresh_access_data()
-
-            self._profile.refresh = res.cookies[self.config.refresh_token_cookie_name]
-            self._profile.refresh_valid = True
-            self._profile.set_refresh_expire()
-
-            self._profile.creds_valid = True
+            self._profile.set_access(res.json().get('accessToken') or res.json()['token'])
+            self._profile.set_refresh(res.cookies[self.config.refresh_token_cookie_name], set_expire=True)
             self._profile.flush()
             self._set_from_profile()
 
+            assert self._profile.refresh
             return self._profile.refresh
 
     def refresh_auth(self) -> str:
@@ -107,20 +98,15 @@ class Client:
 
         with self._refresh_lock:
             l.debug('refresh access_token')
-            if not self._profile.refresh_valid:
-                raise RuntimeError('No valid refresh_token found to refresh auth')
 
             res = refresh_token(self)
-            self._profile.access = res.json().get('accessToken') or res.json()['token']
-            self._profile.access_valid = True
-            self._profile.access_data = self._profile.refresh_access_data()
-
+            self._profile.set_access(res.json().get('accessToken') or res.json()['token'])
             if self.config.refresh_token_cookie_name in res.cookies:
-                self._profile.refresh = res.cookies[self.config.refresh_token_cookie_name]
-                self._profile.refresh_valid = True
+                self._profile.set_refresh(res.cookies[self.config.refresh_token_cookie_name])
             self._profile.flush()
             self._set_from_profile()
 
+            assert self._profile.access
             return self._profile.access
 
     @property
@@ -141,21 +127,30 @@ class Client:
         self.visibility.update_stats()
 
     def _before_request(self, url: str, level: AuthLevel = AuthLevel.ACCESS):
-        if url != 'v1/auth/sign-in' and ((self._profile.refresh and self._profile.is_refresh_expired) or not self._profile.refresh_valid):
-            self._profile.access_valid = False
-            if level == AuthLevel.LOGIN:
+        if level == AuthLevel.NO or self._credtest:
+            return
+
+        if level >= AuthLevel.REFRESH and ((self._profile.refresh and self._profile.is_refresh_expired) or not self._profile.refresh_valid):
+            self._profile.refresh_valid = False
+            if self.auth_level == AuthLevel.LOGIN:
                 self.login()
             else:
-                l.warning('not enough level to re-login')
+                l.error('not enough level to re-login')
+                if not self.config.bypass_auth_level:
+                    raise SessionExpiredError()
 
-        if url not in ('v1/auth/refresh', 'v1/auth/sign-in') and (
-            (self._profile.access_data and self._profile.access_data.is_expired) or not self._profile.access_valid
+        if (
+            url != 'v1/auth/refresh'
+            and level >= AuthLevel.ACCESS
+            and ((self._profile.access_data and self._profile.access_data.is_expired) or not self._profile.access_valid)
         ):
             self._profile.access_valid = False
-            if level >= AuthLevel.REFRESH:
+            if self.auth_level >= AuthLevel.REFRESH:
                 self.refresh_auth()
             else:
-                l.warning('not enough level to refresh access_token')
+                l.error('not enough level to refresh access_token')
+                if not self.config.bypass_auth_level:
+                    raise AccessTokenExpiredError()
 
     def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
         """Сделать запрос
@@ -168,7 +163,7 @@ class Client:
         """
         l.debug('%s %s params=%s authlevel=%s', method.upper(), url, params, level.value)
 
-        if level > self.auth_level and not self.config.bypass_auth_level:
+        if level > self.auth_level and not self.config.bypass_auth_level and not self._credtest:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
         self._before_request(url, level=level)
@@ -198,7 +193,8 @@ class Client:
 
     def logout(self):
         """Выход из аккаунта"""
-        logout(self)
+        res = logout(self)
+        res.raise_for_status()
 
     def change_password(self, old: str, new: str) -> None:
         """Смена пароля
@@ -220,4 +216,7 @@ class Client:
 
 
 def init_client(name: str | None = None, config: Config = Config()) -> Client:
+    if name == 'anon':
+        clear_anon_profile()
+        register(clear_anon_profile)
     return Client(name or 'default', config=config)

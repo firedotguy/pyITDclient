@@ -3,10 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from itd.core.limiter import IPRateLimiter, RateLimiter
-
 if TYPE_CHECKING:
     from itd.core.client import Client
+    from itd.core.limiter import IPRateLimiter, RateLimiter
 
 _logging_setupped: bool = False
 _default_client: Client | None = None

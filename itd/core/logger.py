@@ -1,5 +1,15 @@
 import logging
+from getpass import getpass
 from sys import stdout
+
+from itd.core.default import is_logging_setupped
+
+try:
+    from rich.prompt import Prompt
+except ImportError:
+    RICH_SUPPORTED = False
+else:
+    RICH_SUPPORTED = True
 
 
 class ITDFormatter(logging.Formatter):
@@ -51,3 +61,14 @@ def setup_logging(level: str = 'INFO', colorful: bool | None = None) -> logging.
 
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(f'itd.{name}')
+
+
+def iprint(l, message: str):
+    l.info(message) if is_logging_setupped() else print(message)
+
+
+def rich_input(prompt: str, color: str, password: bool = False):
+    if RICH_SUPPORTED:
+        return Prompt.ask(f'[{color}]{prompt}[/]', password=password)
+    else:
+        return (getpass if password else input)(f'{prompt}: ')
