@@ -8,7 +8,7 @@ from threading import RLock
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from requests import Session
+from requests import Response, Session
 from requests.adapters import HTTPAdapter
 
 from itd.api.auth import change_password, logout, refresh_token, sign_in
@@ -19,7 +19,7 @@ from itd.core.default import maybe_get_default_client, set_default_client
 from itd.core.dwell import DwellTracker
 from itd.core.logger import get_logger
 from itd.core.profile import Profile, clear_anon_profile
-from itd.core.request import fetch, fetch_stream
+from itd.core.request import fetch
 from itd.core.utils import get_profile
 from itd.core.visibility import VisibilityTracker
 from itd.enums import AuthLevel
@@ -152,28 +152,22 @@ class Client:
                 if not self.config.bypass_auth_level:
                     raise AccessTokenExpiredError()
 
-    def request(self, method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, level=AuthLevel.ACCESS):
-        """Сделать запрос
-
-        Args:
-            method (str): Метод
-            url (str): URL
-            params (dict, optional): Параметры. Defaults to {}.
-            files (dict[str, tuple[str, BufferedReader | bytes]], optional): Файлы. Defaults to {}.
-        """
-        l.debug('%s %s params=%s authlevel=%s', method.upper(), url, params, level.value)
+    def request(
+        self,
+        method: str,
+        url: str,
+        params: dict = {},
+        files: dict[str, tuple[str, BufferedReader | bytes]] = {},
+        sse: bool = False,
+        level: AuthLevel = AuthLevel.ACCESS
+    ) -> Response:
+        l.debug('%s %s params=%s authlevel=%s', ('SSE ' if sse else '') + method.upper(), url, params, level.value)
 
         if level > self.auth_level and not self.config.bypass_auth_level and not self._credtest:
             raise InsufficientAuthLevelError(self.auth_level, level)
 
         self._before_request(url, level=level)
-        return fetch(self, method, url, params, files)
-
-    def request_sse(self, url: str):
-        l.debug('sse %s', url)
-
-        self._before_request(url)
-        return fetch_stream(self, url)
+        return fetch(self, method, url, params, files, sse=sse)
 
     @property
     def user_id(self) -> UUID:

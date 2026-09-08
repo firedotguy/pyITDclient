@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING
 
 from itd.api.auth import sign_in
 from itd.core.captcha import get_turnstile
-from itd.core.logger import RICH_SUPPORTED, get_logger, iprint, rich_input
+from itd.core.logger import RICH_AVAILABLE, get_logger, iprint, rich_input
 from itd.core.profile import Profile
+from itd.core.qr import auth_qr
 from itd.core.utils import shorten_token
 from itd.exceptions import (
     AccessTokenExpiredError,
@@ -21,7 +22,7 @@ from itd.exceptions import (
 if TYPE_CHECKING:
     from itd.core.client import Client
 
-if RICH_SUPPORTED:
+if RICH_AVAILABLE:
     from rich.status import Status
 
 l = get_logger('auth')
@@ -85,7 +86,7 @@ def interactive_auth(client: 'Client') -> Profile:
                     profile.creds_valid = True
                     return True
 
-            if RICH_SUPPORTED:
+            if RICH_AVAILABLE:
                 with Status('Solving captcha..') as status:
                     turnstile = get_turnstile(client, status=status)
                     status.update('Verifying..')
@@ -99,7 +100,8 @@ def interactive_auth(client: 'Client') -> Profile:
                     return profile
 
         elif option == '2':
-            l.warning('QRcode currently is not supported')
+            if auth_qr(client):
+                return client._profile
 
         elif option == '3':
             profile.set_refresh(rich_input('refresh token', 'cyan', password=True))
@@ -118,7 +120,7 @@ def interactive_auth(client: 'Client') -> Profile:
                 else:
                     return True
 
-            if RICH_SUPPORTED:
+            if RICH_AVAILABLE:
                 with Status('Verifying..'):
                     if _verify():
                         iprint(l, 'accepted')
@@ -146,7 +148,7 @@ def interactive_auth(client: 'Client') -> Profile:
                 else:
                     return True
 
-            if RICH_SUPPORTED:
+            if RICH_AVAILABLE:
                 with Status('Verifying..'):
                     if _verify():
                         iprint(l, 'accepted')

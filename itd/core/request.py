@@ -81,30 +81,44 @@ def decode_jwt_payload(jwt_token: str) -> dict[str, Any]:
     return loads(decoded)
 
 
-def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}) -> Response:
-    headers = {'Accept': 'application/json', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
+def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dict[str, tuple[str, BufferedReader | bytes]] = {}, sse: bool = False) -> Response:
+    headers = {'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
     if client.config._user_agent:
         headers['User-Agent'] = client.config._user_agent
     if client._profile.access and client._profile.access_valid:
         headers['Authorization'] = 'Bearer ' + client._profile.access
+    if sse:
+        headers['Accept'] = 'text/event-stream'
+        headers.update(
+            {
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Referer': 'https://xn--d1ah4a.com/',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'no-cors',
+                'Sec-Fetch-Site': 'same-origin'
+            }
+        )
+    else:
+        headers['Accept'] = 'application/json'
 
-    # ai begin ---
     def _do_request():
         m = method.lower()
         if m == 'get':
-            return client.session.get(f'{client.config.url}/{url}', timeout=client.config._timeout, params=params, headers=headers)
+            return client.session.get(f'{client.config.url}/{url}', timeout=None if sse else client.config._timeout, params=params, headers=headers, stream=sse)
 
         return client.session.request(
             m.upper(),
             f'{client.config.url}/{url}',
-            timeout=client.config.timeout_file if files else client.config._timeout,
+            timeout=None if sse else client.config.timeout_file if files else client.config._timeout,
             json=params,
             headers=headers,
+            stream=sse,
             files=files
         )
 
     res = _do_request()
-    if client.config.solve_challenge:
+    if client.config.solve_challenge and not sse:
         for _ in range(3):
             if not _solve_ddos_guard(client.session, res, client.config._user_agent):
                 break
@@ -112,12 +126,11 @@ def fetch(client: 'Client', method: str, url: str, params: dict = {}, files: dic
             res = _do_request()
         else:
             l.warning('ddos-guard challenge not solved')
-    # --- ai end
 
     return res
 
 
-def fetch_stream(client: 'Client', url: str):
+def fetch_sse(client: 'Client', url: str, params: dict = {}):
     """Fetch для SSE streaming запросов"""
     base = f'https://xn--d1ah4a.com/api/{url}'
     headers = {
@@ -133,7 +146,7 @@ def fetch_stream(client: 'Client', url: str):
         'TE': 'trailers',
         'User-Agent': client.config._user_agent
     }
-    return client.session.get(base, headers=headers, stream=True, timeout=None)
+    return client.session.get(base, headers=headers, params=params, stream=True, timeout=None)
 
 
 @dataclass
@@ -171,14 +184,7 @@ def _find_error(res: Response, json: dict, exceptions: tuple[ITDException, ...])
     return None
 
 
-# user calls `Me` -> model calls `get_me` -> `api_wrapper` wrapper: (`get_me` -> `client.request` -> `fetch` -> responses 401 -> `refresh_auth` from `api_wrapper` -> `client.resuest` -> `fetch` -> token refreshed -> `api_wrapper` backs to main query -> `get_me` -> `client.request` -> `fetch` -> user fetched) -> model recieves data -> pydantic fills model
 def api_wrapper(*exceptions: ITDException):
-    """Декоратор для отлавливания ошибок
-
-    Args:
-        *exceptions (ITDException): Список ошибок для отлавливания
-    """
-
     def decorator(func):
         @wraps(func)
         def wrapper(client: 'Client', *args, **kwargs) -> Response | None:
@@ -298,27 +304,7 @@ def api_wrapper(*exceptions: ITDException):
     return decorator
 
 
-@dataclass
-class Endpoint:
-    """Описание эндпоинта, доступно как атрибут `.endpoint` у декорированной функции"""
-
-    method: str
-    url: str
-    level: AuthLevel
-    exceptions: tuple[ITDException, ...]
-
-
-def endpoint(method: str, url: str, *exceptions: ITDException, level: AuthLevel = AuthLevel.ACCESS):
-    """Объявить эндпоинт: декорированная функция только собирает тело запроса (dict с параметрами, Payload или ничего),
-    а отправку, авторизацию, лимиты и ошибки берет на себя пайплайн
-
-    Args:
-        method (str): Метод
-        url (str): URL, может содержать имена аргументов функции: 'posts/{post_id}/comments'
-        *exceptions (ITDException): Ошибки, специфичные для эндпоинта (общие проверяются всегда)
-        level (AuthLevel, optional): Требуемый уровень авторизации. Defaults to AuthLevel.ACCESS.
-    """
-
+def endpoint(method: str, url: str, *exceptions: ITDException, sse: bool = False, level: AuthLevel = AuthLevel.ACCESS):
     def decorator(func: Callable[..., dict | Payload | None]):
         params = signature(func) if '{' in url else None  # аргументы нужно связывать, только если url шаблонный
 
@@ -335,10 +321,8 @@ def endpoint(method: str, url: str, *exceptions: ITDException, level: AuthLevel 
                 bound.apply_defaults()
                 path = url.format(**bound.arguments)
 
-            return client.request(method, path, payload.params, payload.files, level=level)
+            return client.request(method, path, payload.params, payload.files, sse=sse, level=level)
 
-        wrapper = api_wrapper(*exceptions)(request)
-        wrapper.endpoint = Endpoint(method, url, level, exceptions)
-        return wrapper
+        return request if sse else api_wrapper(*exceptions)(request)
 
     return decorator

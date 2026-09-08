@@ -7,9 +7,9 @@ from itd.core.default import is_logging_setupped
 try:
     from rich.prompt import Prompt
 except ImportError:
-    RICH_SUPPORTED = False
+    RICH_AVAILABLE = False
 else:
-    RICH_SUPPORTED = True
+    RICH_AVAILABLE = True
 
 
 class ITDFormatter(logging.Formatter):
@@ -68,7 +68,7 @@ def iprint(l, message: str):
 
 
 def rich_input(prompt: str, color: str, password: bool = False):
-    if RICH_SUPPORTED:
+    if RICH_AVAILABLE:
         return Prompt.ask(f'[{color}]{prompt}[/]', password=password)
     else:
         return (getpass if password else input)(f'{prompt}: ')

@@ -51,3 +51,8 @@ def qr_start(cleint: Client): ...
 @endpoint('post', 'v1/auth/qr/claim', level=AuthLevel.NO)
 def qr_claim(client: Client, qr_id: UUID, claim_token: str):
     return {'qrId': str(qr_id), 'claimToken': claim_token}
+
+
+@endpoint('post', 'v1/auth/qr/stream', sse=True, level=AuthLevel.NO)
+def qr_stream(client: Client, qr_id: UUID, claim_token: str):
+    return {'qrId': str(qr_id), 'claimToken': claim_token}

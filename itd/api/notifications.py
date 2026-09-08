@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from itd.exceptions import NotFoundError
 from itd.core.request import endpoint
+from itd.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from itd.core.client import Client
@@ -36,5 +36,5 @@ def update_notifications_settings(client: Client, settings: dict):
     return settings
 
 
-def stream_notifications(client: Client):
-    return client.request_sse('notifications/stream')
+@endpoint('get', 'notifications/stream', sse=True)
+def stream_notifications(client: Client): ...

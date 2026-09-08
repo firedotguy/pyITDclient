@@ -105,9 +105,6 @@ class Config:
     post_update_stats: bool | None = None
     post_update_stats_interval: int = 3
 
-    qr_mode: Literal['auto', 'manual', 'disabled'] = 'auto'
-    qr_check_interval: float = 5
-
     captcha_solve: bool = False
     captcha_headless: bool | Literal['virtual'] = 'virtual'
 
