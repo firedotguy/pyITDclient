@@ -49,7 +49,7 @@ class Client:
         if maybe_get_default_client() is None or self.config.is_default:
             set_default_client(self)
 
-        self._profile = interactive_auth(self)
+        interactive_auth(self)
         self._set_from_profile()
         self._profile.flush()
         self._credtest = False  # skip all checks and refreshing to test credentials
@@ -61,14 +61,14 @@ class Client:
         self.visibility.start()
 
     def _set_from_profile(self):
-        if self._profile.access:
+        if self._profile.access and self._profile.access_valid:
             self.auth_level = AuthLevel.ACCESS
 
-        if self._profile.refresh:
+        if self._profile.refresh and self._profile.refresh_valid:
             self.session.cookies.set(self.config.refresh_token_cookie_name, self._profile.refresh, path='/')
             self.auth_level = AuthLevel.REFRESH
 
-        if self._profile.email and self._profile.password:
+        if self._profile.email and self._profile.password and self._profile.creds_valid:
             self.auth_level = AuthLevel.LOGIN
 
     def login(self, turnstile: str | None = None) -> str:
@@ -79,7 +79,7 @@ class Client:
         """
         with self._refresh_lock:
             res = sign_in(
-                self, self._profile.email, self._profile.password, 'turnstileToken', turnstile or get_turnstile(self)[1]
+                self, self._profile.email, self._profile.password, 'turnstileToken', turnstile or get_turnstile(self)
             )  # 'turnstileToken' пока загулшка, ждем когда вернут капчу от итд
             self._profile.set_access(res.json().get('accessToken') or res.json()['token'])
             self._profile.set_refresh(res.cookies[self.config.refresh_token_cookie_name], set_expire=True)

@@ -68,6 +68,9 @@ dev = [
     "python-dotenv>=1.2.1",
 ]
 
+[project.scripts]
+itd-sdk = "itd.core.cli:main"
+
 [tool.ruff]
 line-length = 160
 

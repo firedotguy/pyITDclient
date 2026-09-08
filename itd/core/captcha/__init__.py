@@ -13,13 +13,13 @@ if TYPE_CHECKING:
 l = get_logger('captcha')
 
 
-def get_turnstile(client: 'Client', status=None) -> str:  # tuple[str, str]:
+def get_turnstile(client: 'Client | None' = None, status=None) -> str:  # tuple[str, str]:
     # provider_data = {'provider': 'cloudflare', 'token': 'turnstileToken'}  # get_captcha_provider(client)
     # if provider_data['provider'] not in providers:
     #     raise RuntimeError(f'Unknown provider: {provider_data["provider"]}')
 
     # provider = providers[provider_data['provider']]()
-    if not client.config.captcha_solve:
+    if client and client.config.captcha_solve:
         l.warning('captcha solving disabled')
         iprint(l, 'solve captcha on other devices via `uv run itd captcha`, then paste result here')
         iprint(l, 'enter `continue` to force solve captcha on this device')
@@ -33,7 +33,7 @@ def get_turnstile(client: 'Client', status=None) -> str:  # tuple[str, str]:
 
     if not CAPTCHA_AVAILABLE:
         l.error('captcha libraries not installed; install via `uv add itd-sdk[captcha]`')
-    provider = CloudflareProvider(client.config.captcha_headless)
+    provider = CloudflareProvider(False if not client else client.config.captcha_headless)
     provider.launch()
     turnstile = provider.solve()
     provider.close()
